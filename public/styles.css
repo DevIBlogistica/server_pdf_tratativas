@@ -1,0 +1,270 @@
+@page {
+    size: A4;
+    margin: 25px;
+}
+
+body {
+    font-family: 'Century Gothic', sans-serif;
+    margin: 25px;
+    box-sizing: border-box;
+}
+
+.container {
+    width: 210mm;
+    height: 297mm;
+    padding: 10px;
+    box-sizing: border-box;
+    border: 1px solid #000;
+}
+
+/* Ajustes globais */
+.row {
+    margin-bottom: 2px;
+}
+
+/* Título Principal */
+.title-row .main-title {
+    text-align: center;
+    border: 1px solid #000;
+    padding: 3px;
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 2px;
+    background-color: #e8f5e9;
+}
+
+/* Categorias */
+.category-row .category-title {
+    text-align: center;
+    border: 1px solid #000;
+    padding: 3px;
+    margin-bottom: 2px;
+    background-color: #e8f5e9;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* Grid para informações pessoais */
+.grid-row {
+    display: grid;
+    grid-template-columns: 49.8% 49.8%;
+    gap: 0.4%;
+    margin-bottom: 4px;
+}
+
+.grid-row .col {
+    border: 1px solid #000;
+    padding: 3px;
+}
+
+.field-container {
+    display: flex;
+    align-items: center;
+}
+
+.label {
+    font-size: 10px;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.dynamic {
+    display: inline-block;
+    min-height: 1em;
+    min-width: 50px;
+    padding-left: 10px;
+    font-size: 10px;
+}
+
+/* Campo empresa com fonte normal */
+.company-col .dynamic {
+    font-size: 10px;
+}
+
+/* Container de Riscos */
+.risks-container {
+    border: 1px solid #000;
+    margin-bottom: 2px;
+    min-height: 20vh;
+}
+
+.risk-row {
+    display: grid;
+    grid-template-columns: 15% 85%;
+    margin-bottom: 4px;
+}
+
+.risk-label {
+    padding: 5px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.risk-content {
+    padding: 5px;
+    min-height: 3em;
+    line-height: 1.5;
+}
+
+.risk-content .dynamic {
+    font-size: 10px;
+    display: block;
+    word-wrap: break-word;
+}
+
+/* Seção médica em três colunas */
+.medical-section {
+    display: grid;
+    grid-template-columns: 34.8% 14.8% 49.8%;
+    gap: 0.3%;
+    height: 360px;
+    margin-bottom: 4px;
+}
+
+/* Colunas de Exames e Datas */
+.exams-column,
+.dates-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.exams-container {
+    border: 1px solid #000;
+    padding: 2px;
+    margin-bottom: 2px;
+    height: calc(100% - 26px);
+}
+
+.exam-row {
+    display: grid;
+    grid-template-columns: 70% 30%;
+    font-size: 10px;
+    margin-bottom: 3px;
+    min-height: 14px;
+    align-items: center;
+}
+
+.data-field {
+    text-align: center;
+    font-size: 10px;
+    display: block;
+    width: 100%;
+    line-height: 14px;
+    padding: 0 10px;
+}
+
+/* Coluna de Procedimentos */
+.procedures-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.procedures-block {
+    border: 1px solid #000;
+    padding: 3px;
+    margin-bottom: 2px;
+    min-height: 83px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.procedure-item {
+    font-size: 10px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    min-height: 16px;
+}
+
+.checkbox {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #000;
+    border-radius: 5px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+/* Seção médico coordenador e clínica */
+.medical-coordinator-section {
+    display: grid;
+    grid-template-columns: 49.8% 49.8%;
+    gap: 0.4%;
+    margin-top: 2px;
+}
+
+.medical-coordinator-container {
+    border: 1px solid #000;
+    padding: 3px;
+    margin-bottom: 2px;
+    min-height: 40px;
+}
+
+.medical-coordinator-container.clinica {
+    min-height: 120px;
+}
+
+.clinic-info {
+    text-align: center;
+    padding: 10px;
+}
+
+.clinic-info .dynamic {
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* Seção local e assinatura */
+.local-assinatura-container {
+    border: 1px solid #000;
+    padding: 14px;
+    margin-top: 4px;
+}
+
+.local-assinatura-section {
+    display: grid;
+    gap: 10px;
+    align-items: center;
+}
+
+.local-assinatura-section:first-child {
+    grid-template-columns: 7% 46% 6% 37%;
+}
+
+.local-assinatura-section:last-child {
+    grid-template-columns: 20% 76%;
+    gap: 30px;
+    margin-top: 12px;
+}
+
+.signature-field {
+    border: 1px solid #000;
+    height: 30px;
+}
+
+/* Remover overflow e scroll */
+.exams-container {
+    overflow: visible;
+}
+
+/* Ajustes de impressão */
+@media print {
+    body {
+        background: none;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .container {
+        width: 210mm;
+        height: 297mm;
+        margin: 0;
+        padding: 10px;
+    }
+    
+    section {
+        break-inside: avoid;
+    }
+} 

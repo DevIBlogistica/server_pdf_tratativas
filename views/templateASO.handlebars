@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atestado de Saúde Ocupacional</title>
+</head>
+<body>
+    <div class="container">
+        <!-- Linha 1 -->
+        <div class="row title-row">
+            <div class="col main-title">ATESTADO DE SAÚDE OCUPACIONAL</div>
+        </div>
+        
+        <!-- Linha 2 -->
+        <div class="row category-row">
+            <div class="col category-title">
+                <span class="dynamic natureza_exame">{{natureza_exame}}</span>
+            </div>
+        </div>
+        
+        <!-- Linha 3 - CPF e Nome -->
+        <div class="row grid-row personal-info-row">
+            <div class="col cpf-col">
+                <div class="field-container">
+                    <span class="label">CPF:</span>
+                    <span class="dynamic cpf">{{cpf}}</span>
+                </div>
+            </div>
+            <div class="col name-col">
+                <div class="field-container">
+                    <span class="label">NOME:</span>
+                    <span class="dynamic nome">{{nome}}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Linha 4 - Data Nascimento e Função -->
+        <div class="row grid-row birth-function-row">
+            <div class="col birth-col">
+                <div class="field-container">
+                    <span class="label">DATA DE NASCIMENTO:</span>
+                    <span class="dynamic data_nascimento">{{data_nascimento}}</span>
+                </div>
+            </div>
+            <div class="col function-col">
+                <div class="field-container">
+                    <span class="label">FUNÇÃO:</span>
+                    <span class="dynamic funcao">{{funcao}}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Linha 5 - Setor e Empresa -->
+        <div class="row grid-row sector-company-row">
+            <div class="col sector-col">
+                <div class="field-container">
+                    <span class="label">SETOR:</span>
+                    <span class="dynamic setor">{{setor}}</span>
+                </div>
+            </div>
+            <div class="col company-col">
+                <div class="field-container">
+                    <span class="label">EMPRESA:</span>
+                    <span class="dynamic empresa">{{empresa}}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Categoria Riscos -->
+        <div class="row category-row">
+            <div class="col category-title">RISCOS OCUPACIONAIS EXISTENTES NA ATIVIDADE</div>
+        </div>
+
+        <!-- Riscos - 5 linhas -->
+        <div class="risks-container">
+            <div class="row risk-row">
+                <div class="col risk-label">FÍSICO:</div>
+                <div class="col risk-content">
+                    <span class="dynamic risco_fisico">{{risco_fisico}}</span>
+                </div>
+            </div>
+            
+            <div class="row risk-row">
+                <div class="col risk-label">QUÍMICO:</div>
+                <div class="col risk-content">
+                    <span class="dynamic risco_quimico">{{risco_quimico}}</span>
+                </div>
+            </div>
+            
+            <div class="row risk-row">
+                <div class="col risk-label">ERGONÔMICO:</div>
+                <div class="col risk-content">
+                    <span class="dynamic risco_ergonomico">{{risco_ergonomico}}</span>
+                </div>
+            </div>
+            
+            <div class="row risk-row">
+                <div class="col risk-label">ACIDENTE:</div>
+                <div class="col risk-content">
+                    <span class="dynamic risco_acidente">{{risco_acidente}}</span>
+                </div>
+            </div>
+            
+            <div class="row risk-row">
+                <div class="col risk-label">BIOLÓGICO:</div>
+                <div class="col risk-content">
+                    <span class="dynamic risco_biologico">{{risco_biologico}}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção médica em três colunas -->
+        <div class="medical-section">
+            <!-- Coluna Esquerda - Exames -->
+            <div class="exams-column">
+                <div class="row category-row">
+                    <div class="col category-title">EXAMES</div>
+                </div>
+                <div class="exams-container">
+                    {{#each exames}}
+                    <div class="exam-row">
+                        <span class="dynamic exames">{{this}}</span>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+
+            <!-- Coluna Centro - Datas -->
+            <div class="dates-column">
+                <div class="row category-row">
+                    <div class="col category-title">DATA</div>
+                </div>
+                <div class="exams-container">
+                    {{#each exames}}
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+
+            <!-- Coluna Direita - Procedimentos -->
+            <div class="procedures-column">
+                <!-- Procedimentos Médicos -->
+                <div class="row category-row">
+                    <div class="col category-title">PROCEDIMENTOS MÉDICOS</div>
+                </div>
+                <div class="procedures-block">
+                    <div class="procedure-item">
+                        <span class="checkbox"></span>
+                        <span>ANAMNESE CLÍNICO OCUPACIONAL</span>
+                    </div>
+                    <div class="procedure-item">
+                        <span class="checkbox"></span>
+                        <span>EXAME FÍSICO E MENTAL</span>
+                    </div>
+                </div>
+
+                <!-- Parecer Médico -->
+                <div class="row category-row">
+                    <div class="col category-title">PARECER MÉDICO</div>
+                </div>
+                <div class="procedures-block">
+                    <div class="procedure-item">
+                        <span class="checkbox"></span>
+                        <span>APTO PARA A FUNÇÃO QUE VAI EXERCER</span>
+                    </div>
+                    <div class="procedure-item">
+                        <span class="checkbox"></span>
+                        <span>INAPTO PARA A FUNÇÃO QUE VAI EXERCER</span>
+                    </div>
+                </div>
+
+                <!-- Parecer Altura -->
+                <div class="row category-row">
+                    <div class="col category-title">PARECER MÉDICO PARA ATIVIDADE EM ALTURA</div>
+                </div>
+                <div class="procedures-block">
+                    <div class="procedure-item">
+                        <span class="checkbox"></span>
+                        <span>APTO PARA A FUNÇÃO QUE VAI EXERCER</span>
+                    </div>
+                    <div class="procedure-item">
+                        <span class="checkbox"></span>
+                        <span>INAPTO PARA A FUNÇÃO QUE VAI EXERCER</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção médico coordenador e clínica -->
+        <div class="medical-coordinator-section">
+            <!-- Coluna Esquerda - Médico Coordenador e Examinador -->
+            <div class="coordinator-column">
+                <!-- Médico Coordenador -->
+                <div class="row category-row">
+                    <div class="col category-title">MÉDICO COORDENADOR</div>
+                </div>
+                <div class="medical-coordinator-container">
+                    <div class="exam-row">
+                        <span class="dynamic exames" style="font-size: 12px; margin-bottom: 4px;">DR. NASSER SAROUTE</span><br>
+                        <span class="dynamic exames" style="font-size: 12px;">CREMESP: 42559 CRM MG 33.214 - MTB 23.402</span>
+                    </div>
+                </div>
+
+                <!-- Médico Examinador -->
+                <div class="row category-row">
+                    <div class="col category-title">MÉDICO EXAMINADOR</div>
+                </div>
+                <div class="medical-coordinator-container">
+                    <span class="empty-space"></span>
+                </div>
+            </div>
+            
+            <!-- Coluna Direita - Clínica -->
+            <div class="clinic-column">
+                <div class="row category-row">
+                    <div class="col category-title">CLÍNICA</div>
+                </div>
+                <div class="medical-coordinator-container clinica">
+                    <div class="clinic-info">
+                        <span class="dynamic">{{clinica.nome}}</span>
+                        <span class="dynamic">{{clinica.endereco}}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção local e assinatura -->
+        <div class="local-assinatura-container">
+            <div class="local-assinatura-section">
+                <span class="dynamic">LOCAL:</span>
+                <div class="signature-field"></div>
+                <span class="dynamic">DATA:</span>
+                <div class="signature-field"></div>
+            </div>
+
+            <div class="local-assinatura-section">
+                <span class="dynamic">RECEBI 2ª VIA DO ASO:</span>
+                <div class="signature-field"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

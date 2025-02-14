@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atestado de Saúde Ocupacional</title>
+    <link rel="stylesheet" href="templateASOstyle.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Linha 1 -->
+        <div class="row title-row">
+            <div class="col main-title">ATESTADO DE SAÚDE OCUPACIONAL</div>
+        </div>
+        <!-- Linha 2 -->
+        <div class="row category-row">
+            <div class="col category-title">
+                <span class="dynamic natureza_exame" style="font-size: 12px; font-weight: 600;">RETORNO AO TRABALHO</span>
+            </div>
+        </div>
+        
+        <!-- Linha 3 - CPF e Nome -->
+        <div class="row grid-row personal-info-row">
+            <div class="col cpf-col">
+                <div class="field-container">
+                    <span class="label">CPF:</span>
+                    <span class="dynamic cpf">CPF_DINAMICO</span>
+                </div>
+            </div>
+            <div class="col name-col">
+                <div class="field-container">
+                    <span class="label">NOME:</span>
+                    <span class="dynamic nome">NOME_DINAMICO</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Linha 4 - Data Nascimento e Função -->
+        <div class="row grid-row birth-function-row">
+            <div class="col birth-col">
+                <div class="field-container">
+                    <span class="label">DATA DE NASCIMENTO:</span>
+                    <span class="dynamic data_nascimento">DATA_NASCIMENTO_DINAMICA</span>
+                </div>
+            </div>
+            <div class="col function-col">
+                <div class="field-container">
+                    <span class="label">FUNÇÃO:</span>
+                    <span class="dynamic funcao">FUNCAO_DINAMICA</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Linha 5 - Setor e Empresa -->
+        <div class="row grid-row sector-company-row">
+            <div class="col sector-col">
+                <div class="field-container">
+                    <span class="label">SETOR:</span>
+                    <span class="dynamic setor">SETOR_DINAMICO</span>
+                </div>
+            </div>
+            <div class="col company-col">
+                <div class="field-container">
+                    <span class="label">EMPRESA:</span>
+                    <span class="dynamic empresa">EMPRESA_DINAMICA</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Categoria Riscos -->
+        <div class="row category-row">
+            <div class="col category-title">RISCOS OCUPACIONAIS EXISTENTES NA ATIVIDADE</div>
+        </div>
+
+        <!-- Riscos - 5 linhas -->
+        <div class="risks-container">
+            <div class="row risk-row">
+                <div class="col risk-label">FÍSICO:</div>
+                <div class="col risk-content">
+                    <span class="dynamic risco_fisico" style="font-size: 10px; text-transform: uppercase;">RISCO FÍSICO: ESTE É UM TEXTO FICTÍCIO QUE DESCREVE OS RISCOS FÍSICOS ASSOCIADOS AO TRABALHO. OS TRABALHADORES PODEM ESTAR EXPOSTOS A CONDIÇÕES QUE PODEM CAUSAR LESÕES. É IMPORTANTE USAR EQUIPAMENTOS DE PROTEÇÃO ADEQUADOS.</span>
+                </div>
+            </div>
+            
+            <div class="row risk-row">
+                <div class="col risk-label">QUÍMICO:</div>
+                <div class="col risk-content">
+                    <span class="dynamic risco_quimico" style="font-size: 10px; text-transform: uppercase;">RISCO QUÍMICO: ESTE TEXTO FICTÍCIO DESCREVE OS RISCOS QUÍMICOS QUE PODEM ESTAR PRESENTES NO AMBIENTE DE TRABALHO. A EXPOSIÇÃO A SUBSTÂNCIAS QUÍMICAS PODE CAUSAR PROBLEMAS DE SAÚDE A LONGO PRAZO.</span>
+                </div>
+            </div>
+            
+            <div class="row risk-row">
+                <div class="col risk-label">ERGONÔMICO:</div>
+                <div class="col risk-content">
+                    <span class="dynamic risco_ergonomico" style="font-size: 10px; text-transform: uppercase;">RISCO ERGONÔMICO: ESTE TEXTO FICTÍCIO FALA SOBRE OS RISCOS ERGONÔMICOS QUE PODEM AFETAR OS TRABALHADORES. POSTURAS INADEQUADAS E MOVIMENTOS REPETITIVOS PODEM LEVAR A LESÕES MUSCULOESQUELÉTICAS.</span>
+                </div>
+            </div>
+            
+            <div class="row risk-row">
+                <div class="col risk-label">ACIDENTE:</div>
+                <div class="col risk-content">
+                    <span class="dynamic risco_acidente" style="font-size: 10px; text-transform: uppercase;">RISCO DE ACIDENTE: ESTE TEXTO FICTÍCIO DISCUTE OS RISCOS DE ACIDENTES NO LOCAL DE TRABALHO. É FUNDAMENTAL SEGUIR AS NORMAS DE SEGURANÇA PARA EVITAR LESÕES.</span>
+                </div>
+            </div>
+            
+            <div class="row risk-row" style="margin-bottom: 0;">
+                <div class="col risk-label">BIOLÓGICO:</div>
+                <div class="col risk-content">
+                    <span class="dynamic risco_biologico" style="font-size: 10px; text-transform: uppercase;">RISCO BIOLÓGICO: ESTE CAMPO PERMANECE VAZIO, POIS NÃO FOI SOLICITADO TEXTO FICTÍCIO.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Divisão em duas colunas -->
+        <div class="medical-section">
+            <!-- Coluna Esquerda - Exames -->
+            <div class="exams-column">
+                <!-- Categoria Exames-->
+                <div class="row category-row">
+                    <div class="col category-title">EXAMES</div>
+                </div>
+<!-- Container Exames -->
+                <div class="exams-container">
+                    <div class="exam-row">
+                        <span class="dynamic exames">226 ACUIDADE VISUAL</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="dynamic exames">227 AUDIOMETRIA OCUPACIONAL</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="dynamic exames">228 ELETROCARDIOGRAMA</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="dynamic exames">229 ELETROENCEFALOGRAMA</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="dynamic exames">230 ESPIROMETRIA</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="dynamic exames">231 HEMOGRAMA COMPLETO</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="dynamic exames">232 RAIO X TÓRAX PA</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="dynamic exames">233 GAMA GT</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="dynamic exames">234 GLICEMIA EM JEJUM</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="dynamic exames">235 AVALIAÇÃO PSICOSSOCIAL</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="dynamic exames">236 TESTE DE ROMBERG</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="dynamic exames">237 DINAMOMETRIA LOMBAR</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="dynamic exames">238 EXAME CLÍNICO</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="dynamic exames">239 ACUIDADE AUDITIVA</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="dynamic exames">240 TESTE ERGOMÉTRICO</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="dynamic exames">241 EXAME TOXICOLÓGICO</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="dynamic exames">242 AVALIAÇÃO OFTALMOLÓGICA</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Coluna Centro - Datas -->
+            <div class="exams-column">
+                <!-- Categoria Exames e Data -->
+                <div class="row category-row">
+                    <div class="col category-title">DATA</div>
+                </div>
+
+                <!-- Container Exames e Data -->
+                <div class="exams-container">
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                    <div class="exam-row">
+                        <span class="data-field">____/____/________</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna Direita - Procedimentos -->
+            <div class="procedures-column">
+                <!-- Categoria 1 -->
+                <div class="row category-row">
+                    <div class="col category-title">PROCEDIMENTOS MÉDICOS</div>
+                </div>
+                <div class="procedures-block">
+                    <div class="procedure-item">
+                        <span class="checkbox"></span>
+                        <span>ANAMNESE CLÍNICO OCUPACIONAL</span>
+                    </div>
+                    <div class="procedure-item">
+                        <span class="checkbox"></span>
+                        <span>EXAME FÍSICO E MENTAL</span>
+                    </div>
+                </div>
+
+                <!-- Categoria 2 -->
+                <div class="row category-row">
+                    <div class="col category-title">PARECER MÉDICO</div>
+                </div>
+                <div class="procedures-block">
+                    <div class="procedure-item">
+                        <span class="checkbox"></span>
+                        <span>APTO PARA A FUNÇÃO QUE VAI EXERCER</span>
+                    </div>
+                    <div class="procedure-item">
+                        <span class="checkbox"></span>
+                        <span>INAPTO PARA A FUNÇÃO QUE VAI EXERCER</span>
+                    </div>
+                </div>
+
+                <!-- Categoria 3 -->
+                <div class="row category-row">
+                    <div class="col category-title">PARECER MÉDICO PARA ATIVIDADE EM ALTURA</div>
+                </div>
+                <div class="procedures-block">
+                    <div class="procedure-item">
+                        <span class="checkbox"></span>
+                        <span>APTO PARA A FUNÇÃO QUE VAI EXERCER</span>
+                    </div>
+                    <div class="procedure-item">
+                        <span class="checkbox"></span>
+                        <span>INAPTO PARA A FUNÇÃO QUE VAI EXERCER</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção médico coordenador e clínica -->
+        <div class="medical-coordinator-section">
+            <!-- Coluna Esquerda - Médico Coordenador e Médico Examinador -->
+            <div class="exams-column">
+                <!-- Categoria Médico Coordenador-->
+                <div class="row category-row">
+                    <div class="col category-title">MÉDICO COORDENADOR</div>
+                </div>
+                <!-- Container médico coordenador -->
+                <div class="medical-coordinator-container" style="border: 1px solid #000; min-height: 40px; margin-bottom: 10px;">
+                    <div class="exam-row">
+                        <span class="dynamic exames" style="font-size: 12px; margin-bottom: 4px;">DR. NASSER SAROUTE</span><br>
+                        <span class="dynamic exames" style="font-size: 12px;">CREMESP: 42559 CRM MG 33.214 - MTB 23.402</span>
+                    </div>
+                </div>
+                <!-- Categoria Médico Examinador-->
+                <div class="row category-row">
+                    <div class="col category-title">MÉDICO EXAMINADOR</div>
+                </div>
+                <!-- Container médico examinado -->
+                <div class="medical-coordinator-container" style="border: 1px solid #000; min-height:37px; margin-bottom: 0;">
+                    <span style="display: block; height: 100%;"></span>
+                </div>
+            </div>
+            
+            <!-- Coluna Direita - Clínica -->
+            <div class="exams-column" style="text-align: center;">
+                <!-- Categoria Clínica -->
+                <div class="row category-row">
+                    <div class="col category-title">CLÍNICA</div>
+                </div>
+
+                <!-- Container Clínica -->
+                <div class="medical-coordinator-container" style="min-height: 133.3px; border: 1px solid #000; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div style="text-align: center;">
+                        <span class="dynamic data_exame" style="font-size: 11px;">NOME_DA_CLINICA_DINAMICO</span><br>
+                        <span class="dynamic data_exame" style="font-size: 11px;">ENDERECO_DA_CLINICA_DINAMICO</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção local e assinatura -->
+        <div class="local-assinatura-container" style="border: 1px solid #000; padding: 14px;">
+            <div class="local-assinatura-section" style="display: grid; gap: 10px; grid-template-columns: 7% 46% 6% 37%; align-items: center;">
+                <span class="dynamic" style="font-size: 12px;">LOCAL:</span>
+                <div style="border: 1px solid #000; height: 30px;"></div>
+                <span class="dynamic" style="font-size: 12px;">DATA:</span>
+                <div style="border: 1px solid #000; height: 30px;"></div>
+            </div>
+
+            <!-- Nova linha para RECEBI 2ª VIA DO ASO -->
+            <div class="local-assinatura-section" style="display: grid; gap: 30px; grid-template-columns: 20% 76%; align-items: center; margin-top: 12px;">
+                <span class="dynamic" style="font-size: 12px;">RECEBI 2ª VIA DO ASO:</span>
+                <div style="border: 1px solid #000; height: 30px;"></div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html> 
