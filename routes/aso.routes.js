@@ -6,17 +6,56 @@ const supabase = require('../config/supabase');
 const fs = require('fs');
 
 // Função auxiliar para gerar nome único para o arquivo
-const generateUniqueFileName = () => {
-    return `aso_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.pdf`;
+const generateUniqueFileName = (natureza, nome, data) => {
+    console.log('\n[Gerando nome do arquivo]');
+    console.log('Dados recebidos:', { natureza, nome, data });
+    
+    const dataFormatada = data.split('-').reverse().join('-');
+    console.log('Data formatada:', dataFormatada);
+    
+    const nomeFormatado = nome.replace(/[^a-zA-Z0-9 ]/g, ' ').toUpperCase();
+    console.log('Nome formatado:', nomeFormatado);
+    
+    const naturezaFormatada = natureza.replace(/[^a-zA-Z0-9 ]/g, ' ').toUpperCase();
+    console.log('Natureza formatada:', naturezaFormatada);
+    
+    const fileName = `ASO ${naturezaFormatada} ${nomeFormatado} ${dataFormatada}.pdf`;
+    console.log('Nome final do arquivo:', fileName);
+    
+    return fileName;
 };
 
 // Função auxiliar para fazer upload do PDF para o Supabase Storage
 const uploadPDFToSupabase = async (pdfBuffer, fileName) => {
+    console.log('\n[Verificando duplicidade do arquivo]');
+    
+    // Verifica se o arquivo já existe
+    const { data: existingFiles } = await supabase.storage
+        .from(process.env.SUPABASE_BUCKET_NAME)
+        .list();
+
+    const existingFile = existingFiles?.find(file => file.name === fileName);
+    
+    if (existingFile) {
+        console.log('Arquivo com mesmo nome encontrado:', existingFile.name);
+        
+        // Retorna a URL do arquivo existente
+        const { data: { publicUrl } } = supabase.storage
+            .from(process.env.SUPABASE_BUCKET_NAME)
+            .getPublicUrl(fileName);
+            
+        console.log('Retornando URL do arquivo existente');
+        return publicUrl;
+    }
+
+    console.log('Arquivo não encontrado, realizando upload...');
+    
+    // Se não existir, faz o upload
     const { data, error } = await supabase.storage
         .from(process.env.SUPABASE_BUCKET_NAME)
         .upload(fileName, pdfBuffer, {
             contentType: 'application/pdf',
-            upsert: true
+            upsert: false // Alterado para false para não sobrescrever
         });
 
     if (error) throw error;
@@ -26,6 +65,7 @@ const uploadPDFToSupabase = async (pdfBuffer, fileName) => {
         .from(process.env.SUPABASE_BUCKET_NAME)
         .getPublicUrl(fileName);
 
+    console.log('Upload concluído com sucesso');
     return publicUrl;
 };
 
@@ -188,7 +228,7 @@ router.post('/generate', async (req, res) => {
         await browser.close();
 
         // Gera nome único para o arquivo
-        const fileName = generateUniqueFileName();
+        const fileName = generateUniqueFileName(natureza_exame, nome, new Date().toLocaleDateString('pt-BR'));
 
         // Faz upload do PDF para o Supabase Storage
         const publicUrl = await uploadPDFToSupabase(pdfBuffer, fileName);
@@ -298,7 +338,7 @@ router.get('/test-generate', async (req, res) => {
         await browser.close();
 
         // Gera nome único para o arquivo
-        const fileName = generateUniqueFileName();
+        const fileName = generateUniqueFileName(templateData.natureza_exame, templateData.nome, new Date().toLocaleDateString('pt-BR'));
 
         // Faz upload do PDF para o Supabase Storage
         const publicUrl = await uploadPDFToSupabase(pdfBuffer, fileName);
@@ -449,7 +489,7 @@ router.get('/generate-from-booking/:id', async (req, res) => {
         console.log('[13] Navegador fechado');
 
         // Gera nome único para o arquivo
-        const fileName = generateUniqueFileName();
+        const fileName = generateUniqueFileName(templateData.natureza_exame, templateData.nome, booking.data_agendamento);
         console.log('[14] Nome do arquivo gerado:', fileName);
 
         // Faz upload do PDF para o Supabase Storage
