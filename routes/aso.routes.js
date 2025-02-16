@@ -5,6 +5,27 @@ const puppeteer = require('puppeteer');
 const supabase = require('../config/supabase');
 const fs = require('fs');
 
+// Função auxiliar para trocar caracteres acentuados e caracteres especiais
+const troquePor = (str) => {
+    const acentos = {
+        'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a', 'ä': 'a',
+        'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
+        'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i',
+        'ó': 'o', 'ò': 'o', 'õ': 'o', 'ô': 'o', 'ö': 'o',
+        'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u',
+        'ç': 'c', // Substituição do "ç" por "c"
+        'Ç': 'C', // Substituição do "Ç" por "C"
+        'Á': 'A', 'À': 'A', 'Ã': 'A', 'Â': 'A', 'Ä': 'A',
+        'É': 'E', 'È': 'E', 'Ê': 'E', 'Ë': 'E',
+        'Í': 'I', 'Ì': 'I', 'Î': 'I', 'Ï': 'I',
+        'Ó': 'O', 'Ò': 'O', 'Õ': 'O', 'Ô': 'O', 'Ö': 'O',
+        'Ú': 'U', 'Ù': 'U', 'Û': 'U', 'Ü': 'U'
+    };
+    
+    // Substitui cada caractere acentuado por seu equivalente sem acento
+    return str.split('').map(char => acentos[char] || char).join('').replace(/\//g, '_'); // Substitui '/' por '_'
+};
+
 // Função auxiliar para gerar nome único para o arquivo
 const generateUniqueFileName = (natureza, nome, data) => {
     console.log('\n[Gerando nome do arquivo]');
@@ -13,13 +34,15 @@ const generateUniqueFileName = (natureza, nome, data) => {
     const dataFormatada = data.split('-').reverse().join('-');
     console.log('Data formatada:', dataFormatada);
     
-    const nomeFormatado = nome.replace(/[^a-zA-Z0-9 ]/g, ' ').toUpperCase();
+    // Usando os dados recebidos diretamente, mas trocando caracteres acentuados
+    const nomeFormatado = troquePor(nome.trim()).toUpperCase(); // Mantendo todos os caracteres, incluindo acentos
     console.log('Nome formatado:', nomeFormatado);
     
-    const naturezaFormatada = natureza.replace(/[^a-zA-Z0-9 ]/g, ' ').toUpperCase();
+    const naturezaFormatada = troquePor(natureza.trim()).toUpperCase(); // Mantendo todos os caracteres, incluindo acentos
     console.log('Natureza formatada:', naturezaFormatada);
     
-    const fileName = `ASO ${naturezaFormatada} ${nomeFormatado} ${dataFormatada}.pdf`;
+    // Gerando o nome do arquivo sem caracteres inválidos
+    const fileName = `ASO ${naturezaFormatada} ${nomeFormatado} ${dataFormatada}.pdf`.replace(/\s+/g, ' ').trim();
     console.log('Nome final do arquivo:', fileName);
     
     return fileName;
@@ -519,5 +542,10 @@ router.get('/generate-from-booking/:id', async (req, res) => {
         });
     }
 });
+
+// Teste da função removeAcentos
+const teste = "MUDANÇA DE FUNÇÃO";
+const resultado = troquePor(teste);
+console.log('Resultado do teste:', resultado); // Deve imprimir "MUDANCA DE FUNCAO"
 
 module.exports = router; 
