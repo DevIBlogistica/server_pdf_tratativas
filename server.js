@@ -10,7 +10,7 @@ const asoRoutes = require('./routes/aso.routes');
 
 // Inicialização do Express
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 
 // Configuração do CORS para permitir requisições do frontend
 app.use(cors());
