@@ -34,15 +34,15 @@ const generateUniqueFileName = (natureza, nome, data) => {
     const dataFormatada = data.split('-').reverse().join('-');
     console.log('Data formatada:', dataFormatada);
     
-    // Usando os dados recebidos diretamente, mas trocando caracteres acentuados
-    const nomeFormatado = troquePor(nome.trim()).toUpperCase(); // Mantendo todos os caracteres, incluindo acentos
+    // Mantendo a formatação original dos dados recebidos
+    const nomeFormatado = nome.trim().toUpperCase(); 
     console.log('Nome formatado:', nomeFormatado);
     
-    const naturezaFormatada = troquePor(natureza.trim()).toUpperCase(); // Mantendo todos os caracteres, incluindo acentos
+    const naturezaFormatada = troquePor(natureza.trim()).toUpperCase(); 
     console.log('Natureza formatada:', naturezaFormatada);
     
-    // Gerando o nome do arquivo sem caracteres inválidos
-    const fileName = `ASO ${naturezaFormatada} ${nomeFormatado} ${dataFormatada}.pdf`.replace(/\s+/g, ' ').trim();
+    // Gerando o nome do arquivo na nova ordem: data, nome, natureza
+    const fileName = `${dataFormatada} ${nomeFormatado} ${naturezaFormatada}.pdf`.replace(/\s+/g, ' ').trim();
     console.log('Nome final do arquivo:', fileName);
     
     return fileName;
