@@ -551,6 +551,6 @@ console.log('Resultado do teste:', resultado); // Deve imprimir "MUDANCA DE FUNC
 // Adicionando log periódico para manter a instância ativa
 setInterval(() => {
     console.log('[INFO] Servidor ativo - mantendo a instância em execução...');
-}, 300000); // 5 minutos
+}, 60000); // 1 minuto
 
 module.exports = router; 
