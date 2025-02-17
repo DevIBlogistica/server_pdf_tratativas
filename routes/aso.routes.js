@@ -548,4 +548,9 @@ const teste = "MUDANÇA DE FUNÇÃO";
 const resultado = troquePor(teste);
 console.log('Resultado do teste:', resultado); // Deve imprimir "MUDANCA DE FUNCAO"
 
+// Adicionando log periódico para manter a instância ativa
+setInterval(() => {
+    console.log('[INFO] Servidor ativo - mantendo a instância em execução...');
+}, 300000); // 5 minutos
+
 module.exports = router; 
