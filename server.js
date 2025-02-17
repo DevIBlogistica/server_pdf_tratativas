@@ -12,8 +12,14 @@ const asoRoutes = require('./routes/aso.routes');
 const app = express();
 const port = process.env.PORT || 3001;
 
-// Configuração do CORS para permitir requisições do frontend
-app.use(cors());
+// Configuração do CORS para permitir requisições de qualquer origem
+const corsOptions = {
+    origin: '*', // Aceita todas as origens
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
 
 // Configuração para aceitar dados JSON e aumentar o limite
 app.use(express.json({ limit: '50mb' }));
@@ -54,5 +60,6 @@ app.use((err, req, res, next) => {
 
 // Inicialização do servidor
 app.listen(port, () => {
-    console.log(`Servidor rodando em http://localhost:${port}`);
-}); 
+    console.log(`Servidor rodando na porta ${port}`);
+    console.log('CORS configurado para aceitar todas as origens...');
+});

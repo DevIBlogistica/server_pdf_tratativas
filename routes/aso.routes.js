@@ -1,9 +1,21 @@
 const express = require('express');
+const cors = require('cors');
+const axios = require('axios'); // Para fazer requisições HTTP
 const router = express.Router();
 const path = require('path');
 const puppeteer = require('puppeteer');
 const supabase = require('../config/supabase');
 const fs = require('fs');
+
+// Configura o CORS para permitir requisições de qualquer origem
+const corsOptions = {
+    origin: '*', // Aceita todas as origens
+    methods: ['GET', 'POST'], // Métodos permitidos
+    allowedHeaders: ['Content-Type', 'Authorization'], // Cabeçalhos permitidos
+};
+
+// Use o middleware CORS
+router.use(cors(corsOptions));
 
 // Função auxiliar para trocar caracteres acentuados e caracteres especiais
 const troquePor = (str) => {
@@ -539,6 +551,22 @@ router.get('/generate-from-booking/:id', async (req, res) => {
             success: false,
             message: 'Erro ao gerar PDF',
             error: error.message
+        });
+    }
+});
+
+// Rota proxy para chamar a API externa
+router.get('/proxy/generate-from-booking/:id', async (req, res) => {
+    try {
+        const bookingId = req.params.id;
+        const response = await axios.get(`URL_DA_API/generate-from-booking/${bookingId}`); // Substitua pela URL da sua API
+        res.json(response.data);
+    } catch (error) {
+        console.error('Erro ao chamar a API externa:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao chamar a API externa',
+            error: error.message,
         });
     }
 });
