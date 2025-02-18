@@ -54,7 +54,9 @@ const generateUniqueFileName = (natureza, nome, data) => {
     console.log('Natureza formatada:', naturezaFormatada);
     
     // Gerando o nome do arquivo na nova ordem: data, nome, natureza
-    const fileName = `${dataFormatada} ${nomeFormatado} ${naturezaFormatada}.pdf`.replace(/\s+/g, ' ').trim();
+    const fileName = `${dataFormatada} ${nomeFormatado} ${naturezaFormatada}.pdf`
+        .replace(/\s+/g, '_') // Substitui espaços por underscores
+        .replace(/[^a-zA-Z0-9_.-]/g, ''); // Remove caracteres inválidos
     console.log('Nome final do arquivo:', fileName);
     
     return fileName;
