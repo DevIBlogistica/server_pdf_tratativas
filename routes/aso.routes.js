@@ -475,8 +475,8 @@ router.get('/generate-from-booking/:id', async (req, res) => {
         // Inicia o navegador Puppeteer
         console.log('[10] Iniciando navegador Puppeteer...');
         const browser = await puppeteer.launch({
-            headless: false, // Set to false for debugging
-            args: ['--no-sandbox', '--disable-setuid-sandbox'] // Add these arguments
+            headless: true, // Set to true for headless mode
+            args: ['--no-sandbox', '--disable-setuid-sandbox'] // Add these arguments for compatibility
         });
         const page = await browser.newPage();
 
