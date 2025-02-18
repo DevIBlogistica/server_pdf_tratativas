@@ -3,6 +3,8 @@ const express = require('express');
 const { engine } = require('express-handlebars');
 const path = require('path');
 const cors = require('cors');
+const https = require('https'); // Import the https module
+const fs = require('fs'); // Import the fs module
 require('dotenv').config();
 
 // Importação das rotas
@@ -10,7 +12,7 @@ const asoRoutes = require('./routes/aso.routes');
 
 // Inicialização do Express
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3000;
 
 // Configuração do CORS para permitir requisições de qualquer origem
 const corsOptions = {
@@ -58,8 +60,14 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Inicialização do servidor
-app.listen(port, () => {
+// Carregar o certificado SSL
+const sslOptions = {
+    key: fs.readFileSync('server.key'), // Relative path to the private key
+    cert: fs.readFileSync('server.cert') // Relative path to the certificate
+};
+
+// Inicialização do servidor HTTPS
+https.createServer(sslOptions, app).listen(port, () => {
     console.log(`Servidor rodando na porta ${port}`);
     console.log('CORS configurado para aceitar todas as origens...');
 });
