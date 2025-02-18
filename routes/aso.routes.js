@@ -475,8 +475,8 @@ router.get('/generate-from-booking/:id', async (req, res) => {
         // Inicia o navegador Puppeteer
         console.log('[10] Iniciando navegador Puppeteer...');
         const browser = await puppeteer.launch({
-            headless: 'new',
-            args: ['--no-sandbox']
+            headless: false, // Set to false for debugging
+            args: ['--no-sandbox', '--disable-setuid-sandbox'] // Add these arguments
         });
         const page = await browser.newPage();
 
@@ -502,7 +502,8 @@ router.get('/generate-from-booking/:id', async (req, res) => {
 
         // Configura o conteúdo HTML na página
         await page.setContent(htmlWithStyles, {
-            waitUntil: 'networkidle0'
+            waitUntil: 'networkidle0',
+            timeout: 60000 // Increase timeout to 60 seconds
         });
 
         // Gera o PDF
