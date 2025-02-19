@@ -640,10 +640,35 @@ const downloadPDF = async (url) => {
     }
 };
 
+// Função para criar diretório temporário
+const createTempDirectory = () => {
+    const tempDir = path.join(__dirname, '../temp');
+    if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir);
+    }
+    return tempDir;
+};
+
+// Função para limpar diretório temporário
+const cleanTempDirectory = () => {
+    const tempDir = path.join(__dirname, '../temp');
+    if (fs.existsSync(tempDir)) {
+        fs.readdirSync(tempDir).forEach(file => {
+            const filePath = path.join(tempDir, file);
+            fs.unlinkSync(filePath);
+        });
+        console.log('[Temp] Diretório temporário limpo');
+    }
+};
+
 // Função para mesclar PDFs
 const mergePDFs = async (pdfUrls) => {
     try {
         console.log('[Merge PDFs] Iniciando mesclagem de PDFs...');
+        
+        // Limpar diretório temporário antes de começar
+        cleanTempDirectory();
+        const tempDir = createTempDirectory();
         
         // Criar novo documento PDF
         const mergedPdf = await PDFDocument.create();
@@ -653,6 +678,10 @@ const mergePDFs = async (pdfUrls) => {
             console.log('[Merge PDFs] Baixando PDF:', url);
             // Baixar o PDF
             const pdfBytes = await downloadPDF(url);
+            
+            // Salvar temporariamente
+            const tempFile = path.join(tempDir, `temp_${Date.now()}.pdf`);
+            fs.writeFileSync(tempFile, Buffer.from(pdfBytes));
             
             // Carregar o PDF
             console.log('[Merge PDFs] Carregando PDF no documento...');
@@ -671,9 +700,14 @@ const mergePDFs = async (pdfUrls) => {
         // Gerar o PDF final
         const mergedPdfFile = await mergedPdf.save();
         
+        // Limpar arquivos temporários
+        cleanTempDirectory();
+        
         console.log('[Merge PDFs] Mesclagem concluída com sucesso');
         return Buffer.from(mergedPdfFile);
     } catch (error) {
+        // Garantir que os arquivos temporários sejam limpos mesmo em caso de erro
+        cleanTempDirectory();
         console.error('[Merge PDFs] Erro ao mesclar PDFs:', error);
         throw error;
     }
@@ -684,7 +718,7 @@ const generateUnifiedFileName = (filters) => {
     const { data, clinica } = filters;
     const dataFormatada = data.split('-').reverse().join('-');
     const clinicaFormatada = troquePor(clinica.trim()).toUpperCase();
-    return `${dataFormatada}_${clinicaFormatada}_UNIFICADO.pdf`;
+    return `${dataFormatada}_${clinicaFormatada}_AGENDADOS.pdf`;
 };
 
 // Função para gerar PDF a partir de um booking
