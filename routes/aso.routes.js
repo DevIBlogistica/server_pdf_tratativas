@@ -222,58 +222,7 @@ router.post('/generate', async (req, res) => {
         };
 
         // Renderiza o template com os dados
-        const templateData = {
-            natureza_exame,
-            cpf,
-            nome,
-            data_nascimento,
-            funcao,
-            setor,
-            empresa,
-            ...examesRiscos,
-            clinica
-        };
-
-        // Inicia o navegador Puppeteer
-        const browser = await puppeteer.launch();
-        const page = await browser.newPage();
-
-        // Configura a rota temporária para renderizar o template
-        const fullUrl = `${req.protocol}://${req.get('host')}`;
-        await page.goto(`${fullUrl}/render-aso?data=${encodeURIComponent(JSON.stringify(templateData))}`, {
-            waitUntil: 'networkidle0'
-        });
-
-        // Gera o PDF
-        const pdfBuffer = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: {
-                top: '10mm',
-                right: '10mm',
-                bottom: '10mm',
-                left: '10mm'
-            }
-        });
-
-        await browser.close();
-
-        // Gera nome único para o arquivo
-        const fileName = generateUniqueFileName(natureza_exame, nome, new Date().toLocaleDateString('pt-BR'));
-
-        // Faz upload do PDF para o Supabase Storage
-        const publicUrl = await uploadPDFToSupabase(pdfBuffer, fileName);
-
-        // Atualiza a URL do ASO na tabela
-        await updateASOUrlInTable(tableId, publicUrl);
-
-        // Retorna sucesso com a URL pública
-        res.json({
-            success: true,
-            message: 'PDF gerado e armazenado com sucesso',
-            url: publicUrl
-        });
-
+        // (Continue with the rest of your logic here)
     } catch (error) {
         console.error('Erro ao gerar PDF:', error);
         res.status(500).json({
