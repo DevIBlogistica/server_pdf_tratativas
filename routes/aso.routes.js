@@ -629,29 +629,15 @@ setInterval(() => {
 
 // Função auxiliar para baixar PDF da URL
 const downloadPDF = async (url) => {
-    const response = await fetch(url);
-    return await response.arrayBuffer();
-};
-
-// Função para unificar PDFs
-const mergePDFs = async (pdfUrls) => {
-    const mergedPdf = await PDFDocument.create();
-    
-    for (const url of pdfUrls) {
-        const pdfBytes = await downloadPDF(url);
-        const pdf = await PDFDocument.load(pdfBytes);
-        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-        copiedPages.forEach((page) => mergedPdf.addPage(page));
+    try {
+        const response = await axios.get(url, {
+            responseType: 'arraybuffer'
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Erro ao baixar PDF:', error);
+        throw error;
     }
-    
-    return await mergedPdf.save();
-};
-
-// Função para gerar nome do arquivo unificado
-const generateUnifiedFileName = (filters) => {
-    const data = filters.data.split('-').reverse().join('-');
-    const clinica = filters.clinica.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
-    return `${data}_${clinica}_UNIFICADO.pdf`;
 };
 
 // Função para gerar PDF a partir de um booking
@@ -697,14 +683,14 @@ const generatePDFFromBooking = async (booking, req) => {
     // Renderiza o template
     console.log('[8] Renderizando template...');
     const html = await new Promise((resolve, reject) => {
-        req.app.render('templateASO', { ...templateData, layout: false }, (err, html) => {
-            if (err) {
-                console.error('[ERRO] Erro ao renderizar template:', err);
-                reject(err);
-            } else {
-                resolve(html);
-            }
-        });
+        const handlebarsTemplate = handlebars.compile(fs.readFileSync(path.join(__dirname, '../views/templateASO.handlebars'), 'utf8'));
+        try {
+            const renderedHtml = handlebarsTemplate(templateData);
+            resolve(renderedHtml);
+        } catch (err) {
+            console.error('[ERRO] Erro ao renderizar template:', err);
+            reject(err);
+        }
     });
 
     // Lê o arquivo CSS
