@@ -726,4 +726,105 @@ router.post('/generate-unified', async (req, res) => {
     }
 });
 
+// Função para gerar PDF a partir de um booking
+const generatePDFFromBooking = async (booking) => {
+    console.log(`[1] Iniciando geração de PDF para booking:`, booking.id);
+
+    // Busca exames e riscos necessários
+    console.log('[2] Buscando exames necessários...');
+    const examesRiscos = await fetchExamesNecessarios(booking.funcao, booking.natureza);
+    console.log('[3] Exames encontrados:', examesRiscos.exames);
+
+    // Processa informações da clínica
+    console.log('[4] Processando informações da clínica...');
+    const clinicaInfo = processarClinica(booking.clinica);
+    console.log('[5] Informações da clínica processadas:', clinicaInfo);
+
+    // Formata a data atual
+    const dataAtual = new Date().toLocaleDateString('pt-BR');
+
+    // Monta os dados para o template
+    console.log('[6] Montando dados para o template...');
+    const templateData = {
+        natureza_exame: booking.natureza.toUpperCase(),
+        cpf: booking.cpf,
+        nome: booking.nome.toUpperCase(),
+        data_nascimento: formatarData(booking.data_nasc),
+        funcao: booking.funcao.toUpperCase(),
+        setor: booking.setor.toUpperCase(),
+        empresa: booking.empresa.toUpperCase(),
+        ...examesRiscos,
+        clinica: clinicaInfo,
+        data_exame: dataAtual
+    };
+
+    // Inicia o navegador Puppeteer
+    console.log('[7] Iniciando navegador Puppeteer...');
+    const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    const page = await browser.newPage();
+
+    // Renderiza o template
+    console.log('[8] Renderizando template...');
+    const html = await new Promise((resolve, reject) => {
+        app.render('templateASO', { ...templateData, layout: false }, (err, html) => {
+            if (err) {
+                console.error('[ERRO] Erro ao renderizar template:', err);
+                reject(err);
+            } else {
+                resolve(html);
+            }
+        });
+    });
+
+    // Lê o arquivo CSS
+    const cssPath = path.join(__dirname, '../public/styles.css');
+    const css = fs.readFileSync(cssPath, 'utf8');
+
+    // Injeta o CSS diretamente no HTML
+    const htmlWithStyles = html.replace('</head>', `<style>${css}</style></head>`);
+
+    // Configura o conteúdo HTML na página
+    await page.setContent(htmlWithStyles, {
+        waitUntil: 'networkidle0',
+        timeout: 60000
+    });
+
+    // Gera o PDF
+    console.log('[9] Gerando PDF...');
+    const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+            top: '25px',
+            right: '25px',
+            bottom: '25px',
+            left: '25px'
+        },
+        preferCSSPageSize: true,
+        displayHeaderFooter: false
+    });
+
+    await browser.close();
+    console.log('[10] Navegador fechado');
+
+    // Gera nome único para o arquivo
+    const fileName = generateUniqueFileName(templateData.natureza_exame, templateData.nome, booking.data_agendamento);
+    console.log('[11] Nome do arquivo gerado:', fileName);
+
+    // Faz upload do PDF para o Supabase Storage
+    console.log('[12] Fazendo upload do PDF para o Supabase...');
+    const publicUrl = await uploadPDFToSupabase(pdfBuffer, fileName);
+    console.log('[13] Upload concluído. URL pública:', publicUrl);
+
+    // Atualiza a URL do ASO na tabela bookings
+    console.log('[14] Atualizando URL do ASO no booking...');
+    await updateASOUrlInTable(booking.id, publicUrl);
+    console.log('[15] URL do ASO atualizada com sucesso');
+
+    return { url: publicUrl };
+};
+
 module.exports = router; 
