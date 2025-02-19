@@ -702,8 +702,14 @@ const generateUnifiedFileName = (filters) => {
     if (!data || !clinica) {
         throw new Error('Data e clínica são obrigatórios para gerar o nome do arquivo unificado');
     }
+    
+    // Formata a data (de YYYY-MM-DD para DD-MM-YYYY)
     const dataFormatada = data.split('-').reverse().join('-');
+    
+    // Extrai e formata o nome da clínica (remove a parte do telefone e formata)
     const clinicaFormatada = troquePor(clinica.split('TELEFONE:')[0].trim()).toUpperCase();
+    
+    // Retorna o nome do arquivo no formato: DATA_CLINICA_AGENDADOS.pdf
     return `${dataFormatada}_${clinicaFormatada}_AGENDADOS.pdf`;
 };
 
