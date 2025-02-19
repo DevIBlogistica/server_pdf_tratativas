@@ -640,6 +640,53 @@ const downloadPDF = async (url) => {
     }
 };
 
+// Função para mesclar PDFs
+const mergePDFs = async (pdfUrls) => {
+    try {
+        console.log('[Merge PDFs] Iniciando mesclagem de PDFs...');
+        
+        // Criar novo documento PDF
+        const mergedPdf = await PDFDocument.create();
+        
+        // Para cada URL de PDF
+        for (const url of pdfUrls) {
+            console.log('[Merge PDFs] Baixando PDF:', url);
+            // Baixar o PDF
+            const pdfBytes = await downloadPDF(url);
+            
+            // Carregar o PDF
+            console.log('[Merge PDFs] Carregando PDF no documento...');
+            const pdf = await PDFDocument.load(pdfBytes);
+            
+            // Copiar todas as páginas
+            const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+            
+            // Adicionar cada página ao documento final
+            pages.forEach((page) => {
+                mergedPdf.addPage(page);
+            });
+        }
+        
+        console.log('[Merge PDFs] Gerando PDF final...');
+        // Gerar o PDF final
+        const mergedPdfFile = await mergedPdf.save();
+        
+        console.log('[Merge PDFs] Mesclagem concluída com sucesso');
+        return Buffer.from(mergedPdfFile);
+    } catch (error) {
+        console.error('[Merge PDFs] Erro ao mesclar PDFs:', error);
+        throw error;
+    }
+};
+
+// Função para gerar nome do arquivo unificado
+const generateUnifiedFileName = (filters) => {
+    const { data, clinica } = filters;
+    const dataFormatada = data.split('-').reverse().join('-');
+    const clinicaFormatada = troquePor(clinica.trim()).toUpperCase();
+    return `${dataFormatada}_${clinicaFormatada}_UNIFICADO.pdf`;
+};
+
 // Função para gerar PDF a partir de um booking
 const generatePDFFromBooking = async (booking, req) => {
     console.log(`[1] Iniciando geração de PDF para booking:`, booking.id);
