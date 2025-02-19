@@ -188,77 +188,60 @@ const formatarData = (dataStr) => {
 
 // Função para buscar exames necessários e riscos
 const fetchExamesNecessarios = async (funcao, natureza) => {
-    console.log('[4.1] Buscando exames para função:', funcao, 'natureza:', natureza);
+    console.log(`[Exames] Buscando para função: ${funcao}`);
     const { data: examesData, error: examesError } = await supabase
         .from('exames_necessarios')
         .select('exame, codigo, valor')
         .eq('funcao', funcao)
         .eq('natureza', natureza);
 
-    if (examesError) {
-        console.error('[ERRO] Erro ao buscar exames:', examesError);
-        throw examesError;
-    }
+    if (examesError) throw examesError;
 
-    console.log('[4.2] Exames encontrados:', examesData);
-
-    // Lista de exames formatados com código
     const exames = examesData.map(item => `${item.codigo} - ${item.exame.toUpperCase()}`);
-
-    // Calcula o custo total dos exames
     const custoTotal = examesData.reduce((total, item) => total + Number(item.valor), 0);
 
-    // Busca riscos ocupacionais
-    console.log('\n[4.3] Iniciando busca de riscos...');
-    console.log('Função recebida:', funcao);
-    console.log('Função após trim e uppercase:', funcao.trim().toUpperCase());
-
-    // Faz a consulta
-    const { data: riscosData, error: riscosError } = await supabase
-        .from('riscos')
-        .select('*')
-        .eq('funcao', funcao.trim().toUpperCase())
-        .single();
-
-    if (riscosError) {
-        console.error('[ERRO] Detalhes do erro ao buscar riscos:', {
-            codigo: riscosError.code,
-            mensagem: riscosError.message,
-            detalhes: riscosError.details,
-            dica: riscosError.hint
-        });
-
-        // Faz uma busca geral para ver todas as funções disponíveis
-        const { data: todasFuncoes } = await supabase
+    try {
+        const { data: riscosData, error: riscosError } = await supabase
             .from('riscos')
-            .select('funcao');
-        
-        console.log('\n[DEBUG] Funções disponíveis na tabela riscos:', 
-            todasFuncoes?.map(f => f.funcao));
+            .select('*')
+            .eq('funcao', funcao.trim().toUpperCase())
+            .single();
 
+        if (riscosError) {
+            console.log(`[Riscos] Não encontrados para função: ${funcao}`);
+            return {
+                exames,
+                custoTotal,
+                risco_fisico: "NAO ENCONTRADO",
+                risco_quimico: "NAO ENCONTRADO",
+                risco_ergonomico: "NAO ENCONTRADO",
+                risco_acidente: "NAO ENCONTRADO",
+                risco_biologico: "NAO ENCONTRADO"
+            };
+        }
+
+        // Se encontrou os riscos, mantém o "NA" quando for o valor original
         return {
             exames,
             custoTotal,
-            risco_fisico: "NA",
-            risco_quimico: "NA",
-            risco_ergonomico: "NA",
-            risco_acidente: "NA",
-            risco_biologico: "NA"
+            risco_fisico: riscosData.fisico || "NA",
+            risco_quimico: riscosData.quimico || "NA",
+            risco_ergonomico: riscosData.ergonomico || "NA",
+            risco_acidente: riscosData.acidente || "NA",
+            risco_biologico: riscosData.biologico || "NA"
+        };
+    } catch (error) {
+        console.log(`[Riscos] Erro ao buscar riscos: ${error.message}`);
+        return {
+            exames,
+            custoTotal,
+            risco_fisico: "NAO ENCONTRADO",
+            risco_quimico: "NAO ENCONTRADO",
+            risco_ergonomico: "NAO ENCONTRADO",
+            risco_acidente: "NAO ENCONTRADO",
+            risco_biologico: "NAO ENCONTRADO"
         };
     }
-
-    console.log('[4.4] Riscos encontrados:', riscosData);
-
-    // Retorna os exames e riscos encontrados
-    return {
-        exames,
-        custoTotal,
-        risco_fisico: riscosData.fisico || "NA",
-        risco_quimico: riscosData.quimico || "NA",
-        risco_ergonomico: riscosData.ergonomico || "NA",
-        risco_acidente: riscosData.acidente || "NA",
-        risco_biologico: riscosData.biologico || "NA"
-    };
 };
 
 // Função para processar informações da clínica
@@ -716,8 +699,11 @@ const mergePDFs = async (pdfUrls) => {
 // Função para gerar nome do arquivo unificado
 const generateUnifiedFileName = (filters) => {
     const { data, clinica } = filters;
+    if (!data || !clinica) {
+        throw new Error('Data e clínica são obrigatórios para gerar o nome do arquivo unificado');
+    }
     const dataFormatada = data.split('-').reverse().join('-');
-    const clinicaFormatada = troquePor(clinica.trim()).toUpperCase();
+    const clinicaFormatada = troquePor(clinica.split('TELEFONE:')[0].trim()).toUpperCase();
     return `${dataFormatada}_${clinicaFormatada}_AGENDADOS.pdf`;
 };
 
@@ -834,11 +820,8 @@ router.post('/generate-unified', async (req, res) => {
             });
         }
 
-        console.log('[1] Iniciando geração de ASO unificado');
-        console.log('IDs recebidos:', bookingIds);
-        console.log('Filtros:', filters);
+        console.log(`[Unificado] Iniciando geração para ${bookingIds.length} bookings`);
 
-        // Buscar todos os agendamentos
         const { data: bookings, error: bookingsError } = await supabase
             .from('bookings')
             .select('*')
@@ -846,35 +829,28 @@ router.post('/generate-unified', async (req, res) => {
 
         if (bookingsError) throw bookingsError;
 
-        // Separar ASOs existentes e faltantes
         const existingAsos = bookings.filter(b => b.aso_url);
         const missingAsos = bookings.filter(b => !b.aso_url);
 
-        console.log(`[2] ASOs existentes: ${existingAsos.length}, Faltantes: ${missingAsos.length}`);
+        console.log(`[Unificado] ASOs existentes: ${existingAsos.length}, Faltantes: ${missingAsos.length}`);
 
-        // Gerar ASOs faltantes
         const generatedUrls = [];
         for (const booking of missingAsos) {
-            console.log(`[3] Gerando ASO para booking ID: ${booking.id}`);
+            console.log(`[Unificado] Gerando ASO para booking ID: ${booking.id}`);
             const response = await generatePDFFromBooking(booking, req);
             generatedUrls.push(response.url);
         }
 
-        // Coletar todas as URLs (existentes + geradas)
         const allUrls = [...existingAsos.map(b => b.aso_url), ...generatedUrls];
         
-        console.log('[4] Unificando PDFs...');
+        console.log(`[Unificado] Mesclando ${allUrls.length} PDFs`);
         const mergedPdfBuffer = await mergePDFs(allUrls);
 
-        // Gerar nome do arquivo unificado
         const fileName = generateUnifiedFileName(filters);
-        console.log('[5] Nome do arquivo unificado:', fileName);
+        console.log(`[Unificado] Nome do arquivo: ${fileName}`);
 
-        // Upload do PDF unificado
-        console.log('[6] Fazendo upload do PDF unificado...');
         const unifiedUrl = await uploadPDFToSupabase(mergedPdfBuffer, `unified/${fileName}`);
 
-        console.log('[7] Processo concluído com sucesso');
         res.json({
             success: true,
             message: 'ASO unificado gerado com sucesso',
@@ -885,7 +861,7 @@ router.post('/generate-unified', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('[ERRO] Erro ao gerar ASO unificado:', error);
+        console.error('[Erro] Geração unificada:', error.message);
         res.status(500).json({
             success: false,
             message: 'Erro ao gerar ASO unificado',
