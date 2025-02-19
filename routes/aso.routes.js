@@ -221,6 +221,8 @@ router.post('/generate', async (req, res) => {
             clinica
         };
 
+        console.log('[9] Dados do template montados:', templateData);
+
         // Renderiza o template com os dados
         // (Continue with the rest of your logic here)
     } catch (error) {
