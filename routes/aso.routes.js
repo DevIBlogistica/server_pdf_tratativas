@@ -7,6 +7,8 @@ const puppeteer = require('puppeteer');
 const supabase = require('../config/supabase');
 const fs = require('fs');
 const handlebars = require('handlebars');
+const { PDFDocument } = require('pdf-lib');
+const fetch = require('node-fetch');
 
 // Configura o CORS para permitir requisições de qualquer origem
 const corsOptions = {
@@ -624,5 +626,104 @@ console.log('Resultado do teste:', resultado); // Deve imprimir "MUDANCA DE FUNC
 setInterval(() => {
     console.log('[INFO] Servidor ativo - mantendo a instância em execução...');
 }, 60000); // 1 minuto
+
+// Função auxiliar para baixar PDF da URL
+const downloadPDF = async (url) => {
+    const response = await fetch(url);
+    return await response.arrayBuffer();
+};
+
+// Função para unificar PDFs
+const mergePDFs = async (pdfUrls) => {
+    const mergedPdf = await PDFDocument.create();
+    
+    for (const url of pdfUrls) {
+        const pdfBytes = await downloadPDF(url);
+        const pdf = await PDFDocument.load(pdfBytes);
+        const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        copiedPages.forEach((page) => mergedPdf.addPage(page));
+    }
+    
+    return await mergedPdf.save();
+};
+
+// Função para gerar nome do arquivo unificado
+const generateUnifiedFileName = (filters) => {
+    const data = filters.data.split('-').reverse().join('-');
+    const clinica = filters.clinica.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
+    return `${data}_${clinica}_UNIFICADO.pdf`;
+};
+
+// Nova rota para gerar ASO unificado
+router.post('/generate-unified', async (req, res) => {
+    try {
+        const { bookingIds, filters } = req.body;
+        
+        if (!bookingIds || !Array.isArray(bookingIds) || bookingIds.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'É necessário fornecer ao menos um ID de agendamento'
+            });
+        }
+
+        console.log('[1] Iniciando geração de ASO unificado');
+        console.log('IDs recebidos:', bookingIds);
+        console.log('Filtros:', filters);
+
+        // Buscar todos os agendamentos
+        const { data: bookings, error: bookingsError } = await supabase
+            .from('bookings')
+            .select('*')
+            .in('id', bookingIds);
+
+        if (bookingsError) throw bookingsError;
+
+        // Separar ASOs existentes e faltantes
+        const existingAsos = bookings.filter(b => b.aso_url);
+        const missingAsos = bookings.filter(b => !b.aso_url);
+
+        console.log(`[2] ASOs existentes: ${existingAsos.length}, Faltantes: ${missingAsos.length}`);
+
+        // Gerar ASOs faltantes
+        const generatedUrls = [];
+        for (const booking of missingAsos) {
+            console.log(`[3] Gerando ASO para booking ID: ${booking.id}`);
+            const response = await generatePDFFromBooking(booking);
+            generatedUrls.push(response.url);
+        }
+
+        // Coletar todas as URLs (existentes + geradas)
+        const allUrls = [...existingAsos.map(b => b.aso_url), ...generatedUrls];
+        
+        console.log('[4] Unificando PDFs...');
+        const mergedPdfBuffer = await mergePDFs(allUrls);
+
+        // Gerar nome do arquivo unificado
+        const fileName = generateUnifiedFileName(filters);
+        console.log('[5] Nome do arquivo unificado:', fileName);
+
+        // Upload do PDF unificado
+        console.log('[6] Fazendo upload do PDF unificado...');
+        const unifiedUrl = await uploadPDFToSupabase(mergedPdfBuffer, `unified/${fileName}`);
+
+        console.log('[7] Processo concluído com sucesso');
+        res.json({
+            success: true,
+            message: 'ASO unificado gerado com sucesso',
+            url: unifiedUrl,
+            total: bookingIds.length,
+            generated: missingAsos.length,
+            existing: existingAsos.length
+        });
+
+    } catch (error) {
+        console.error('[ERRO] Erro ao gerar ASO unificado:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao gerar ASO unificado',
+            error: error.message
+        });
+    }
+});
 
 module.exports = router; 
