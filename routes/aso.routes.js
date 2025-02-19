@@ -125,7 +125,6 @@ const formatarData = (dataStr) => {
 
 // Função para buscar exames necessários e riscos
 const fetchExamesNecessarios = async (funcao, natureza) => {
-    // Busca exames necessários
     console.log('[4.1] Buscando exames para função:', funcao, 'natureza:', natureza);
     const { data: examesData, error: examesError } = await supabase
         .from('exames_necessarios')
@@ -159,8 +158,8 @@ const fetchExamesNecessarios = async (funcao, natureza) => {
         return {
             exames,
             custoTotal,
-            risco_fisico: "NÃO APLICÁVEL",
-            risco_quimico: "NÃO APLICÁVEL",
+            risco_fisico: "NA",
+            risco_quimico: "NA",
             risco_ergonomico: "NÃO APLICÁVEL",
             risco_acidente: "NÃO APLICÁVEL",
             risco_biologico: "NÃO APLICÁVEL"
@@ -169,12 +168,12 @@ const fetchExamesNecessarios = async (funcao, natureza) => {
 
     console.log('[4.4] Riscos encontrados:', riscosData);
 
-    // Retorna os exames e riscos encontrados
+    // Retorna os exames e riscos encontrados, mantendo "NA" como está
     return {
         exames,
         custoTotal,
-        risco_fisico: riscosData.fisico?.toUpperCase() || "NÃO APLICÁVEL",
-        risco_quimico: riscosData.quimico?.toUpperCase() || "NÃO APLICÁVEL",
+        risco_fisico: riscosData.fisico || "NA",
+        risco_quimico: riscosData.quimico || "NA",
         risco_ergonomico: riscosData.ergonomico?.toUpperCase() || "NÃO APLICÁVEL",
         risco_acidente: riscosData.acidente?.toUpperCase() || "NÃO APLICÁVEL",
         risco_biologico: riscosData.biologico?.toUpperCase() || "NÃO APLICÁVEL"
@@ -195,7 +194,7 @@ router.post('/generate', async (req, res) => {
     try {
         // Extrai os dados necessários do corpo da requisição
         const {
-            tableId, // ID do registro na tabela
+            tableId,
             natureza_exame,
             cpf,
             nome,
@@ -203,19 +202,24 @@ router.post('/generate', async (req, res) => {
             funcao,
             setor,
             empresa,
-            risco_fisico,
-            risco_quimico,
-            risco_ergonomico,
-            risco_acidente,
-            risco_biologico,
-            exames,
-            procedimentos_medicos,
-            parecer_medico,
-            parecer_altura,
-            medico_coordenador,
-            medico_examinador,
             clinica
         } = req.body;
+
+        // Busca exames e riscos necessários
+        const examesRiscos = await fetchExamesNecessarios(funcao, natureza_exame);
+
+        // Monta os dados para o template
+        const templateData = {
+            natureza_exame,
+            cpf,
+            nome,
+            data_nascimento,
+            funcao,
+            setor,
+            empresa,
+            ...examesRiscos, // Inclui exames e riscos
+            clinica
+        };
 
         // Renderiza o template com os dados
         const templateData = {
@@ -226,17 +230,7 @@ router.post('/generate', async (req, res) => {
             funcao,
             setor,
             empresa,
-            risco_fisico,
-            risco_quimico,
-            risco_ergonomico,
-            risco_acidente,
-            risco_biologico,
-            exames,
-            procedimentos_medicos,
-            parecer_medico,
-            parecer_altura,
-            medico_coordenador,
-            medico_examinador,
+            ...examesRiscos,
             clinica
         };
 
