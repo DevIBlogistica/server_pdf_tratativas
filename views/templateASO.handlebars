@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atestado de Saúde Ocupacional</title>
+    <script>
+        Handlebars.registerHelper('keepNA', function(value) {
+            return value;
+        });
+    </script>
 </head>
 <body>
     <div class="container">
@@ -77,35 +82,35 @@
             <div class="row risk-row">
                 <div class="col risk-label">FÍSICO:</div>
                 <div class="col risk-content">
-                    <span class="dynamic risco_fisico">{{risco_fisico}}</span>
+                    <span class="dynamic risco_fisico">{{{risco_fisico}}}</span>
                 </div>
             </div>
             
             <div class="row risk-row">
                 <div class="col risk-label">QUÍMICO:</div>
                 <div class="col risk-content">
-                    <span class="dynamic risco_quimico">{{risco_quimico}}</span>
+                    <span class="dynamic risco_quimico">{{{risco_quimico}}}</span>
                 </div>
             </div>
             
             <div class="row risk-row">
                 <div class="col risk-label">ERGONÔMICO:</div>
                 <div class="col risk-content">
-                    <span class="dynamic risco_ergonomico">{{risco_ergonomico}}</span>
+                    <span class="dynamic risco_ergonomico">{{{risco_ergonomico}}}</span>
                 </div>
             </div>
             
             <div class="row risk-row">
                 <div class="col risk-label">ACIDENTE:</div>
                 <div class="col risk-content">
-                    <span class="dynamic risco_acidente">{{risco_acidente}}</span>
+                    <span class="dynamic risco_acidente">{{{risco_acidente}}}</span>
                 </div>
             </div>
             
             <div class="row risk-row">
                 <div class="col risk-label">BIOLÓGICO:</div>
                 <div class="col risk-content">
-                    <span class="dynamic risco_biologico">{{risco_biologico}}</span>
+                    <span class="dynamic risco_biologico">{{{risco_biologico}}}</span>
                 </div>
             </div>
         </div>

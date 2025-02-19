@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerar PDF</title>
+</head>
+<body>
+    <h1>Gerar PDF</h1>
+    <table id="bookings-table" border="1">
+        <thead>
+            <tr>
+                <th>Selecionar</th>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Função</th>
+                <th>Data de Nascimento</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Os dados da tabela serão inseridos aqui -->
+        </tbody>
+    </table>
+    <button id="generate-pdf">Gerar PDF</button>
+    <div id="output"></div>
+
+    <script>
+        // Função para buscar os bookings do Supabase
+        async function fetchBookings() {
+            const response = await fetch('http://localhost:3000/api/aso/view-booking'); // Rota para buscar os bookings
+            const data = await response.json();
+            return data.data; // Retorna os dados dos bookings
+        }
+
+        // Função para preencher a tabela com os dados dos bookings
+        async function populateTable() {
+            const bookings = await fetchBookings();
+            const tableBody = document.getElementById('bookings-table').getElementsByTagName('tbody')[0];
+
+            bookings.forEach(booking => {
+                const row = tableBody.insertRow();
+                const cellSelect = row.insertCell(0);
+                const cellId = row.insertCell(1);
+                const cellName = row.insertCell(2);
+                const cellFunction = row.insertCell(3);
+                const cellBirthDate = row.insertCell(4);
+
+                // Adiciona um checkbox para selecionar o booking
+                cellSelect.innerHTML = `<input type="checkbox" value="${booking.id}">`;
+                cellId.innerText = booking.id;
+                cellName.innerText = booking.nome;
+                cellFunction.innerText = booking.funcao;
+                cellBirthDate.innerText = booking.data_nasc;
+            });
+        }
+
+        // Chama a função para preencher a tabela ao carregar a página
+        window.onload = populateTable;
+
+        // Função para gerar PDF com os bookings selecionados
+        document.getElementById('generate-pdf').addEventListener('click', async function() {
+            const checkboxes = document.querySelectorAll('#bookings-table input[type="checkbox"]:checked');
+            const selectedIds = Array.from(checkboxes).map(checkbox => checkbox.value);
+
+            if (selectedIds.length === 0) {
+                alert('Por favor, selecione pelo menos um booking.');
+                return;
+            }
+
+            // Chama a API para gerar o PDF com os IDs selecionados
+            const response = await fetch('http://localhost:3000/api/aso/generate-from-booking', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ids: selectedIds }) // Envia os IDs selecionados
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                document.getElementById('output').innerHTML = `<a href="${data.url}" target="_blank">Abrir documento</a>`;
+            } else {
+                console.error(data.message);
+            }
+        });
+    </script>
+</body>
+</html>

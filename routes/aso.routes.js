@@ -6,6 +6,7 @@ const path = require('path');
 const puppeteer = require('puppeteer');
 const supabase = require('../config/supabase');
 const fs = require('fs');
+const handlebars = require('handlebars');
 
 // Configura o CORS para permitir requisições de qualquer origem
 const corsOptions = {
@@ -16,6 +17,11 @@ const corsOptions = {
 
 // Use o middleware CORS
 router.use(cors(corsOptions));
+
+// Registra o helper para manter o valor "NA" sem transformação
+handlebars.registerHelper('keepNA', function(value) {
+    return value;
+});
 
 // Função auxiliar para trocar caracteres acentuados e caracteres especiais
 const troquePor = (str) => {
@@ -76,26 +82,81 @@ const uploadPDFToSupabase = async (pdfBuffer, fileName) => {
     if (existingFile) {
         console.log('Arquivo com mesmo nome encontrado:', existingFile.name);
         
-        // Retorna a URL do arquivo existente
-        const { data: { publicUrl } } = supabase.storage
+        // Obtém a URL do arquivo existente para buscar agendamentos que a utilizam
+        const { data: { publicUrl: oldUrl } } = supabase.storage
             .from(process.env.SUPABASE_BUCKET_NAME)
             .getPublicUrl(fileName);
             
-        console.log('Retornando URL do arquivo existente');
-        return publicUrl;
+        console.log('Buscando agendamentos que utilizam o arquivo...');
+        const { data: bookings, error: bookingsError } = await supabase
+            .from('bookings')
+            .select('id')
+            .eq('aso_url', oldUrl);
+            
+        if (bookingsError) {
+            console.error('Erro ao buscar agendamentos:', bookingsError);
+            throw bookingsError;
+        }
+
+        // Deleta o arquivo existente
+        console.log('Deletando arquivo existente...');
+        const { error: deleteError } = await supabase.storage
+            .from(process.env.SUPABASE_BUCKET_NAME)
+            .remove([fileName]);
+            
+        if (deleteError) {
+            console.error('Erro ao deletar arquivo:', deleteError);
+            throw deleteError;
+        }
+        
+        // Faz upload do novo arquivo
+        console.log('Realizando upload do novo arquivo...');
+        const { error: uploadError } = await supabase.storage
+            .from(process.env.SUPABASE_BUCKET_NAME)
+            .upload(fileName, pdfBuffer, {
+                contentType: 'application/pdf',
+                upsert: true
+            });
+
+        if (uploadError) {
+            console.error('Erro ao fazer upload:', uploadError);
+            throw uploadError;
+        }
+        
+        // Gera a nova URL pública
+        const { data: { publicUrl: newUrl } } = supabase.storage
+            .from(process.env.SUPABASE_BUCKET_NAME)
+            .getPublicUrl(fileName);
+            
+        // Atualiza a URL em todos os agendamentos que utilizavam o arquivo antigo
+        if (bookings && bookings.length > 0) {
+            console.log(`Atualizando URL em ${bookings.length} agendamento(s)...`);
+            const { error: updateError } = await supabase
+                .from('bookings')
+                .update({ aso_url: newUrl })
+                .in('id', bookings.map(b => b.id));
+                
+            if (updateError) {
+                console.error('Erro ao atualizar agendamentos:', updateError);
+                throw updateError;
+            }
+        }
+        
+        console.log('Processo de substituição concluído com sucesso');
+        return newUrl;
     }
 
     console.log('Arquivo não encontrado, realizando upload...');
     
-    // Se não existir, faz o upload
-    const { data, error } = await supabase.storage
+    // Se não existir, faz o upload normalmente
+    const { error: uploadError } = await supabase.storage
         .from(process.env.SUPABASE_BUCKET_NAME)
         .upload(fileName, pdfBuffer, {
             contentType: 'application/pdf',
-            upsert: false // Alterado para false para não sobrescrever
+            upsert: false
         });
 
-    if (error) throw error;
+    if (uploadError) throw uploadError;
     
     // Gera URL pública do arquivo
     const { data: { publicUrl } } = supabase.storage
@@ -146,37 +207,55 @@ const fetchExamesNecessarios = async (funcao, natureza) => {
     const custoTotal = examesData.reduce((total, item) => total + Number(item.valor), 0);
 
     // Busca riscos ocupacionais
-    console.log('[4.3] Buscando riscos para função:', funcao);
+    console.log('\n[4.3] Iniciando busca de riscos...');
+    console.log('Função recebida:', funcao);
+    console.log('Função após trim e uppercase:', funcao.trim().toUpperCase());
+
+    // Faz a consulta
     const { data: riscosData, error: riscosError } = await supabase
         .from('riscos')
         .select('*')
-        .eq('funcao', funcao)
+        .eq('funcao', funcao.trim().toUpperCase())
         .single();
 
     if (riscosError) {
-        console.log('[AVISO] Riscos não encontrados para a função:', funcao);
+        console.error('[ERRO] Detalhes do erro ao buscar riscos:', {
+            codigo: riscosError.code,
+            mensagem: riscosError.message,
+            detalhes: riscosError.details,
+            dica: riscosError.hint
+        });
+
+        // Faz uma busca geral para ver todas as funções disponíveis
+        const { data: todasFuncoes } = await supabase
+            .from('riscos')
+            .select('funcao');
+        
+        console.log('\n[DEBUG] Funções disponíveis na tabela riscos:', 
+            todasFuncoes?.map(f => f.funcao));
+
         return {
             exames,
             custoTotal,
             risco_fisico: "NA",
             risco_quimico: "NA",
-            risco_ergonomico: "NÃO APLICÁVEL",
-            risco_acidente: "NÃO APLICÁVEL",
-            risco_biologico: "NÃO APLICÁVEL"
+            risco_ergonomico: "NA",
+            risco_acidente: "NA",
+            risco_biologico: "NA"
         };
     }
 
     console.log('[4.4] Riscos encontrados:', riscosData);
 
-    // Retorna os exames e riscos encontrados, mantendo "NA" como está
+    // Retorna os exames e riscos encontrados
     return {
         exames,
         custoTotal,
         risco_fisico: riscosData.fisico || "NA",
         risco_quimico: riscosData.quimico || "NA",
-        risco_ergonomico: riscosData.ergonomico?.toUpperCase() || "NÃO APLICÁVEL",
-        risco_acidente: riscosData.acidente?.toUpperCase() || "NÃO APLICÁVEL",
-        risco_biologico: riscosData.biologico?.toUpperCase() || "NÃO APLICÁVEL"
+        risco_ergonomico: riscosData.ergonomico || "NA",
+        risco_acidente: riscosData.acidente || "NA",
+        risco_biologico: riscosData.biologico || "NA"
     };
 };
 
@@ -207,6 +286,14 @@ router.post('/generate', async (req, res) => {
 
         // Busca exames e riscos necessários
         const examesRiscos = await fetchExamesNecessarios(funcao, natureza_exame);
+
+        // Garante que os valores dos riscos sejam mantidos exatamente como estão
+        const riscos = ['risco_fisico', 'risco_quimico', 'risco_ergonomico', 'risco_acidente', 'risco_biologico'];
+        riscos.forEach(risco => {
+            if (examesRiscos[risco] === 'NA') {
+                examesRiscos[risco] = 'NA';
+            }
+        });
 
         // Monta os dados para o template
         const templateData = {
@@ -239,6 +326,15 @@ router.post('/generate', async (req, res) => {
 router.get('/render-aso', (req, res) => {
     try {
         const templateData = JSON.parse(decodeURIComponent(req.query.data));
+        
+        // Garantir que os valores dos riscos sejam mantidos exatamente como estão
+        const riscos = ['risco_fisico', 'risco_quimico', 'risco_ergonomico', 'risco_acidente', 'risco_biologico'];
+        riscos.forEach(risco => {
+            if (templateData[risco] === 'NA') {
+                templateData[risco] = 'NA';
+            }
+        });
+        
         res.render('templateASO', { ...templateData, layout: false });
     } catch (error) {
         console.error('Erro ao renderizar template:', error);
