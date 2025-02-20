@@ -12,12 +12,15 @@ const fetch = require('node-fetch');
 
 // Configura o CORS para permitir requisições de qualquer origem
 const corsOptions = {
-    origin: '*', // Aceita todas as origens
-    methods: ['GET', 'POST'], // Métodos permitidos
-    allowedHeaders: ['Content-Type', 'Authorization'], // Cabeçalhos permitidos
+    origin: true, // Permite todas as origens
+    credentials: true, // Permite credenciais
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Content-Length', 'Content-Type'],
+    maxAge: 86400
 };
 
-// Use o middleware CORS
+// Use o middleware CORS nas rotas
 router.use(cors(corsOptions));
 
 // Registra o helper para manter o valor "NA" sem transformação
