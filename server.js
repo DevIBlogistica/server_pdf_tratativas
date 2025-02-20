@@ -33,6 +33,9 @@ app.engine('handlebars', engine({
     helpers: {
         json: function(context) {
             return JSON.stringify(context);
+        },
+        keepNA: function(value) {
+            return value;
         }
     }
 }));
@@ -60,14 +63,28 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Carregar o certificado SSL
-const sslOptions = {
-    key: fs.readFileSync('server.key'), // Relative path to the private key
-    cert: fs.readFileSync('server.cert') // Relative path to the certificate
-};
+// Verifica se estamos em ambiente de produção
+if (process.env.NODE_ENV === 'production') {
+    try {
+        // Carregar o certificado SSL apenas em produção
+        const sslOptions = {
+            key: fs.readFileSync('server.key'), // Relative path to the private key
+            cert: fs.readFileSync('server.cert') // Relative path to the certificate
+        };
 
-// Inicialização do servidor HTTPS
-https.createServer(sslOptions, app).listen(port, () => {
-    console.log(`Servidor rodando na porta ${port}`);
-    console.log('CORS configurado para aceitar todas as origens...');
-});
+        // Inicialização do servidor HTTPS
+        https.createServer(sslOptions, app).listen(port, () => {
+            console.log(`Servidor HTTPS rodando na porta ${port}`);
+            console.log('CORS configurado para aceitar todas as origens...');
+        });
+    } catch (error) {
+        console.error('Erro ao iniciar servidor HTTPS:', error);
+        process.exit(1);
+    }
+} else {
+    // Em desenvolvimento, usa HTTP simples
+    app.listen(port, () => {
+        console.log(`Servidor HTTP rodando na porta ${port}`);
+        console.log('CORS configurado para aceitar todas as origens...');
+    });
+}

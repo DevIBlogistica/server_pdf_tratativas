@@ -6,6 +6,9 @@ const path = require('path');
 const puppeteer = require('puppeteer');
 const supabase = require('../config/supabase');
 const fs = require('fs');
+const handlebars = require('handlebars');
+const { PDFDocument } = require('pdf-lib');
+const fetch = require('node-fetch');
 
 // Configura o CORS para permitir requisições de qualquer origem
 const corsOptions = {
@@ -16,6 +19,11 @@ const corsOptions = {
 
 // Use o middleware CORS
 router.use(cors(corsOptions));
+
+// Registra o helper para manter o valor "NA" sem transformação
+handlebars.registerHelper('keepNA', function(value) {
+    return value;
+});
 
 // Função auxiliar para trocar caracteres acentuados e caracteres especiais
 const troquePor = (str) => {
@@ -76,26 +84,81 @@ const uploadPDFToSupabase = async (pdfBuffer, fileName) => {
     if (existingFile) {
         console.log('Arquivo com mesmo nome encontrado:', existingFile.name);
         
-        // Retorna a URL do arquivo existente
-        const { data: { publicUrl } } = supabase.storage
+        // Obtém a URL do arquivo existente para buscar agendamentos que a utilizam
+        const { data: { publicUrl: oldUrl } } = supabase.storage
             .from(process.env.SUPABASE_BUCKET_NAME)
             .getPublicUrl(fileName);
             
-        console.log('Retornando URL do arquivo existente');
-        return publicUrl;
+        console.log('Buscando agendamentos que utilizam o arquivo...');
+        const { data: bookings, error: bookingsError } = await supabase
+            .from('bookings')
+            .select('id')
+            .eq('aso_url', oldUrl);
+            
+        if (bookingsError) {
+            console.error('Erro ao buscar agendamentos:', bookingsError);
+            throw bookingsError;
+        }
+
+        // Deleta o arquivo existente
+        console.log('Deletando arquivo existente...');
+        const { error: deleteError } = await supabase.storage
+            .from(process.env.SUPABASE_BUCKET_NAME)
+            .remove([fileName]);
+            
+        if (deleteError) {
+            console.error('Erro ao deletar arquivo:', deleteError);
+            throw deleteError;
+        }
+        
+        // Faz upload do novo arquivo
+        console.log('Realizando upload do novo arquivo...');
+        const { error: uploadError } = await supabase.storage
+            .from(process.env.SUPABASE_BUCKET_NAME)
+            .upload(fileName, pdfBuffer, {
+                contentType: 'application/pdf',
+                upsert: true
+            });
+
+        if (uploadError) {
+            console.error('Erro ao fazer upload:', uploadError);
+            throw uploadError;
+        }
+        
+        // Gera a nova URL pública
+        const { data: { publicUrl: newUrl } } = supabase.storage
+            .from(process.env.SUPABASE_BUCKET_NAME)
+            .getPublicUrl(fileName);
+            
+        // Atualiza a URL em todos os agendamentos que utilizavam o arquivo antigo
+        if (bookings && bookings.length > 0) {
+            console.log(`Atualizando URL em ${bookings.length} agendamento(s)...`);
+            const { error: updateError } = await supabase
+                .from('bookings')
+                .update({ aso_url: newUrl })
+                .in('id', bookings.map(b => b.id));
+                
+            if (updateError) {
+                console.error('Erro ao atualizar agendamentos:', updateError);
+                throw updateError;
+            }
+        }
+        
+        console.log('Processo de substituição concluído com sucesso');
+        return newUrl;
     }
 
     console.log('Arquivo não encontrado, realizando upload...');
     
-    // Se não existir, faz o upload
-    const { data, error } = await supabase.storage
+    // Se não existir, faz o upload normalmente
+    const { error: uploadError } = await supabase.storage
         .from(process.env.SUPABASE_BUCKET_NAME)
         .upload(fileName, pdfBuffer, {
             contentType: 'application/pdf',
-            upsert: false // Alterado para false para não sobrescrever
+            upsert: false
         });
 
-    if (error) throw error;
+    if (uploadError) throw uploadError;
     
     // Gera URL pública do arquivo
     const { data: { publicUrl } } = supabase.storage
@@ -125,59 +188,60 @@ const formatarData = (dataStr) => {
 
 // Função para buscar exames necessários e riscos
 const fetchExamesNecessarios = async (funcao, natureza) => {
-    console.log('[4.1] Buscando exames para função:', funcao, 'natureza:', natureza);
+    console.log(`[Exames] Buscando para função: ${funcao}`);
     const { data: examesData, error: examesError } = await supabase
         .from('exames_necessarios')
         .select('exame, codigo, valor')
         .eq('funcao', funcao)
         .eq('natureza', natureza);
 
-    if (examesError) {
-        console.error('[ERRO] Erro ao buscar exames:', examesError);
-        throw examesError;
-    }
+    if (examesError) throw examesError;
 
-    console.log('[4.2] Exames encontrados:', examesData);
-
-    // Lista de exames formatados com código
     const exames = examesData.map(item => `${item.codigo} - ${item.exame.toUpperCase()}`);
-
-    // Calcula o custo total dos exames
     const custoTotal = examesData.reduce((total, item) => total + Number(item.valor), 0);
 
-    // Busca riscos ocupacionais
-    console.log('[4.3] Buscando riscos para função:', funcao);
-    const { data: riscosData, error: riscosError } = await supabase
-        .from('riscos')
-        .select('*')
-        .eq('funcao', funcao)
-        .single();
+    try {
+        const { data: riscosData, error: riscosError } = await supabase
+            .from('riscos')
+            .select('*')
+            .eq('funcao', funcao.trim().toUpperCase())
+            .single();
 
-    if (riscosError) {
-        console.log('[AVISO] Riscos não encontrados para a função:', funcao);
+        if (riscosError) {
+            console.log(`[Riscos] Não encontrados para função: ${funcao}`);
+            return {
+                exames,
+                custoTotal,
+                risco_fisico: "NAO ENCONTRADO",
+                risco_quimico: "NAO ENCONTRADO",
+                risco_ergonomico: "NAO ENCONTRADO",
+                risco_acidente: "NAO ENCONTRADO",
+                risco_biologico: "NAO ENCONTRADO"
+            };
+        }
+
+        // Se encontrou os riscos, mantém o "NA" quando for o valor original
         return {
             exames,
             custoTotal,
-            risco_fisico: "NA",
-            risco_quimico: "NA",
-            risco_ergonomico: "NÃO APLICÁVEL",
-            risco_acidente: "NÃO APLICÁVEL",
-            risco_biologico: "NÃO APLICÁVEL"
+            risco_fisico: riscosData.fisico || "NA",
+            risco_quimico: riscosData.quimico || "NA",
+            risco_ergonomico: riscosData.ergonomico || "NA",
+            risco_acidente: riscosData.acidente || "NA",
+            risco_biologico: riscosData.biologico || "NA"
+        };
+    } catch (error) {
+        console.log(`[Riscos] Erro ao buscar riscos: ${error.message}`);
+        return {
+            exames,
+            custoTotal,
+            risco_fisico: "NAO ENCONTRADO",
+            risco_quimico: "NAO ENCONTRADO",
+            risco_ergonomico: "NAO ENCONTRADO",
+            risco_acidente: "NAO ENCONTRADO",
+            risco_biologico: "NAO ENCONTRADO"
         };
     }
-
-    console.log('[4.4] Riscos encontrados:', riscosData);
-
-    // Retorna os exames e riscos encontrados, mantendo "NA" como está
-    return {
-        exames,
-        custoTotal,
-        risco_fisico: riscosData.fisico || "NA",
-        risco_quimico: riscosData.quimico || "NA",
-        risco_ergonomico: riscosData.ergonomico?.toUpperCase() || "NÃO APLICÁVEL",
-        risco_acidente: riscosData.acidente?.toUpperCase() || "NÃO APLICÁVEL",
-        risco_biologico: riscosData.biologico?.toUpperCase() || "NÃO APLICÁVEL"
-    };
 };
 
 // Função para processar informações da clínica
@@ -231,6 +295,14 @@ router.post('/generate-unified', async (req, res) => {
 
         // Formata a data atual
         const dataAtual = new Date().toLocaleDateString('pt-BR');
+
+        // Garante que os valores dos riscos sejam mantidos exatamente como estão
+        const riscos = ['risco_fisico', 'risco_quimico', 'risco_ergonomico', 'risco_acidente', 'risco_biologico'];
+        riscos.forEach(risco => {
+            if (examesRiscos[risco] === 'NA') {
+                examesRiscos[risco] = 'NA';
+            }
+        });
 
         // Monta os dados para o template
         console.log('[7] Montando dados para o template...');
@@ -337,6 +409,15 @@ router.post('/generate-unified', async (req, res) => {
 router.get('/render-aso', (req, res) => {
     try {
         const templateData = JSON.parse(decodeURIComponent(req.query.data));
+        
+        // Garantir que os valores dos riscos sejam mantidos exatamente como estão
+        const riscos = ['risco_fisico', 'risco_quimico', 'risco_ergonomico', 'risco_acidente', 'risco_biologico'];
+        riscos.forEach(risco => {
+            if (templateData[risco] === 'NA') {
+                templateData[risco] = 'NA';
+            }
+        });
+        
         res.render('templateASO', { ...templateData, layout: false });
     } catch (error) {
         console.error('Erro ao renderizar template:', error);
@@ -626,5 +707,271 @@ console.log('Resultado do teste:', resultado); // Deve imprimir "MUDANCA DE FUNC
 setInterval(() => {
     console.log('[INFO] Servidor ativo - mantendo a instância em execução...');
 }, 60000); // 1 minuto
+
+// Função auxiliar para baixar PDF da URL
+const downloadPDF = async (url) => {
+    try {
+        const response = await axios.get(url, {
+            responseType: 'arraybuffer'
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Erro ao baixar PDF:', error);
+        throw error;
+    }
+};
+
+// Função para criar diretório temporário
+const createTempDirectory = () => {
+    const tempDir = path.join(__dirname, '../temp');
+    if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir);
+    }
+    return tempDir;
+};
+
+// Função para limpar diretório temporário
+const cleanTempDirectory = () => {
+    const tempDir = path.join(__dirname, '../temp');
+    if (fs.existsSync(tempDir)) {
+        fs.readdirSync(tempDir).forEach(file => {
+            const filePath = path.join(tempDir, file);
+            fs.unlinkSync(filePath);
+        });
+        console.log('[Temp] Diretório temporário limpo');
+    }
+};
+
+// Função para mesclar PDFs
+const mergePDFs = async (pdfUrls) => {
+    try {
+        console.log('[Merge PDFs] Iniciando mesclagem de PDFs...');
+        
+        // Limpar diretório temporário antes de começar
+        cleanTempDirectory();
+        const tempDir = createTempDirectory();
+        
+        // Criar novo documento PDF
+        const mergedPdf = await PDFDocument.create();
+        
+        // Para cada URL de PDF
+        for (const url of pdfUrls) {
+            console.log('[Merge PDFs] Baixando PDF:', url);
+            // Baixar o PDF
+            const pdfBytes = await downloadPDF(url);
+            
+            // Salvar temporariamente
+            const tempFile = path.join(tempDir, `temp_${Date.now()}.pdf`);
+            fs.writeFileSync(tempFile, Buffer.from(pdfBytes));
+            
+            // Carregar o PDF
+            console.log('[Merge PDFs] Carregando PDF no documento...');
+            const pdf = await PDFDocument.load(pdfBytes);
+            
+            // Copiar todas as páginas
+            const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+            
+            // Adicionar cada página ao documento final
+            pages.forEach((page) => {
+                mergedPdf.addPage(page);
+            });
+        }
+        
+        console.log('[Merge PDFs] Gerando PDF final...');
+        // Gerar o PDF final
+        const mergedPdfFile = await mergedPdf.save();
+        
+        // Limpar arquivos temporários
+        cleanTempDirectory();
+        
+        console.log('[Merge PDFs] Mesclagem concluída com sucesso');
+        return Buffer.from(mergedPdfFile);
+    } catch (error) {
+        // Garantir que os arquivos temporários sejam limpos mesmo em caso de erro
+        cleanTempDirectory();
+        console.error('[Merge PDFs] Erro ao mesclar PDFs:', error);
+        throw error;
+    }
+};
+
+// Função para gerar nome do arquivo unificado
+const generateUnifiedFileName = (filters) => {
+    const { data, clinica } = filters;
+    if (!data || !clinica) {
+        throw new Error('Data e clínica são obrigatórios para gerar o nome do arquivo unificado');
+    }
+    
+    // Formata a data (de YYYY-MM-DD para DD-MM-YYYY)
+    const dataFormatada = data.split('-').reverse().join('-');
+    
+    // Extrai e formata o nome da clínica (remove a parte do telefone e formata)
+    const clinicaFormatada = troquePor(clinica.split('TELEFONE:')[0].trim()).toUpperCase();
+    
+    // Retorna o nome do arquivo no formato: DATA_CLINICA_AGENDADOS.pdf
+    return `${dataFormatada}_${clinicaFormatada}_AGENDADOS.pdf`;
+};
+
+// Função para gerar PDF a partir de um booking
+const generatePDFFromBooking = async (booking, req) => {
+    console.log(`[1] Iniciando geração de PDF para booking:`, booking.id);
+
+    // Busca exames e riscos necessários
+    console.log('[2] Buscando exames necessários...');
+    const examesRiscos = await fetchExamesNecessarios(booking.funcao, booking.natureza);
+    console.log('[3] Exames encontrados:', examesRiscos.exames);
+
+    // Processa informações da clínica
+    console.log('[4] Processando informações da clínica...');
+    const clinicaInfo = processarClinica(booking.clinica);
+    console.log('[5] Informações da clínica processadas:', clinicaInfo);
+
+    // Formata a data atual
+    const dataAtual = new Date().toLocaleDateString('pt-BR');
+
+    // Monta os dados para o template
+    console.log('[6] Montando dados para o template...');
+    const templateData = {
+        natureza_exame: booking.natureza.toUpperCase(),
+        cpf: booking.cpf,
+        nome: booking.nome.toUpperCase(),
+        data_nascimento: formatarData(booking.data_nasc),
+        funcao: booking.funcao.toUpperCase(),
+        setor: booking.setor.toUpperCase(),
+        empresa: booking.empresa.toUpperCase(),
+        ...examesRiscos,
+        clinica: clinicaInfo,
+        data_exame: dataAtual
+    };
+
+    // Inicia o navegador Puppeteer
+    console.log('[7] Iniciando navegador Puppeteer...');
+    const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    const page = await browser.newPage();
+
+    // Renderiza o template
+    console.log('[8] Renderizando template...');
+    const html = await new Promise((resolve, reject) => {
+        const handlebarsTemplate = handlebars.compile(fs.readFileSync(path.join(__dirname, '../views/templateASO.handlebars'), 'utf8'));
+        try {
+            const renderedHtml = handlebarsTemplate(templateData);
+            resolve(renderedHtml);
+        } catch (err) {
+            console.error('[ERRO] Erro ao renderizar template:', err);
+            reject(err);
+        }
+    });
+
+    // Lê o arquivo CSS
+    const cssPath = path.join(__dirname, '../public/styles.css');
+    const css = fs.readFileSync(cssPath, 'utf8');
+
+    // Injeta o CSS diretamente no HTML
+    const htmlWithStyles = html.replace('</head>', `<style>${css}</style></head>`);
+
+    // Configura o conteúdo HTML na página
+    await page.setContent(htmlWithStyles, {
+        waitUntil: 'networkidle0',
+        timeout: 60000
+    });
+
+    // Gera o PDF
+    console.log('[9] Gerando PDF...');
+    const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+            top: '25px',
+            right: '25px',
+            bottom: '25px',
+            left: '25px'
+        },
+        preferCSSPageSize: true,
+        displayHeaderFooter: false
+    });
+
+    await browser.close();
+    console.log('[10] Navegador fechado');
+
+    // Gera nome único para o arquivo
+    const fileName = generateUniqueFileName(templateData.natureza_exame, templateData.nome, booking.data_agendamento);
+    console.log('[11] Nome do arquivo gerado:', fileName);
+
+    // Faz upload do PDF para o Supabase Storage
+    console.log('[12] Fazendo upload do PDF para o Supabase...');
+    const publicUrl = await uploadPDFToSupabase(pdfBuffer, fileName);
+    console.log('[13] Upload concluído. URL pública:', publicUrl);
+
+    // Atualiza a URL do ASO na tabela bookings
+    console.log('[14] Atualizando URL do ASO no booking...');
+    await updateASOUrlInTable(booking.id, publicUrl);
+    console.log('[15] URL do ASO atualizada com sucesso');
+
+    return { url: publicUrl };
+};
+
+// Nova rota para gerar ASO unificado
+router.post('/generate-unified', async (req, res) => {
+    try {
+        const { bookingIds, filters } = req.body;
+        
+        if (!bookingIds || !Array.isArray(bookingIds) || bookingIds.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'É necessário fornecer ao menos um ID de agendamento'
+            });
+        }
+
+        console.log(`[Unificado] Iniciando geração para ${bookingIds.length} bookings`);
+
+        const { data: bookings, error: bookingsError } = await supabase
+            .from('bookings')
+            .select('*')
+            .in('id', bookingIds);
+
+        if (bookingsError) throw bookingsError;
+
+        const existingAsos = bookings.filter(b => b.aso_url);
+        const missingAsos = bookings.filter(b => !b.aso_url);
+
+        console.log(`[Unificado] ASOs existentes: ${existingAsos.length}, Faltantes: ${missingAsos.length}`);
+
+        const generatedUrls = [];
+        for (const booking of missingAsos) {
+            console.log(`[Unificado] Gerando ASO para booking ID: ${booking.id}`);
+            const response = await generatePDFFromBooking(booking, req);
+            generatedUrls.push(response.url);
+        }
+
+        const allUrls = [...existingAsos.map(b => b.aso_url), ...generatedUrls];
+        
+        console.log(`[Unificado] Mesclando ${allUrls.length} PDFs`);
+        const mergedPdfBuffer = await mergePDFs(allUrls);
+
+        const fileName = generateUnifiedFileName(filters);
+        console.log(`[Unificado] Nome do arquivo: ${fileName}`);
+
+        const unifiedUrl = await uploadPDFToSupabase(mergedPdfBuffer, `unified/${fileName}`);
+
+        res.json({
+            success: true,
+            message: 'ASO unificado gerado com sucesso',
+            url: unifiedUrl,
+            total: bookingIds.length,
+            generated: missingAsos.length,
+            existing: existingAsos.length
+        });
+
+    } catch (error) {
+        console.error('[Erro] Geração unificada:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao gerar ASO unificado',
+            error: error.message
+        });
+    }
+});
 
 module.exports = router; 
