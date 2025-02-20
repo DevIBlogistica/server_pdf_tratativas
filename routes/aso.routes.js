@@ -312,6 +312,7 @@ router.post('/generate-unified', async (req, res) => {
 // Rota GET para renderizar o template (usado internamente pelo Puppeteer)
 router.get('/render-aso', (req, res) => {
     try {
+        console.log('[INFO] Renderizando template ASO...');
         const templateData = JSON.parse(decodeURIComponent(req.query.data));
         
         // Garantir que os valores dos riscos sejam mantidos exatamente como estão
@@ -324,7 +325,7 @@ router.get('/render-aso', (req, res) => {
         
         res.render('templateASO', { ...templateData, layout: false });
     } catch (error) {
-        console.error('Erro ao renderizar template:', error);
+        console.error('[ERRO] Erro ao renderizar template:', error.message);
         res.status(500).send('Erro ao renderizar template');
     }
 });
@@ -332,6 +333,7 @@ router.get('/render-aso', (req, res) => {
 // Rota de teste com dados mockados
 router.get('/test-generate', async (req, res) => {
     try {
+        console.log('[11] Iniciando geração de PDF de teste...');
         // Dados mockados para teste
         const templateData = {
             natureza_exame: "EXAME ADMISSIONAL",
@@ -389,6 +391,7 @@ router.get('/test-generate', async (req, res) => {
         });
 
         // Gera o PDF
+        console.log('[12] Gerando PDF de teste...');
         const pdfBuffer = await page.pdf({
             format: 'A4',
             printBackground: true,
@@ -401,12 +404,16 @@ router.get('/test-generate', async (req, res) => {
         });
 
         await browser.close();
+        console.log('[13] Navegador fechado.');
 
         // Gera nome único para o arquivo
         const fileName = generateUniqueFileName(templateData.natureza_exame, templateData.nome, new Date().toLocaleDateString('pt-BR'));
+        console.log(`[14] Nome do arquivo de teste gerado: ${fileName}`);
 
         // Faz upload do PDF para o Supabase Storage
+        console.log('[15] Fazendo upload do PDF de teste para o Supabase...');
         const publicUrl = await uploadPDFToSupabase(pdfBuffer, fileName);
+        console.log('[16] Upload de teste concluído. URL pública:', publicUrl);
 
         // Retorna sucesso com a URL pública
         res.json({
@@ -416,7 +423,7 @@ router.get('/test-generate', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Erro ao gerar PDF de teste:', error);
+        console.error('[ERRO] Erro ao gerar PDF de teste:', error.message);
         res.status(500).json({
             success: false,
             message: 'Erro ao gerar PDF de teste',
