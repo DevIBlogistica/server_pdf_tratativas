@@ -189,44 +189,142 @@ const processarClinica = (clinicaStr) => {
     };
 };
 
-// Rota POST para gerar PDF do ASO
-router.post('/generate', async (req, res) => {
+// Rota POST para gerar PDF do ASO (unificado)
+router.post('/generate-unified', async (req, res) => {
     try {
-        // Extrai os dados necessários do corpo da requisição
-        const {
-            tableId,
-            natureza_exame,
-            cpf,
-            nome,
-            data_nascimento,
-            funcao,
-            setor,
-            empresa,
-            clinica
-        } = req.body;
+        // Extrai os IDs dos bookings do corpo da requisição
+        const { bookingIds } = req.body; // Expecting an array of booking IDs
+
+        if (!bookingIds || bookingIds.length === 0) {
+            return res.status(400).json({ success: false, message: 'Nenhum ID de booking fornecido.' });
+        }
+
+        // Busca o primeiro booking usando o primeiro ID
+        const firstBookingId = bookingIds[0];
+        console.log(`[1] Buscando dados do booking com ID: ${firstBookingId}`);
+
+        const { data: booking, error: bookingError } = await supabase
+            .from('bookings')
+            .select('*')
+            .eq('id', firstBookingId)
+            .single();
+
+        if (bookingError) throw bookingError;
+        if (!booking) throw new Error('Booking não encontrado');
+
+        console.log('[2] Dados do booking encontrados:', {
+            nome: booking.nome,
+            funcao: booking.funcao,
+            natureza: booking.natureza,
+            data_nasc: booking.data_nasc
+        });
 
         // Busca exames e riscos necessários
-        const examesRiscos = await fetchExamesNecessarios(funcao, natureza_exame);
+        console.log('[3] Buscando exames necessários...');
+        const examesRiscos = await fetchExamesNecessarios(booking.funcao, booking.natureza);
+        console.log('[4] Exames encontrados:', examesRiscos.exames);
+
+        // Processa informações da clínica
+        console.log('[5] Processando informações da clínica...');
+        const clinicaInfo = processarClinica(booking.clinica);
+        console.log('[6] Informações da clínica processadas:', clinicaInfo);
+
+        // Formata a data atual
+        const dataAtual = new Date().toLocaleDateString('pt-BR');
 
         // Monta os dados para o template
+        console.log('[7] Montando dados para o template...');
         const templateData = {
-            natureza_exame,
-            cpf,
-            nome,
-            data_nascimento,
-            funcao,
-            setor,
-            empresa,
-            ...examesRiscos, // Inclui exames e riscos
-            clinica
+            natureza_exame: booking.natureza.toUpperCase(),
+            cpf: booking.cpf,
+            nome: booking.nome.toUpperCase(),
+            data_nascimento: formatarData(booking.data_nasc),
+            funcao: booking.funcao.toUpperCase(),
+            setor: booking.setor.toUpperCase(),
+            empresa: booking.empresa.toUpperCase(),
+            ...examesRiscos,
+            clinica: clinicaInfo,
+            data_exame: dataAtual
         };
 
-        console.log('[9] Dados do template montados:', templateData);
+        console.log('[8] Dados do template montados:', templateData);
 
-        // Renderiza o template com os dados
-        // (Continue with the rest of your logic here)
+        // Inicia o navegador Puppeteer
+        console.log('[9] Iniciando navegador Puppeteer...');
+        const browser = await puppeteer.launch({
+            headless: true, // Set to true for headless mode
+            args: ['--no-sandbox', '--disable-setuid-sandbox'] // Add these arguments for compatibility
+        });
+        const page = await browser.newPage();
+
+        // Renderiza o template diretamente
+        console.log('[10] Renderizando template...');
+        const html = await new Promise((resolve, reject) => {
+            req.app.render('templateASO', { ...templateData, layout: false }, (err, html) => {
+                if (err) {
+                    console.error('[ERRO] Erro ao renderizar template:', err);
+                    reject(err);
+                } else {
+                    resolve(html);
+                }
+            });
+        });
+
+        // Lê o arquivo CSS
+        const cssPath = path.join(__dirname, '../public/styles.css');
+        const css = fs.readFileSync(cssPath, 'utf8');
+
+        // Injeta o CSS diretamente no HTML
+        const htmlWithStyles = html.replace('</head>', `<style>${css}</style></head>`);
+
+        // Configura o conteúdo HTML na página
+        await page.setContent(htmlWithStyles, {
+            waitUntil: 'networkidle0',
+            timeout: 60000 // Increase timeout to 60 seconds
+        });
+
+        // Gera o PDF
+        console.log('[11] Gerando PDF...');
+        const pdfBuffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: {
+                top: '25px',
+                right: '25px',
+                bottom: '25px',
+                left: '25px'
+            },
+            preferCSSPageSize: true,
+            displayHeaderFooter: false
+        });
+
+        await browser.close();
+        console.log('[12] Navegador fechado');
+
+        // Gera nome único para o arquivo
+        const fileName = generateUniqueFileName(templateData.natureza_exame, templateData.nome, dataAtual);
+        console.log('[13] Nome do arquivo gerado:', fileName);
+
+        // Faz upload do PDF para o Supabase Storage
+        console.log('[14] Fazendo upload do PDF para o Supabase...');
+        const publicUrl = await uploadPDFToSupabase(pdfBuffer, fileName);
+        console.log('[15] Upload concluído. URL pública:', publicUrl);
+
+        // Atualiza a URL do ASO na tabela bookings
+        console.log('[16] Atualizando URL do ASO no booking...');
+        await updateASOUrlInTable(firstBookingId, publicUrl);
+        console.log('[17] URL do ASO atualizada com sucesso');
+
+        // Retorna sucesso com a URL pública
+        console.log('[18] Processo concluído com sucesso!\n');
+        res.json({
+            success: true,
+            message: 'PDF gerado e armazenado com sucesso',
+            url: publicUrl
+        });
+
     } catch (error) {
-        console.error('Erro ao gerar PDF:', error);
+        console.error('\n[ERRO] Erro ao gerar PDF:', error);
         res.status(500).json({
             success: false,
             message: 'Erro ao gerar PDF',
