@@ -256,150 +256,84 @@ const processarClinica = (clinicaStr) => {
 // Rota POST para gerar PDF do ASO (unificado)
 router.post('/generate-unified', async (req, res) => {
     try {
-        // Extrai os IDs dos bookings do corpo da requisição
-        const { bookingIds } = req.body; // Expecting an array of booking IDs
-
-        if (!bookingIds || bookingIds.length === 0) {
-            return res.status(400).json({ success: false, message: 'Nenhum ID de booking fornecido.' });
+        const { bookingIds } = req.body;
+        
+        if (!bookingIds || !Array.isArray(bookingIds) || bookingIds.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'É necessário fornecer ao menos um ID de agendamento'
+            });
         }
 
-        // Busca o primeiro booking usando o primeiro ID
-        const firstBookingId = bookingIds[0];
-        console.log(`[1] Buscando dados do booking com ID: ${firstBookingId}`);
+        console.log(`[Unificado] Iniciando geração para ${bookingIds.length} bookings`);
 
-        const { data: booking, error: bookingError } = await supabase
+        // Busca todos os bookings
+        const { data: bookings, error: bookingsError } = await supabase
             .from('bookings')
             .select('*')
-            .eq('id', firstBookingId)
-            .single();
+            .in('id', bookingIds);
 
-        if (bookingError) throw bookingError;
-        if (!booking) throw new Error('Booking não encontrado');
+        if (bookingsError) throw bookingsError;
+        if (!bookings || bookings.length === 0) {
+            throw new Error('Nenhum agendamento encontrado');
+        }
 
-        console.log('[2] Dados do booking encontrados:', {
-            nome: booking.nome,
-            funcao: booking.funcao,
-            natureza: booking.natureza,
-            data_nasc: booking.data_nasc
-        });
+        // Pega o primeiro booking para gerar o nome do arquivo
+        const firstBooking = bookings[0];
+        
+        // Formata a data do agendamento (YYYY-MM-DD para DD-MM-YYYY)
+        const dataFormatada = firstBooking.data_agendamento.split('-').reverse().join('-');
+        
+        // Extrai e formata o nome da clínica
+        const clinicaNome = firstBooking.clinica
+            .split('TELEFONE:')[0]  // Remove a parte do telefone
+            .trim()
+            .replace(/\s+/g, '-')   // Substitui espaços por hífens
+            .normalize('NFD')        // Normaliza caracteres acentuados
+            .replace(/[\u0300-\u036f]/g, '')  // Remove acentos
+            .toUpperCase();          // Converte para maiúsculas
 
-        // Busca exames e riscos necessários
-        console.log('[3] Buscando exames necessários...');
-        const examesRiscos = await fetchExamesNecessarios(booking.funcao, booking.natureza);
-        console.log('[4] Exames encontrados:', examesRiscos.exames);
+        // Gera o nome do arquivo unificado
+        const unifiedFileName = `unificados/${dataFormatada}_${clinicaNome}_AGENDADOS.pdf`;
+        console.log('[Unificado] Nome do arquivo:', unifiedFileName);
 
-        // Processa informações da clínica
-        console.log('[5] Processando informações da clínica...');
-        const clinicaInfo = processarClinica(booking.clinica);
-        console.log('[6] Informações da clínica processadas:', clinicaInfo);
+        // Separa bookings que já têm ASO dos que não têm
+        const existingAsos = bookings.filter(b => b.aso_url);
+        const missingAsos = bookings.filter(b => !b.aso_url);
 
-        // Formata a data atual
-        const dataAtual = new Date().toLocaleDateString('pt-BR');
+        console.log(`[Unificado] ASOs existentes: ${existingAsos.length}, Faltantes: ${missingAsos.length}`);
 
-        // Garante que os valores dos riscos sejam mantidos exatamente como estão
-        const riscos = ['risco_fisico', 'risco_quimico', 'risco_ergonomico', 'risco_acidente', 'risco_biologico'];
-        riscos.forEach(risco => {
-            if (examesRiscos[risco] === 'NA') {
-                examesRiscos[risco] = 'NA';
-            }
-        });
+        // Gera ASOs faltantes
+        const generatedUrls = [];
+        for (const booking of missingAsos) {
+            console.log(`[Unificado] Gerando ASO para booking ID: ${booking.id}`);
+            const response = await generatePDFFromBooking(booking, req);
+            generatedUrls.push(response.url);
+        }
 
-        // Monta os dados para o template
-        console.log('[7] Montando dados para o template...');
-        const templateData = {
-            natureza_exame: booking.natureza.toUpperCase(),
-            cpf: booking.cpf,
-            nome: booking.nome.toUpperCase(),
-            data_nascimento: formatarData(booking.data_nasc),
-            funcao: booking.funcao.toUpperCase(),
-            setor: booking.setor.toUpperCase(),
-            empresa: booking.empresa.toUpperCase(),
-            ...examesRiscos,
-            clinica: clinicaInfo,
-            data_exame: dataAtual
-        };
+        // Combina URLs de ASOs existentes e recém-gerados
+        const allUrls = [...existingAsos.map(b => b.aso_url), ...generatedUrls];
+        
+        console.log(`[Unificado] Mesclando ${allUrls.length} PDFs`);
+        const mergedPdfBuffer = await mergePDFs(allUrls);
 
-        console.log('[8] Dados do template montados:', templateData);
+        // Faz upload do PDF unificado
+        const unifiedUrl = await uploadPDFToSupabase(mergedPdfBuffer, unifiedFileName);
 
-        // Inicia o navegador Puppeteer
-        console.log('[9] Iniciando navegador Puppeteer...');
-        const browser = await puppeteer.launch({
-            headless: true, // Set to true for headless mode
-            args: ['--no-sandbox', '--disable-setuid-sandbox'] // Add these arguments for compatibility
-        });
-        const page = await browser.newPage();
-
-        // Renderiza o template diretamente
-        console.log('[10] Renderizando template...');
-        const html = await new Promise((resolve, reject) => {
-            req.app.render('templateASO', { ...templateData, layout: false }, (err, html) => {
-                if (err) {
-                    console.error('[ERRO] Erro ao renderizar template:', err);
-                    reject(err);
-                } else {
-                    resolve(html);
-                }
-            });
-        });
-
-        // Lê o arquivo CSS
-        const cssPath = path.join(__dirname, '../public/styles.css');
-        const css = fs.readFileSync(cssPath, 'utf8');
-
-        // Injeta o CSS diretamente no HTML
-        const htmlWithStyles = html.replace('</head>', `<style>${css}</style></head>`);
-
-        // Configura o conteúdo HTML na página
-        await page.setContent(htmlWithStyles, {
-            waitUntil: 'networkidle0',
-            timeout: 60000 // Increase timeout to 60 seconds
-        });
-
-        // Gera o PDF
-        console.log('[11] Gerando PDF...');
-        const pdfBuffer = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: {
-                top: '25px',
-                right: '25px',
-                bottom: '25px',
-                left: '25px'
-            },
-            preferCSSPageSize: true,
-            displayHeaderFooter: false
-        });
-
-        await browser.close();
-        console.log('[12] Navegador fechado');
-
-        // Gera nome único para o arquivo
-        const fileName = generateUniqueFileName(templateData.natureza_exame, templateData.nome, dataAtual);
-        console.log('[13] Nome do arquivo gerado:', fileName);
-
-        // Faz upload do PDF para o Supabase Storage
-        console.log('[14] Fazendo upload do PDF para o Supabase...');
-        const publicUrl = await uploadPDFToSupabase(pdfBuffer, fileName);
-        console.log('[15] Upload concluído. URL pública:', publicUrl);
-
-        // Atualiza a URL do ASO na tabela bookings
-        console.log('[16] Atualizando URL do ASO no booking...');
-        await updateASOUrlInTable(firstBookingId, publicUrl);
-        console.log('[17] URL do ASO atualizada com sucesso');
-
-        // Retorna sucesso com a URL pública
-        console.log('[18] Processo concluído com sucesso!\n');
         res.json({
             success: true,
-            message: 'PDF gerado e armazenado com sucesso',
-            url: publicUrl
+            message: 'ASO unificado gerado com sucesso',
+            url: unifiedUrl,
+            total: bookingIds.length,
+            generated: missingAsos.length,
+            existing: existingAsos.length
         });
 
     } catch (error) {
-        console.error('\n[ERRO] Erro ao gerar PDF:', error);
+        console.error('[Erro] Geração unificada:', error.message);
         res.status(500).json({
             success: false,
-            message: 'Erro ao gerar PDF',
+            message: 'Erro ao gerar ASO unificado',
             error: error.message
         });
     }
@@ -911,67 +845,5 @@ const generatePDFFromBooking = async (booking, req) => {
 
     return { url: publicUrl };
 };
-
-// Nova rota para gerar ASO unificado
-router.post('/generate-unified', async (req, res) => {
-    try {
-        const { bookingIds, filters } = req.body;
-        
-        if (!bookingIds || !Array.isArray(bookingIds) || bookingIds.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'É necessário fornecer ao menos um ID de agendamento'
-            });
-        }
-
-        console.log(`[Unificado] Iniciando geração para ${bookingIds.length} bookings`);
-
-        const { data: bookings, error: bookingsError } = await supabase
-            .from('bookings')
-            .select('*')
-            .in('id', bookingIds);
-
-        if (bookingsError) throw bookingsError;
-
-        const existingAsos = bookings.filter(b => b.aso_url);
-        const missingAsos = bookings.filter(b => !b.aso_url);
-
-        console.log(`[Unificado] ASOs existentes: ${existingAsos.length}, Faltantes: ${missingAsos.length}`);
-
-        const generatedUrls = [];
-        for (const booking of missingAsos) {
-            console.log(`[Unificado] Gerando ASO para booking ID: ${booking.id}`);
-            const response = await generatePDFFromBooking(booking, req);
-            generatedUrls.push(response.url);
-        }
-
-        const allUrls = [...existingAsos.map(b => b.aso_url), ...generatedUrls];
-        
-        console.log(`[Unificado] Mesclando ${allUrls.length} PDFs`);
-        const mergedPdfBuffer = await mergePDFs(allUrls);
-
-        const fileName = generateUnifiedFileName(filters);
-        console.log(`[Unificado] Nome do arquivo: ${fileName}`);
-
-        const unifiedUrl = await uploadPDFToSupabase(mergedPdfBuffer, `unified/${fileName}`);
-
-        res.json({
-            success: true,
-            message: 'ASO unificado gerado com sucesso',
-            url: unifiedUrl,
-            total: bookingIds.length,
-            generated: missingAsos.length,
-            existing: existingAsos.length
-        });
-
-    } catch (error) {
-        console.error('[Erro] Geração unificada:', error.message);
-        res.status(500).json({
-            success: false,
-            message: 'Erro ao gerar ASO unificado',
-            error: error.message
-        });
-    }
-});
 
 module.exports = router; 
