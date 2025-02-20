@@ -14,46 +14,15 @@ const asoRoutes = require('./routes/aso.routes');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware para verificar API key
-const checkApiKey = (req, res, next) => {
-    const apiKey = req.headers['x-api-key'];
-    
-    if (!apiKey || apiKey !== process.env.API_KEY) {
-        return res.status(401).json({
-            success: false,
-            message: 'Unauthorized: Invalid API key'
-        });
-    }
-    
-    next();
-};
-
 // Configuração do CORS para permitir requisições de qualquer origem
 const corsOptions = {
-    origin: true, // Permite todas as origens
-    credentials: true, // Permite credenciais
-    methods: ['GET', 'POST', 'OPTIONS'], // Inclui OPTIONS para preflight requests
-    allowedHeaders: ['Content-Type', 'Authorization'], // Remove x-api-key pois não estamos usando
-    exposedHeaders: ['Content-Length', 'Content-Type'],
-    maxAge: 86400 // Cache preflight por 24 horas
+    origin: '*',
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
 // Aplica CORS globalmente
 app.use(cors(corsOptions));
-
-// Adiciona headers específicos para cada requisição
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.header('Access-Control-Allow-Credentials', true);
-    
-    // Handle OPTIONS method
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
-    }
-    next();
-});
 
 // Configuração para aceitar dados JSON e aumentar o limite
 app.use(express.json({ limit: '50mb' }));
@@ -77,7 +46,7 @@ app.set('views', './views');
 // Servir arquivos estáticos da pasta public
 app.use(express.static('public'));
 
-// Adicione este middleware antes das rotas
+// Middleware para log de requisições
 app.use((req, res, next) => {
     console.log('Requisição recebida:', {
         method: req.method,
@@ -88,8 +57,8 @@ app.use((req, res, next) => {
     next();
 });
 
-// Configuração das rotas com verificação de API key
-app.use('/api/aso', checkApiKey, asoRoutes);
+// Configuração das rotas sem verificação de API key
+app.use('/api/aso', asoRoutes);
 
 // Rota de teste/status do servidor
 app.get('/status', (req, res) => {
