@@ -75,43 +75,45 @@ const generateUniqueFileName = (natureza, nome, data) => {
 
 // Função auxiliar para fazer upload do PDF para o Supabase Storage
 const uploadPDFToSupabase = async (pdfBuffer, fileName) => {
-    console.log('\n[Verificando duplicidade do arquivo]');
-    
-    // Verifica se o arquivo já existe
-    const { data: existingFiles } = await supabase.storage
-        .from(process.env.SUPABASE_BUCKET_NAME)
-        .list();
-
-    const existingFile = existingFiles?.find(file => file.name === fileName);
-    
-    if (existingFile) {
-        console.log('Arquivo com mesmo nome encontrado:', existingFile.name);
+    try {
+        console.log('\n[Verificando duplicidade do arquivo]');
         
-        // Obtém a URL do arquivo existente para buscar agendamentos que a utilizam
-        const { data: { publicUrl: oldUrl } } = supabase.storage
+        // Verifica se o arquivo já existe
+        const { data: existingFiles } = await supabase.storage
             .from(process.env.SUPABASE_BUCKET_NAME)
-            .getPublicUrl(fileName);
-            
-        console.log('Buscando agendamentos que utilizam o arquivo...');
-        const { data: bookings, error: bookingsError } = await supabase
-            .from('bookings')
-            .select('id')
-            .eq('aso_url', oldUrl);
-            
-        if (bookingsError) {
-            console.error('Erro ao buscar agendamentos:', bookingsError);
-            throw bookingsError;
-        }
+            .list(fileName.includes('unificados/') ? 'unificados' : '');
 
-        // Deleta o arquivo existente
-        console.log('Deletando arquivo existente...');
-        const { error: deleteError } = await supabase.storage
-            .from(process.env.SUPABASE_BUCKET_NAME)
-            .remove([fileName]);
+        const existingFile = existingFiles?.find(file => file.name === fileName.split('/').pop());
+        
+        if (existingFile) {
+            console.log('Arquivo com mesmo nome encontrado:', existingFile.name);
             
-        if (deleteError) {
-            console.error('Erro ao deletar arquivo:', deleteError);
-            throw deleteError;
+            // Obtém a URL do arquivo existente
+            const { data: { publicUrl: oldUrl } } = supabase.storage
+                .from(process.env.SUPABASE_BUCKET_NAME)
+                .getPublicUrl(fileName);
+                
+            console.log('Buscando agendamentos que utilizam o arquivo...');
+            const { data: bookings, error: bookingsError } = await supabase
+                .from('bookings')
+                .select('id')
+                .eq('aso_url', oldUrl);
+                
+            if (bookingsError) {
+                console.error('Erro ao buscar agendamentos:', bookingsError);
+                throw bookingsError;
+            }
+
+            // Deleta o arquivo existente
+            console.log('Deletando arquivo existente...');
+            const { error: deleteError } = await supabase.storage
+                .from(process.env.SUPABASE_BUCKET_NAME)
+                .remove([fileName]);
+                
+            if (deleteError) {
+                console.error('Erro ao deletar arquivo:', deleteError);
+                throw deleteError;
+            }
         }
         
         // Faz upload do novo arquivo
@@ -120,7 +122,7 @@ const uploadPDFToSupabase = async (pdfBuffer, fileName) => {
             .from(process.env.SUPABASE_BUCKET_NAME)
             .upload(fileName, pdfBuffer, {
                 contentType: 'application/pdf',
-                upsert: true
+                upsert: true // Garante que o arquivo será substituído se já existir
             });
 
         if (uploadError) {
@@ -129,16 +131,16 @@ const uploadPDFToSupabase = async (pdfBuffer, fileName) => {
         }
         
         // Gera a nova URL pública
-        const { data: { publicUrl: newUrl } } = supabase.storage
+        const { data: { publicUrl } } = supabase.storage
             .from(process.env.SUPABASE_BUCKET_NAME)
             .getPublicUrl(fileName);
             
-        // Atualiza a URL em todos os agendamentos que utilizavam o arquivo antigo
+        // Se houver bookings antigos, atualiza a URL
         if (bookings && bookings.length > 0) {
             console.log(`Atualizando URL em ${bookings.length} agendamento(s)...`);
             const { error: updateError } = await supabase
                 .from('bookings')
-                .update({ aso_url: newUrl })
+                .update({ aso_url: publicUrl })
                 .in('id', bookings.map(b => b.id));
                 
             if (updateError) {
@@ -147,29 +149,12 @@ const uploadPDFToSupabase = async (pdfBuffer, fileName) => {
             }
         }
         
-        console.log('Processo de substituição concluído com sucesso');
-        return newUrl;
+        console.log('Upload concluído com sucesso');
+        return publicUrl;
+    } catch (error) {
+        console.error('Erro no uploadPDFToSupabase:', error);
+        throw error;
     }
-
-    console.log('Arquivo não encontrado, realizando upload...');
-    
-    // Se não existir, faz o upload normalmente
-    const { error: uploadError } = await supabase.storage
-        .from(process.env.SUPABASE_BUCKET_NAME)
-        .upload(fileName, pdfBuffer, {
-            contentType: 'application/pdf',
-            upsert: false
-        });
-
-    if (uploadError) throw uploadError;
-    
-    // Gera URL pública do arquivo
-    const { data: { publicUrl } } = supabase.storage
-        .from(process.env.SUPABASE_BUCKET_NAME)
-        .getPublicUrl(fileName);
-
-    console.log('Upload concluído com sucesso');
-    return publicUrl;
 };
 
 // Função auxiliar para atualizar a URL do ASO na tabela
