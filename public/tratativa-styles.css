@@ -1,0 +1,354 @@
+@page {
+    size: A4;
+    margin: 0;
+}
+
+body {
+    font-family: 'Century Gothic', sans-serif;
+    font-size: 10px;
+    margin: 0;
+    padding: 20px;
+    background-color: #f0f0f0;
+    display: flex;
+    justify-content: center;
+}
+
+/* Container A4 */
+.page-container {
+    width: 210mm;
+    height: 297mm;
+    margin: 0 auto;
+    background-color: white;
+    position: relative;
+    border: 1px solid #000; /* Borda para visualização */
+}
+
+/* Container do conteúdo com margens */
+.content-container {
+    position: absolute;
+    top: 12.7mm;    /* 1.27cm margem */
+    right: 12.7mm;  /* 1.27cm margem */
+    bottom: 12.7mm; /* 1.27cm margem */
+    left: 12.7mm;   /* 1.27cm margem */
+    padding: 10px;
+    border: 1px solid black; /* Borda tracejada para visualização */
+    overflow: hidden; /* Previne que o conteúdo ultrapasse */
+}
+
+/* Container principal */
+.container {
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Cabeçalho */
+.header-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+}
+
+.header-table td {
+    border: 1px solid black;
+    padding: 8px;
+    font-size: 12px;
+}
+
+.logo-placeholder {
+    width: 50px;
+    height: 50px;
+    border: 1px dashed #999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f5f5f5;
+}
+
+/* Seção de identificação */
+.identification-section {
+    display: grid;
+    grid-template-rows: 25px 25px 35px;
+    row-gap: 0;
+    margin-bottom: 10px;
+}
+
+/* Linha do nome e data */
+.name-date-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+/* Linha da função e setor */
+.function-sector-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+   }
+
+/* Alinhamentos */
+.employee-name, .function-info {
+    padding: 2px 5px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* Alinha à esquerda */
+}
+
+.date-section, .sector-info {
+    padding: 2px 5px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* Alinha à direita */
+}
+
+/* Texto de notificação */
+.notification-text {
+    padding: 5px;
+    display: flex;
+    align-items: center;
+}
+
+/* Ajuste dos parágrafos */
+.name-date-row p,
+.function-sector-row p,
+.notification-text p {
+    margin: 0;
+    line-height: 1;
+}
+
+/* Ajuste específico para textos à direita */
+.date-section p,
+.sector-info p {
+    text-align: right;
+    width: 100%; /* Garante que o texto ocupe toda a largura para o alinhamento */
+}
+
+.dynamic-text {
+    font-weight: bold;
+    color: #000;
+}
+
+/* Headers comuns */
+.occurrence-header, .disciplinary-header {
+    background-color: #f5f5f5;
+    padding: 5px;
+    font-weight: bold;
+    border-bottom: 1px solid black;
+    text-align: center;
+}
+
+/* Ocorrência */
+.occurrence-box {
+    border: 1px solid black;
+    margin: 10px 0;
+}
+
+.occurrence-content {
+    padding: 0;
+}
+
+.occurrence-row {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto auto auto auto;
+    align-items: center;
+    text-align: center;
+}
+
+.occurrence-row > div {
+    padding: 5px;
+    border-right: 1px solid black;
+    border-top: 1px solid black;
+}
+
+.occurrence-row > div:last-child {
+    border-right: none;
+}
+
+.occurrence-label {
+    text-align: right;
+}
+
+.occurrence-time {
+    text-align: left;
+}
+
+/* Medida Disciplinar */
+.disciplinary-box {
+    border: 1px solid black;
+    margin: 10px 0;
+}
+
+.disciplinary-content {
+    padding: 0;
+}
+
+.measure-row {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    align-items: center;
+}
+
+.measure-row > div {
+    padding: 5px;
+    border-right: 1px solid black;
+    border-top: 1px solid black;
+}
+
+/* Ajuste específico para o código (P2) */
+.measure-row > div:first-child {
+    text-align: center;
+}
+
+/* Ajuste específico para a descrição (Advertência Escrita) */
+.measure-row > div:last-child {
+    border-right: none;
+    text-align: left;
+    padding-left: 15px; /* Mais padding à esquerda */
+}
+
+/* Texto Legal */
+.legal-text {
+    margin: 10px 0;
+    font-size: 14px;
+    text-align: justify;
+}
+
+/* Seção de evidências */
+.evidence-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.evidence-container {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid black;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.evidence-image-box {
+    width: 54%; /* Reduzido para caber no container */
+    aspect-ratio: 730/860;
+    border: 1px solid black;
+    padding: 2px;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.evidence-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* Textos da evidência */
+.evidence-info {
+    text-align: center;
+    margin-top: 5px;
+}
+
+.evidence-info p {
+    margin: 2px 0;
+    font-size: 10px;
+}
+
+/* Seção de assinaturas */
+.signature-section {
+    margin-top: auto;
+    padding-bottom: 10px;
+}
+
+/* Assinaturas */
+.signature-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 10px;
+}
+
+.label-col {
+    padding: 8px;
+    border: none;
+    width: 100px;
+}
+
+.bordered-col {
+    border: 1px solid black;
+    padding: 8px;
+    text-align: left;
+}
+
+/* Impressão */
+@media print {
+    body {
+        background: none;
+        padding: 0;
+    }
+    
+    .container {
+        box-shadow: none;
+        padding: 0;
+    }
+}
+
+/* Ajuste do logo */
+.logo {
+    width: 50px;
+    height: 50px;
+}
+
+.logo-img {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+}
+
+/* Grid de Identificação */
+.identification-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.name-col {
+    padding: 8px;
+}
+
+.name-col p {
+    margin: 0;
+    font-size: 10px;
+}
+
+.function-sector-col {
+    padding: 8px;
+}
+
+.function-sector-col p {
+    margin: 0;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+/* Texto Introdutório */
+.intro-row {
+    padding: 8px;
+}
+
+.intro-row p {
+    margin: 0;
+    font-size: 10px;
+    text-align: justify;
+}
+
+/* Ajuste geral de fontes */
+* {
+    font-family: 'Century Gothic', sans-serif;
+    font-size: 10px;
+} 

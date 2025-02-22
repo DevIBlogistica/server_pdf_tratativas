@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medida Disciplinar</title>
+</head>
+<body>
+    <div class="container">
+        <!-- Cabeçalho -->
+        <div class="header">
+            <table class="header-table">
+                <tr>
+                    <td class="title">Título: ACR-003_Medida_Disciplinar</td>
+                    <td class="anexo">Anexo</td>
+                    <td class="doc-number">Nº Documento</td>
+                    <td class="logo" rowspan="2">
+                        <img src="{{logo_url}}" alt="Logo">
+                    </td>
+                </tr>
+                <tr>
+                    <td>Tipo de Documento: Controlado</td>
+                    <td>PRO_003</td>
+                    <td>{{numero_documento}}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Data -->
+        <div class="date-section">
+            {{data_extenso}}
+        </div>
+
+        <!-- Informações do Funcionário -->
+        <div class="employee-info">
+            <p>Sr.(a) <span class="dynamic-text">{{nome_funcionario}}</span></p>
+            <p>Função: <span class="dynamic-text">{{funcao}}</span></p>
+            <p>Setor: <span class="dynamic-text">{{setor}}</span></p>
+        </div>
+
+        <!-- Texto Introdutório -->
+        <div class="intro-text">
+            <p>Pelo presente o notificamos que nesta data está recebendo uma medida disciplinar, em razão da não conformidade abaixo discriminada.</p>
+        </div>
+
+        <!-- Ocorrência -->
+        <div class="occurrence-section">
+            <table class="occurrence-table">
+                <tr>
+                    <th>Cód. {{codigo}}</th>
+                    <th>{{descricao_ocorrencia}}</th>
+                    <th>Em: {{data_ocorrencia}}</th>
+                    <th>às: {{hora_ocorrencia}}</th>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Medida Disciplinar -->
+        <div class="disciplinary-measure">
+            <h3>Medida Disciplinar</h3>
+            <p class="measure-type">{{tipo_medida}}</p>
+        </div>
+
+        <!-- Texto Legal -->
+        <div class="legal-text">
+            <p>Lembramos que caso haja incidência na mesma falta, será penalizado(a), conforme a CONSOLIDAÇÃO DAS LEIS TRABALHISTAS e o procedimento disciplinar da empresa.</p>
+            <p>Esclarecemos que, a reiteração no cometimento de irregularidades autoriza a rescisão do contrato de trabalho por justa causa, razão pela qual esperamos que evite a reincidência da não conformidade, para que não tenhamos no futuro, de tomar medidas que são facultadas por lei à empresa.</p>
+        </div>
+
+        <!-- Evidências -->
+        <div class="evidence-section">
+            {{#each evidencias}}
+            <div class="evidence-item">
+                <img src="{{this.imagem}}" alt="Evidência {{@index}}">
+                <p>Excesso cometido: {{this.excesso}}</p>
+                <p>Limite estabelecido: {{this.limite}}</p>
+            </div>
+            {{/each}}
+        </div>
+
+        <!-- Assinaturas -->
+        <div class="signature-section">
+            <table class="signature-table">
+                <tr>
+                    <th>Nome</th>
+                    <th>Data</th>
+                    <th>Assinatura</th>
+                </tr>
+                <tr>
+                    <td>Funcionário</td>
+                    <td>{{nome_funcionario}}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>Líder</td>
+                    <td>{{nome_lider}}</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>Testemunha (1)</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+</html> 
