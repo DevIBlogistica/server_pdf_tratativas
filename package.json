@@ -4,8 +4,9 @@
   "description": "Servidor para geração de PDFs e integração com Supabase",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node start-server.js",
+    "dev": "nodemon start-server.js",
+    "cert": "node generate-cert.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.48.1",
