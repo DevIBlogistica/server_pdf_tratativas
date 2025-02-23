@@ -155,7 +155,7 @@ body {
 
 .evidence-image-box {
     width: 400px;
-    height: 400px;
+    height: 470px;
     border: 1px solid black;
     margin-bottom: 5px;
 }
@@ -197,12 +197,50 @@ body {
     height: 25px;
 }
 
+/* Larguras individuais das colunas */
 .first-col {
+    width: 20%;
+    border: none; /* Remove todas as bordas da primeira coluna */
+}
+
+.name-col {
+    width: 35%;
+}
+
+.date-col {
     width: 20%;
 }
 
-.bordered-col {
+.signature-col {
+    width: 25%;
+}
+
+/* Primeira linha (cabeçalho) */
+.table-header td {
+    border-bottom: 1px solid black;
+}
+
+/* Segunda e terceira colunas */
+.name-col:not(.table-header td), 
+.date-col:not(.table-header td) {
     border: 1px solid black;
+}
+
+/* Quarta coluna - sem borda direita */
+.signature-col:not(.table-header td) {
+    border: 1px solid black;
+    border-right: none;
+}
+
+/* Quarta coluna no cabeçalho - apenas borda inferior */
+.table-header .signature-col {
+    border: none;
+    border-bottom: 1px solid black;
+}
+
+/* Última linha - sem bordas inferiores */
+.signature-table tr:last-child td {
+    border-bottom: none;
 }
 
 /* Impressão */
