@@ -8,130 +8,121 @@
 <body>
     <div class="page-container">
         <div class="content-container">
-            <div class="container">
-                <!-- Cabeçalho -->
-                <div class="header">
-                    <table class="header-table">
-                        <tr>
-                            <td class="title">Título: ACR-003_Medida_Disciplinar</td>
-                            <td class="anexo">Anexo</td>
-                            <td class="doc-number">Nº Documento</td>
-                            <td class="logo" rowspan="2">
-                                <img src="{{logo_url}}" alt="Logo IB" class="logo-img">
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Tipo de Documento: Controlado</td>
-                            <td>PRO_003</td>
-                            <td>{{numero_documento}}</td>
-                        </tr>
-                    </table>
-                </div>
+            <!-- Cabeçalho -->
+            <table class="header-table">
+                <tr>
+                    <td>Título: ACR-003_Medida_Disciplinar</td>
+                    <td>Anexo</td>
+                    <td>Nº Documento</td>
+                    <td rowspan="2" class="logo">
+                        <img src="{{logo_url}}" alt="Logo IB" class="logo-img">
+                    </td>
+                </tr>
+                <tr>
+                    <td>Tipo de Documento: Controlado</td>
+                    <td>PRO_003</td>
+                    <td>{{numero_documento}}</td>
+                </tr>
+            </table>
 
-                <!-- Grid de identificação -->
-                <div class="identification-section">
-                    <!-- Linha 1: Nome e Data -->
-                    <div class="name-date-row">
-                        <div class="employee-name">
-                            <p>Sr.(a) {{nome_funcionario}}</p>
-                        </div>
-                        <div class="date-section">
-                            <p>{{data_formatada_extenso}}</p>
-                        </div>
+            <!-- Identificação -->
+            <div class="identification-section">
+                <div class="name-date-row">
+                    <div class="employee-name">
+                        <p>Sr.(a) {{nome_funcionario}}</p>
                     </div>
-                    
-                    <!-- Linha 2: Função e Setor -->
-                    <div class="function-sector-row">
-                        <div class="function-info">
-                            <p>Função: {{funcao}}</p>
-                        </div>
-                        <div class="sector-info">
-                            <p>Setor: {{setor}}</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Linha 3: Texto de notificação -->
-                    <div class="notification-text">
-                        <p>Pelo presente o notificamos que nesta data está recebendo uma medida disciplinar, em razão da não conformidade abaixo discriminada.</p>
+                    <div class="date-section">
+                        <p>{{data_formatada_extenso}}</p>
                     </div>
                 </div>
-
-                <!-- Ocorrência -->
-                <div class="occurrence-box">
-                    <div class="occurrence-header">Ocorrência</div>
-                    <div class="occurrence-content">
-                        <div class="occurrence-row">
-                            <div>Cód.</div>
-                            <div>{{codigo_ocorrencia}}</div>
-                            <div>{{descricao_ocorrencia}}</div>
-                            <div>Em:</div>
-                            <div>{{data_ocorrencia}}</div>
-                            <div>às:</div>
-                            <div>{{hora_ocorrencia}}</div>
-                        </div>
+                <div class="function-sector-row">
+                    <div class="function-info">
+                        <p>Função: {{funcao}}</p>
+                    </div>
+                    <div class="sector-info">
+                        <p>Setor: {{setor}}</p>
                     </div>
                 </div>
+                <div class="notification-text">
+                    <p>Pelo presente o notificamos que nesta data está recebendo uma medida disciplinar, em razão da não conformidade abaixo discriminada.</p>
+                </div>
+            </div>
 
-                <!-- Medida Disciplinar -->
-                <div class="disciplinary-box">
-                    <div class="disciplinary-header">Medida Disciplinar</div>
-                    <div class="disciplinary-content">
-                        <div class="measure-row">
-                            <div>{{codigo_medida}}</div>
-                            <div>{{descricao_medida}}</div>
-                        </div>
+            <!-- Ocorrência -->
+            <div class="occurrence-box">
+                <div class="occurrence-header">Ocorrência</div>
+                <div class="occurrence-content">
+                    <div class="occurrence-row">
+                        <div>Cód.</div>
+                        <div>{{codigo_ocorrencia}}</div>
+                        <div>{{descricao_ocorrencia}}</div>
+                        <div>Em:</div>
+                        <div>{{data_ocorrencia}}</div>
+                        <div>às:</div>
+                        <div>{{hora_ocorrencia}}</div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Texto Legal -->
-                <div class="legal-text">
-                    <p>Lembramos que caso haja incidência na mesma falta, será penalizado(a), conforme a CONSOLIDAÇÃO DAS LEIS TRABALHISTAS e o procedimento disciplinar da empresa.</p>
-                    <p>Esclarecemos que, a reiteração no cometimento de irregularidades autoriza a rescisão do contrato de trabalho por justa causa, razão pela qual esperamos que evite a reincidência da não conformidade, para que não tenhamos no futuro, de tomar medidas que são facultadas por lei à empresa.</p>
-                </div>
-
-                <!-- Evidências -->
-                <div class="evidence-section">
-                    <div class="evidence-container">
-                        <div class="evidence-image-box">
-                            <img src="{{imagem_evidencia}}" alt="Evidência" class="evidence-img">
-                        </div>
-                        <div class="evidence-info">
-                            <p>{{texto_excesso}}</p>
-                            <p>{{texto_limite}}</p>
-                        </div>
+            <!-- Medida Disciplinar -->
+            <div class="disciplinary-box">
+                <div class="disciplinary-header">Medida Disciplinar</div>
+                <div class="disciplinary-content">
+                    <div class="measure-row">
+                        <div>{{codigo_medida}}</div>
+                        <div>{{descricao_medida}}</div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Assinaturas -->
-                <div class="signature-box">
-                    <div class="signature-header">Assinaturas</div>
-                    <table class="signature-table">
-                        <tr class="table-header">
-                            <td class="first-col"></td>
-                            <td class="bordered-col">Nome</td>
-                            <td class="bordered-col">Data</td>
-                            <td class="bordered-col">Assinatura</td>
-                        </tr>
-                        <tr>
-                            <td class="first-col">Funcionário</td>
-                            <td class="bordered-col">{{nome_funcionario}}</td>
-                            <td class="bordered-col"></td>
-                            <td class="bordered-col"></td>
-                        </tr>
-                        <tr>
-                            <td class="first-col">Líder</td>
-                            <td class="bordered-col">{{nome_lider}}</td>
-                            <td class="bordered-col"></td>
-                            <td class="bordered-col"></td>
-                        </tr>
-                        <tr>
-                            <td class="first-col">Testemunha</td>
-                            <td class="bordered-col"></td>
-                            <td class="bordered-col"></td>
-                            <td class="bordered-col"></td>
-                        </tr>
-                    </table>
+            <!-- Texto Legal -->
+            <div class="legal-text">
+                <p>Lembramos que caso haja incidência na mesma falta, será penalizado(a), conforme a CONSOLIDAÇÃO DAS LEIS TRABALHISTAS e o procedimento disciplinar da empresa.</p>
+                <p>Esclarecemos que, a reiteração no cometimento de irregularidades autoriza a rescisão do contrato de trabalho por justa causa, razão pela qual esperamos que evite a reincidência da não conformidade, para que não tenhamos no futuro, de tomar medidas que são facultadas por lei à empresa.</p>
+            </div>
+
+            <!-- Evidências -->
+            <div class="evidence-section">
+                <div class="evidence-container">
+                    <div class="evidence-image-box">
+                        <img src="{{imagem_evidencia}}" alt="Evidência" class="evidence-img">
+                    </div>
+                    <div class="evidence-info">
+                        <p>{{texto_excesso}}</p>
+                        <p>{{texto_limite}}</p>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Assinaturas -->
+            <div class="signature-box">
+                <div class="signature-header">Assinaturas</div>
+                <table class="signature-table">
+                    <tr>
+                        <td class="first-col"></td>
+                        <td class="bordered-col">Nome</td>
+                        <td class="bordered-col">Data</td>
+                        <td class="bordered-col">Assinatura</td>
+                    </tr>
+                    <tr>
+                        <td class="first-col">Funcionário</td>
+                        <td class="bordered-col">{{nome_funcionario}}</td>
+                        <td class="bordered-col"></td>
+                        <td class="bordered-col"></td>
+                    </tr>
+                    <tr>
+                        <td class="first-col">Líder</td>
+                        <td class="bordered-col">{{nome_lider}}</td>
+                        <td class="bordered-col"></td>
+                        <td class="bordered-col"></td>
+                    </tr>
+                    <tr>
+                        <td class="first-col">Testemunha</td>
+                        <td class="bordered-col"></td>
+                        <td class="bordered-col"></td>
+                        <td class="bordered-col"></td>
+                    </tr>
+                </table>
             </div>
         </div>
     </div>

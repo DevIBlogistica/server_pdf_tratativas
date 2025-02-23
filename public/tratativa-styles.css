@@ -4,395 +4,211 @@
 }
 
 body {
-    font-family: 'Century Gothic', sans-serif;
+    font-family: 'Century Gothic', 'Arial', 'Helvetica', sans-serif;
     font-size: 10px;
     margin: 0;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
+    padding: 0;
 }
 
-/* Container A4 */
 .page-container {
     width: 210mm;
     height: 297mm;
     margin: 0 auto;
     position: relative;
- 
 }
 
-/* Container do conteúdo com margens */
 .content-container {
     position: absolute;
     top: 12.7mm;
     right: 12.7mm;
     bottom: 12.7mm;
     left: 12.7mm;
-    padding: 0;
-    border: 2px solid black;
-    overflow: hidden;
-}
-
-/* Container principal */
-.container {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    padding: 0;
+    border: 1px solid black;
 }
 
 /* Cabeçalho */
 .header-table {
     width: 100%;
     border-collapse: collapse;
-    margin: 0;
-    border-bottom: 1px solid black;
 }
 
 .header-table td {
-    padding: 8px;
-}
-
-.header-table td:not(:first-child) {
-    border-left: 1px solid black;
-}
-
-.header-table tr:first-child td {
-    border-bottom: 1px solid black;
-}
-
-.logo-placeholder {
-    width: 50px;
-    height: 50px;
-    border: 1px dashed #999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #f5f5f5;
-}
-
-/* Seção de identificação */
-.identification-section {
-    display: grid;
-    grid-template-rows: 25px 25px 35px;
-    row-gap: 0;
-    margin: 10px 0;
-    padding: 0 5px;
-}
-
-/* Linha do nome e data */
-.name-date-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-}
-
-/* Linha da função e setor */
-.function-sector-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-   }
-
-/* Alinhamentos */
-.employee-name, .function-info {
-    padding: 2px 5px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start; /* Alinha à esquerda */
-}
-
-.date-section, .sector-info {
-    padding: 2px 5px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end; /* Alinha à direita */
-}
-
-/* Texto de notificação */
-.notification-text {
+    border: 1px solid black;
     padding: 5px;
-    display: flex;
-    align-items: center;
 }
 
-/* Ajuste dos parágrafos */
-.name-date-row p,
-.function-sector-row p,
-.notification-text p {
-    margin: 0;
-    line-height: 1;
+.header-table td:first-child {
+    border-left: none;
 }
 
-/* Ajuste específico para textos à direita */
-.date-section p,
-.sector-info p {
-    text-align: right;
-    width: 100%; /* Garante que o texto ocupe toda a largura para o alinhamento */
+.header-table td:last-child {
+    border-right: none;
 }
 
-.dynamic-text {
-    font-weight: bold;
-    color: #000;
-}
-
-/* Headers comuns */
-.occurrence-header, .disciplinary-header, .signature-header {
-    background-color: #f5f5f5;
-    padding: 5px;
-    font-weight: bold;
-    border-bottom: 1px solid black;
+/* Logo */
+.logo {
+    width: 45px;
+    height: 35px;
     text-align: center;
 }
 
-.signature-header {
-    border-top: 1px solid black;
+.logo-img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* Seção de Identificação */
+.identification-section {
+    padding: 5px;
+    border-bottom: 1px solid black;
+}
+
+.name-date-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.function-sector-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.notification-text {
+    text-align: justify;
+    font-size: 9px;
 }
 
 /* Ocorrência */
 .occurrence-box {
+    border-bottom: 1px solid black;
+}
+
+.occurrence-header {
+    background-color: #f5f5f5;
+    padding: 5px;
+    text-align: center;
     border-top: 1px solid black;
     border-bottom: 1px solid black;
-    margin: 10px 0;
 }
 
 .occurrence-content {
-    padding: 0;
+    padding: 5px;
 }
 
 .occurrence-row {
     display: grid;
     grid-template-columns: auto auto 1fr auto auto auto auto;
+    gap: 5px;
     align-items: center;
-    text-align: center;
-}
-
-.occurrence-row > div {
-    padding: 5px;
-    border-right: 1px solid black;
-}
-
-.occurrence-row > div:first-child,
-.occurrence-row > div:nth-child(4),
-.occurrence-row > div:nth-child(6) {
-    font-weight: bold;
-}
-
-.occurrence-row > div:last-child {
-    border-right: none;
-}
-
-.occurrence-label {
-    text-align: right;
-}
-
-.occurrence-time {
-    text-align: left;
 }
 
 /* Medida Disciplinar */
 .disciplinary-box {
+    border-bottom: 1px solid black;
+}
+
+.disciplinary-header {
+    background-color: #f5f5f5;
+    padding: 5px;
+    text-align: center;
     border-top: 1px solid black;
     border-bottom: 1px solid black;
-    margin: 10px 0;
 }
 
 .disciplinary-content {
-    padding: 0;
+    padding: 5px;
 }
 
 .measure-row {
     display: grid;
-    grid-template-columns: 100px 1fr;
+    grid-template-columns: auto 1fr;
+    gap: 5px;
     align-items: center;
-}
-
-.measure-row > div {
-    padding: 5px;
-    border-right: 1px solid black;
-}
-
-/* Ajuste específico para o código (P2) */
-.measure-row > div:first-child {
-    text-align: center;
-}
-
-/* Ajuste específico para a descrição (Advertência Escrita) */
-.measure-row > div:last-child {
-    border-right: none;
-    text-align: left;
-    padding-left: 15px; /* Mais padding à esquerda */
 }
 
 /* Texto Legal */
 .legal-text {
-    margin: 10px 0;
-    padding: 0 10px;
-    font-size: 14px;
+    padding: 10px;
+    font-size: 9px;
     text-align: justify;
 }
 
-/* Seção de evidências */
+.legal-text p {
+    margin: 5px 0;
+}
+
+/* Evidências */
 .evidence-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+    padding: 10px;
+    text-align: center;
 }
 
 .evidence-container {
-    width: 100%;
-    padding: 10px 0;
-    border-top: 1px solid black;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
 .evidence-image-box {
-    width: 54.1%;
-    aspect-ratio: 730/860;
+    width: 400px;
+    height: 400px;
     border: 1px solid black;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    margin-bottom: 5px;
 }
 
 .evidence-img {
-    max-width: 100%;
-    max-height: 100%;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
 }
 
-/* Textos da evidência */
 .evidence-info {
     text-align: center;
+    font-size: 9px;
 }
 
 .evidence-info p {
     margin: 2px 0;
-    font-size: 10px;
-}
-
-/* Seção de assinaturas */
-.signature-section {
-    margin: 10px 0 0 0;
-    padding: 0;
-}
-
-.signature-box {
-    border-bottom: 1px solid black;
 }
 
 /* Assinaturas */
-.signature-table {
-    width: 100%;
-    border-collapse: collapse;
-    border-spacing: 0;
-    margin: 0;
+.signature-box {
+    border-top: 1px solid black;
 }
 
-.signature-table td {
-    padding: 8px;
-}
-
-.signature-table .table-header {
-    font-weight: bold;
+.signature-header {
+    background-color: #f5f5f5;
+    padding: 5px;
     text-align: center;
     border-bottom: 1px solid black;
 }
 
-.signature-table .table-header td {
-    font-weight: bold;
+.signature-table {
+    width: 100%;
+    border-collapse: collapse;
 }
 
-.signature-table tr:not(.table-header):not(:last-child) td:not(:first-child) {
-    border-left: 1px solid black;
-    border-bottom: 1px solid black;
-}
-
-.signature-table tr:last-child td:not(:first-child) {
-    border-left: 1px solid black;
+.signature-table td {
+    padding: 5px;
+    height: 25px;
 }
 
 .first-col {
-    width: 7%;
+    width: 20%;
 }
 
-.bordered-col:nth-child(2) {
-    width: 43%;
-}
-
-.bordered-col:nth-child(3) {
-    width: 10%;
-}
-
-.bordered-col:nth-child(4) {
-    width: 40%;
+.bordered-col {
+    border: 1px solid black;
 }
 
 /* Impressão */
 @media print {
     body {
-        background: none;
+        margin: 0;
         padding: 0;
     }
-    
-    .container {
-        box-shadow: none;
-        padding: 0;
-    }
-}
-
-/* Ajuste do logo */
-.logo {
-    width: 50px;
-    height: 50px;
-}
-
-.logo-img {
-    width: 50px;
-    height: 50px;
-    object-fit: contain;
-}
-
-/* Grid de Identificação */
-.identification-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-}
-
-.name-col {
-    padding: 8px;
-}
-
-.name-col p {
-    margin: 0;
-    font-size: 10px;
-}
-
-.function-sector-col {
-    padding: 8px;
-}
-
-.function-sector-col p {
-    margin: 0;
-    font-size: 10px;
-    line-height: 1.5;
-}
-
-/* Texto Introdutório */
-.intro-row {
-    padding: 8px;
-}
-
-.intro-row p {
-    margin: 0;
-    font-size: 10px;
-    text-align: justify;
-}
-
-/* Ajuste geral de fontes */
-* {
-    font-family: 'Century Gothic', sans-serif;
-    font-size: 10px;
 } 
