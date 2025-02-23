@@ -9,6 +9,7 @@ require('dotenv').config();
 
 // Importação das rotas
 const asoRoutes = require('./routes/aso.routes');
+const tratativaRoutes = require('./routes/tratativa.routes');
 
 // Inicialização do Express
 const app = express();
@@ -59,6 +60,9 @@ app.use((req, res, next) => {
 
 // Configuração das rotas sem verificação de API key
 app.use('/api/aso', asoRoutes);
+
+// Novas rotas para tratativas
+app.use('/', tratativaRoutes);
 
 // Rota de teste/status do servidor
 app.get('/status', (req, res) => {

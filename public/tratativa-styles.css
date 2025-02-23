@@ -8,7 +8,6 @@ body {
     font-size: 10px;
     margin: 0;
     padding: 20px;
-    background-color: #f0f0f0;
     display: flex;
     justify-content: center;
 }
@@ -18,44 +17,50 @@ body {
     width: 210mm;
     height: 297mm;
     margin: 0 auto;
-    background-color: white;
     position: relative;
-    border: 1px solid #000; /* Borda para visualização */
+ 
 }
 
 /* Container do conteúdo com margens */
 .content-container {
     position: absolute;
-    top: 12.7mm;    /* 1.27cm margem */
-    right: 12.7mm;  /* 1.27cm margem */
-    bottom: 12.7mm; /* 1.27cm margem */
-    left: 12.7mm;   /* 1.27cm margem */
-    padding: 10px;
-    border: 1px solid black; /* Borda tracejada para visualização */
-    overflow: hidden; /* Previne que o conteúdo ultrapasse */
+    top: 12.7mm;
+    right: 12.7mm;
+    bottom: 12.7mm;
+    left: 12.7mm;
+    padding: 0;
+    border: 2px solid black;
+    overflow: hidden;
 }
 
 /* Container principal */
 .container {
     width: 100%;
     height: 100%;
-    background-color: white;
     position: relative;
     display: flex;
     flex-direction: column;
+    padding: 0;
 }
 
 /* Cabeçalho */
 .header-table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 10px;
+    margin: 0;
+    border-bottom: 1px solid black;
 }
 
 .header-table td {
-    border: 1px solid black;
     padding: 8px;
-    font-size: 12px;
+}
+
+.header-table td:not(:first-child) {
+    border-left: 1px solid black;
+}
+
+.header-table tr:first-child td {
+    border-bottom: 1px solid black;
 }
 
 .logo-placeholder {
@@ -73,7 +78,8 @@ body {
     display: grid;
     grid-template-rows: 25px 25px 35px;
     row-gap: 0;
-    margin-bottom: 10px;
+    margin: 10px 0;
+    padding: 0 5px;
 }
 
 /* Linha do nome e data */
@@ -131,7 +137,7 @@ body {
 }
 
 /* Headers comuns */
-.occurrence-header, .disciplinary-header {
+.occurrence-header, .disciplinary-header, .signature-header {
     background-color: #f5f5f5;
     padding: 5px;
     font-weight: bold;
@@ -139,9 +145,14 @@ body {
     text-align: center;
 }
 
+.signature-header {
+    border-top: 1px solid black;
+}
+
 /* Ocorrência */
 .occurrence-box {
-    border: 1px solid black;
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
     margin: 10px 0;
 }
 
@@ -159,7 +170,12 @@ body {
 .occurrence-row > div {
     padding: 5px;
     border-right: 1px solid black;
-    border-top: 1px solid black;
+}
+
+.occurrence-row > div:first-child,
+.occurrence-row > div:nth-child(4),
+.occurrence-row > div:nth-child(6) {
+    font-weight: bold;
 }
 
 .occurrence-row > div:last-child {
@@ -176,7 +192,8 @@ body {
 
 /* Medida Disciplinar */
 .disciplinary-box {
-    border: 1px solid black;
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
     margin: 10px 0;
 }
 
@@ -193,7 +210,6 @@ body {
 .measure-row > div {
     padding: 5px;
     border-right: 1px solid black;
-    border-top: 1px solid black;
 }
 
 /* Ajuste específico para o código (P2) */
@@ -211,13 +227,13 @@ body {
 /* Texto Legal */
 .legal-text {
     margin: 10px 0;
+    padding: 0 10px;
     font-size: 14px;
     text-align: justify;
 }
 
 /* Seção de evidências */
 .evidence-section {
-    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -225,19 +241,17 @@ body {
 
 .evidence-container {
     width: 100%;
-    padding: 5px;
-    border: 1px solid black;
+    padding: 10px 0;
+    border-top: 1px solid black;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
 .evidence-image-box {
-    width: 54%; /* Reduzido para caber no container */
+    width: 54.1%;
     aspect-ratio: 730/860;
     border: 1px solid black;
-    padding: 2px;
-    margin-bottom: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -252,7 +266,6 @@ body {
 /* Textos da evidência */
 .evidence-info {
     text-align: center;
-    margin-top: 5px;
 }
 
 .evidence-info p {
@@ -262,28 +275,59 @@ body {
 
 /* Seção de assinaturas */
 .signature-section {
-    margin-top: auto;
-    padding-bottom: 10px;
+    margin: 10px 0 0 0;
+    padding: 0;
+}
+
+.signature-box {
+    border-bottom: 1px solid black;
 }
 
 /* Assinaturas */
 .signature-table {
     width: 100%;
-    border-collapse: separate;
+    border-collapse: collapse;
     border-spacing: 0;
-    margin-top: 10px;
+    margin: 0;
 }
 
-.label-col {
+.signature-table td {
     padding: 8px;
-    border: none;
-    width: 100px;
 }
 
-.bordered-col {
-    border: 1px solid black;
-    padding: 8px;
-    text-align: left;
+.signature-table .table-header {
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 1px solid black;
+}
+
+.signature-table .table-header td {
+    font-weight: bold;
+}
+
+.signature-table tr:not(.table-header):not(:last-child) td:not(:first-child) {
+    border-left: 1px solid black;
+    border-bottom: 1px solid black;
+}
+
+.signature-table tr:last-child td:not(:first-child) {
+    border-left: 1px solid black;
+}
+
+.first-col {
+    width: 7%;
+}
+
+.bordered-col:nth-child(2) {
+    width: 43%;
+}
+
+.bordered-col:nth-child(3) {
+    width: 10%;
+}
+
+.bordered-col:nth-child(4) {
+    width: 40%;
 }
 
 /* Impressão */

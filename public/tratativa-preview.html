@@ -24,7 +24,7 @@
                         <tr>
                             <td>Tipo de Documento: Controlado</td>
                             <td>PRO_003</td>
-                            <td>1000</td>
+                            <td>{{numero_documento}}</td>
                         </tr>
                     </table>
                 </div>
@@ -34,20 +34,20 @@
                     <!-- Linha 1: Nome e Data -->
                     <div class="name-date-row">
                         <div class="employee-name">
-                            <p>Sr.(a) ELIELTON FRANCISCO TOLEDO</p>
+                            <p>Sr.(a) {{nome_funcionario}}</p>
                         </div>
                         <div class="date-section">
-                            <p>Sábado, 22 de fevereiro de 2025</p>
+                            <p>{{data_formatada_extenso}}</p>
                         </div>
                     </div>
                     
                     <!-- Linha 2: Função e Setor -->
                     <div class="function-sector-row">
                         <div class="function-info">
-                            <p>Função: OPERADOR MAQ AGRICOLAS</p>
+                            <p>Função: {{funcao}}</p>
                         </div>
                         <div class="sector-info">
-                            <p>Setor: PLANTIO MECANIZADO ALEXANDRIA</p>
+                            <p>Setor: {{setor}}</p>
                         </div>
                     </div>
                     
@@ -63,12 +63,12 @@
                     <div class="occurrence-content">
                         <div class="occurrence-row">
                             <div>Cód.</div>
-                            <div>4, 5</div>
-                            <div>RPM e Velocidade</div>
+                            <div>{{codigo_ocorrencia}}</div>
+                            <div>{{descricao_ocorrencia}}</div>
                             <div>Em:</div>
-                            <div>18/02/2025</div>
+                            <div>{{data_ocorrencia}}</div>
                             <div>às:</div>
-                            <div>10:30</div>
+                            <div>{{hora_ocorrencia}}</div>
                         </div>
                     </div>
                 </div>
@@ -78,8 +78,8 @@
                     <div class="disciplinary-header">Medida Disciplinar</div>
                     <div class="disciplinary-content">
                         <div class="measure-row">
-                            <div>P2</div>
-                            <div>Advertência Escrita</div>
+                            <div>{{codigo_medida}}</div>
+                            <div>{{descricao_medida}}</div>
                         </div>
                     </div>
                 </div>
@@ -94,32 +94,39 @@
                 <div class="evidence-section">
                     <div class="evidence-container">
                         <div class="evidence-image-box">
-                            <img src="path/to/image.jpg" alt="Evidência" class="evidence-img">
+                            <img src="{{imagem_evidencia}}" alt="Evidência" class="evidence-img">
                         </div>
                         <div class="evidence-info">
-                            <p>Excesso de velocidade: 15.2km/h</p>
-                            <p>Limite estabelecido: 15km/h</p>
+                            <p>{{texto_excesso}}</p>
+                            <p>{{texto_limite}}</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Assinaturas -->
-                <div class="signature-section">
+                <div class="signature-box">
+                    <div class="signature-header">Assinaturas</div>
                     <table class="signature-table">
+                        <tr class="table-header">
+                            <td class="first-col"></td>
+                            <td class="bordered-col">Nome</td>
+                            <td class="bordered-col">Data</td>
+                            <td class="bordered-col">Assinatura</td>
+                        </tr>
                         <tr>
-                            <td class="label-col">Funcionário</td>
-                            <td class="bordered-col">ELIELTON FRANCISCO TOLEDO</td>
+                            <td class="first-col">Funcionário</td>
+                            <td class="bordered-col">{{nome_funcionario}}</td>
                             <td class="bordered-col"></td>
                             <td class="bordered-col"></td>
                         </tr>
                         <tr>
-                            <td class="label-col">Líder</td>
-                            <td class="bordered-col">GILVAN FERNANDES DOS SANTOS</td>
+                            <td class="first-col">Líder</td>
+                            <td class="bordered-col">{{nome_lider}}</td>
                             <td class="bordered-col"></td>
                             <td class="bordered-col"></td>
                         </tr>
                         <tr>
-                            <td class="label-col">Testemunha</td>
+                            <td class="first-col">Testemunha</td>
                             <td class="bordered-col"></td>
                             <td class="bordered-col"></td>
                             <td class="bordered-col"></td>
