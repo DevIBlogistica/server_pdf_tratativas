@@ -118,10 +118,47 @@ router.post('/api/tratativa/test', async (req, res) => {
             throw new Error('Body vazio. Certifique-se de enviar os dados no formato JSON correto e com Content-Type: application/json');
         }
 
-        // Carregar logo em base64
-        const logoPath = path.join(__dirname, '../public/images/logoib.png');
-        const logoBase64 = fs.readFileSync(logoPath, { encoding: 'base64' });
-        
+        let logo_src;
+        try {
+            // Tentar diferentes caminhos possíveis
+            const possiblePaths = [
+                path.resolve(__dirname, '../public/images/logoib.png'),
+                path.resolve(process.cwd(), 'public/images/logoib.png'),
+                '/var/www/html/server_pdf/public/images/logoib.png', // caminho absoluto em produção
+                path.join(process.cwd(), 'server_pdf/public/images/logoib.png')
+            ];
+
+            console.log('Diretório atual:', process.cwd());
+            console.log('Diretório do arquivo:', __dirname);
+            console.log('Tentando carregar logo dos seguintes caminhos:');
+            possiblePaths.forEach(p => {
+                console.log(`- ${p} (existe: ${fs.existsSync(p)})`);
+            });
+
+            // Tentar cada caminho até encontrar a logo
+            let logoPath;
+            for (const p of possiblePaths) {
+                if (fs.existsSync(p)) {
+                    console.log('Logo encontrada em:', p);
+                    logoPath = p;
+                    break;
+                }
+            }
+
+            if (!logoPath) {
+                throw new Error('Logo não encontrada em nenhum dos caminhos testados');
+            }
+
+            const logoBase64 = fs.readFileSync(logoPath, { encoding: 'base64' });
+            logo_src = `data:image/png;base64,${logoBase64}`;
+            console.log('Logo carregada com sucesso');
+        } catch (error) {
+            console.error('Erro ao carregar logo:', error);
+            // URL de uma imagem placeholder como fallback
+            logo_src = 'https://placehold.co/45x35/png';
+            console.log('Usando imagem placeholder como fallback');
+        }
+
         console.log('[1/8] Preparando dados de teste');
         
         // Dados para o template
@@ -138,7 +175,7 @@ router.post('/api/tratativa/test', async (req, res) => {
             penalidade_aplicada: req.body.penalidade_aplicada,
             numero_documento: req.body.numero_documento,
             data_formatada_extenso: req.body.data_formatada_extenso,
-            logo_src: `data:image/png;base64,${logoBase64}`,
+            logo_src: logo_src,
             evidencias: {
                 imagem_evidencia: req.body.evidencias.imagem_evidencia,
                 texto_excesso: req.body.evidencias.texto_excesso,
