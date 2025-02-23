@@ -222,4 +222,24 @@ router.post('/api/tratativa/test', async (req, res) => {
     }
 });
 
+// Rota de teste de conexão
+router.post('/api/test-connection', (req, res) => {
+    try {
+        console.log('Teste de conexão recebido');
+        res.status(200).json({ 
+            success: true,
+            message: 'Conexão bem-sucedida!',
+            server: 'PDF Generator Server',
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Erro no teste de conexão:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao testar conexão',
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;
