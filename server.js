@@ -20,14 +20,21 @@ const corsOptions = {
     origin: '*',
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Content-Length', 'Content-Type']
 };
 
 // Aplica CORS globalmente
 app.use(cors(corsOptions));
 
 // Configuração para aceitar dados JSON e aumentar o limite
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ 
+    limit: '50mb',
+    type: ['application/json', 'text/plain'] // Aceitar também text/plain
+}));
+app.use(express.urlencoded({ 
+    extended: true, 
+    limit: '50mb' 
+}));
 
 // Configuração do Handlebars como template engine
 app.engine('handlebars', engine({
@@ -47,27 +54,25 @@ app.set('views', './views');
 // Servir arquivos estáticos da pasta public
 app.use(express.static('public'));
 
-// Middleware para log de requisições
+// Middleware para log de requisições - manter apenas informações essenciais
 app.use((req, res, next) => {
-    console.log('Requisição recebida:', {
-        method: req.method,
-        path: req.path,
-        headers: req.headers,
-        body: req.body
-    });
+    console.log(`${req.method} ${req.path}`);
     next();
 });
 
-// Configuração das rotas sem verificação de API key
-app.use('/api/aso', asoRoutes);
-
-// Novas rotas para tratativas
-app.use('/', tratativaRoutes);
-
-// Rota de teste/status do servidor
-app.get('/status', (req, res) => {
-    res.json({ status: 'Server is running' });
+// Log middleware para debug
+app.use((req, res, next) => {
+    console.log('Request recebida:');
+    console.log('Method:', req.method);
+    console.log('Path:', req.path);
+    console.log('Content-Type:', req.headers['content-type']);
+    console.log('Body:', req.body);
+    next();
 });
+
+// Configuração das rotas
+app.use('/api/aso', asoRoutes);
+app.use('/', tratativaRoutes);
 
 // Middleware para tratamento de erros
 app.use((err, req, res, next) => {
@@ -79,16 +84,14 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Verifica se estamos em ambiente de produção
+// Simplificar mensagens de inicialização
 if (process.env.NODE_ENV === 'production') {
     try {
-        // Carregar o certificado SSL apenas em produção
         const sslOptions = {
-            key: fs.readFileSync('server.key'), // Relative path to the private key
-            cert: fs.readFileSync('server.cert') // Relative path to the certificate
+            key: fs.readFileSync('server.key'),
+            cert: fs.readFileSync('server.cert')
         };
 
-        // Inicialização do servidor HTTPS
         https.createServer(sslOptions, app).listen(port, () => {
             console.log(`Servidor HTTPS rodando na porta ${port}`);
             console.log('CORS configurado para aceitar todas as origens...');
@@ -98,7 +101,6 @@ if (process.env.NODE_ENV === 'production') {
         process.exit(1);
     }
 } else {
-    // Em desenvolvimento, usa HTTP simples
     app.listen(port, () => {
         console.log(`Servidor HTTP rodando na porta ${port}`);
         console.log('CORS configurado para aceitar todas as origens...');

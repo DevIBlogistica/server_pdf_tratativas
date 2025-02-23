@@ -52,24 +52,23 @@ const troquePor = (str) => {
 // Função auxiliar para gerar nome único para o arquivo
 const generateUniqueFileName = (natureza, nome, data) => {
     console.log('\n[Gerando nome do arquivo]');
-    console.log('Dados recebidos:', { natureza, nome, data });
+    console.log('Dados recebidos.');
     
     const dataFormatada = data.split('-').reverse().join('-');
-    console.log('Data formatada:', dataFormatada);
+    console.log('Data formatada.');
     
     // Mantendo a formatação original dos dados recebidos
     const nomeFormatado = nome.trim().toUpperCase(); 
-    console.log('Nome formatado:', nomeFormatado);
+    console.log('Nome formatado.');
     
     const naturezaFormatada = troquePor(natureza.trim()).toUpperCase(); 
-    console.log('Natureza formatada:', naturezaFormatada);
+    console.log('Natureza formatada.');
     
     // Gerando o nome do arquivo na nova ordem: data, nome, natureza
     const fileName = `${dataFormatada} ${nomeFormatado} ${naturezaFormatada}.pdf`
         .replace(/\s+/g, '_') // Substitui espaços por underscores
         .replace(/[^a-zA-Z0-9_.-]/g, ''); // Remove caracteres inválidos
-    console.log('Nome final do arquivo:', fileName);
-    
+    console.log('Nome final do arquivo:', fileName);    
     return fileName;
 };
 
@@ -941,6 +940,91 @@ const generatePDFFromBooking = async (booking, req) => {
 
     return { url: publicUrl };
 };
+
+// Rota POST para testar geração de tratativa
+router.post('/test-tratativa', async (req, res) => {
+    try {
+        const dadosTeste = {
+            funcionario_id: 1,
+            nome_funcionario: "JOÃO DA SILVA",
+            nome_lider: "MARIA OLIVEIRA",
+            funcao: "OPERADOR DE PRODUÇÃO",
+            setor: "PRODUÇÃO",
+            codigo: "001",
+            descricao_ocorrencia: "ATRASO NO HORÁRIO DE TRABALHO",
+            data_ocorrencia: new Date().toLocaleDateString('pt-BR'),
+            hora_ocorrencia: "08:15",
+            tipo_medida: "ADVERTÊNCIA VERBAL",
+            evidencias: {
+                imagem_evidencia: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+                texto_excesso: "Excesso de 15 minutos",
+                texto_limite: "Limite permitido: 5 minutos"
+            }
+        };
+
+        // Gera PDF usando a estrutura existente
+        const browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+        const page = await browser.newPage();
+
+        // Renderiza o template
+        const html = await new Promise((resolve, reject) => {
+            req.app.render('templateTratativa', dadosTeste, (err, html) => {
+                if (err) reject(err);
+                else resolve(html);
+            });
+        });
+
+        // Lê o CSS
+        const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
+        const css = fs.readFileSync(cssPath, 'utf8');
+
+        // Injeta o CSS
+        const htmlWithStyles = html.replace('</head>', `<style>${css}</style></head>`);
+
+        // Configura o conteúdo
+        await page.setContent(htmlWithStyles, {
+            waitUntil: 'networkidle0',
+            timeout: 60000
+        });
+
+        // Gera PDF
+        const pdfBuffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: {
+                top: '25px',
+                right: '25px',
+                bottom: '25px',
+                left: '25px'
+            }
+        });
+
+        await browser.close();
+
+        // Gera nome do arquivo
+        const fileName = `tratativa_teste_${Date.now()}.pdf`;
+
+        // Upload do PDF
+        const publicUrl = await uploadPDFToSupabase(pdfBuffer, `tratativas/${fileName}`);
+
+        res.json({
+            success: true,
+            message: 'Documento de tratativa de teste gerado com sucesso',
+            url: publicUrl
+        });
+
+    } catch (error) {
+        console.error('Erro ao gerar tratativa de teste:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao gerar documento de tratativa de teste',
+            error: error.message
+        });
+    }
+});
 
 // Mantendo a instância ativa
 setInterval(() => {

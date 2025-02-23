@@ -1,10 +1,12 @@
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
-// Criando o cliente Supabase com as credenciais do .env
+// Adicionando log para debug das credenciais
+console.log('[Supabase] Inicializando cliente com URL:', process.env.SUPABASE_TRATATIVAS_URL);
+
 const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
+    process.env.SUPABASE_TRATATIVAS_URL,
+    process.env.SUPABASE_TRATATIVAS_KEY
 );
 
 module.exports = supabase; 

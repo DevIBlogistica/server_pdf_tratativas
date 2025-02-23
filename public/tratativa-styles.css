@@ -94,14 +94,29 @@ body {
 }
 
 .occurrence-content {
-    padding: 5px;
+    padding: 0;
 }
 
 .occurrence-row {
-    display: grid;
-    grid-template-columns: auto auto 1fr auto auto auto auto;
-    gap: 5px;
-    align-items: center;
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.occurrence-row > div {
+    display: table-cell;
+    padding: 5px;
+    vertical-align: middle;
+    border-top: 1px solid black;
+}
+
+/* Bordas específicas para cada coluna */
+.occurrence-row > div:nth-child(2), /* código_ocorrencia */
+.occurrence-row > div:nth-child(3), /* descricao_ocorrencia */
+.occurrence-row > div:nth-child(4), /* "Em:" */
+.occurrence-row > div:nth-child(5), /* data_ocorrencia */
+.occurrence-row > div:nth-child(6) /* "às:" */ {
+    border-left: 1px solid black;
 }
 
 /* Medida Disciplinar */
@@ -118,14 +133,25 @@ body {
 }
 
 .disciplinary-content {
-    padding: 5px;
+    padding: 0;
 }
 
 .measure-row {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 5px;
-    align-items: center;
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.measure-row > div {
+    display: table-cell;
+    padding: 5px;
+    vertical-align: middle;
+    border-top: 1px solid black;
+}
+
+/* Borda entre código e descrição */
+.measure-row > div:last-child {
+    border-left: 1px solid black;
 }
 
 /* Texto Legal */
@@ -155,7 +181,7 @@ body {
 
 .evidence-image-box {
     width: 400px;
-    height: 470px;
+    height: 469px;
     border: 1px solid black;
     margin-bottom: 5px;
 }
@@ -199,20 +225,21 @@ body {
 
 /* Larguras individuais das colunas */
 .first-col {
-    width: 20%;
+    width: 6%;
     border: none; /* Remove todas as bordas da primeira coluna */
 }
 
 .name-col {
-    width: 35%;
+    width: 40%;
+    
 }
 
 .date-col {
-    width: 20%;
+    width: 19%;
 }
 
 .signature-col {
-    width: 25%;
+    width: 35%;
 }
 
 /* Primeira linha (cabeçalho) */
