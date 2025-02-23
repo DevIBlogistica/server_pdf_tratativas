@@ -6,6 +6,10 @@ const puppeteer = require('puppeteer');
 const supabase = require('../config/supabase');
 const fs = require('fs');
 
+// Logo em base64
+const LOGO_BASE64 = `iVBORw0KGgoAAAANSUhEUgAAAC0AAAAjCAYAAAAULK0sAAAACXBIWXMAAAsTAAALEwEAmpwYAAAF0WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNy4yLWMwMDAgNzkuMWI2NWE3OWI0LCAyMDIyLzA2LzEzLTIyOjAxOjAxICAgICAgICAiPiA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIiB4bWxuczpzdEV2dD0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlRXZlbnQjIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgMjQuMCAoV2luZG93cykiIHhtcDpDcmVhdGVEYXRlPSIyMDI0LTAyLTI4VDE0OjE4OjE1LTAzOjAwIiB4bXA6TWV0YWRhdGFEYXRlPSIyMDI0LTAyLTI4VDE0OjE4OjE1LTAzOjAwIiB4bXA6TW9kaWZ5RGF0ZT0iMjAyNC0wMi0yOFQxNDoxODoxNS0wMzowMCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4ZjE0ZjE4Yy1kZjE4LTQ4NGUtODY5Ni1kZjE4ZjE4ZjE4ZjEiIHhtcE1NOkRvY3VtZW50SUQ9ImFkb2JlOmRvY2lkOnBob3Rvc2hvcDo4ZjE4ZjE4Zi1kZjE4LTQ4NGUtODY5Ni1kZjE4ZjE4ZjE4ZjEiIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo4ZjE4ZjE4Zi1kZjE4LTQ4NGUtODY5Ni1kZjE4ZjE4ZjE4ZjEiIGRjOmZvcm1hdD0iaW1hZ2UvcG5nIiBwaG90b3Nob3A6Q29sb3JNb2RlPSIzIj4gPHhtcE1NOkhpc3Rvcnk+IDxyZGY6U2VxPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0iY3JlYXRlZCIgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDo4ZjE0ZjE4Zi1kZjE4LTQ4NGUtODY5Ni1kZjE4ZjE4ZjE4ZjEiIHN0RXZ0OndoZW49IjIwMjQtMDItMjhUMTQ6MTg6MTUtMDM6MDAiIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkFkb2JlIFBob3Rvc2hvcCAyNC4wIChXaW5kb3dzKSIvPiA8L3JkZjpTZXE+IDwveG1wTU06SGlzdG9yeT4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz4+0HxnAAABhUlEQVRYhe2Y0U3DMBCGv1QdgBHYgBHYACagGwATwAZ0A2ACYALYADaADcIG7QbX8WFZVhInTkjVSvdLlhL77t799jk+O6qqSsQVcAvcANfAJXAOnAHHwAnQA/rAEBgBY2AKzIEF8A18Ah/AB/AO/LQNrm0QXQEPwD1wK6EtWQJvwCvwArw2NWwSPQAegUdJdJUv4Bl4AtZNDarR+8AcWLUIbpN4BQyBnb8VfeBZkZwkELwRr8AgFH0oW0wlODXxd3wAZ1p9z8Bdwo5b8a4TvgZGOkG3EsN/4FVjnwCnwIWOdQwPgWf5/0xH5FjH5Ba4l9iZGnwrQXXEYsfxCDwB3zXtxsCjKmPH8QK8/VHXBrpWxsA6oO0SWKr0rcXMo2+hyrgG1qr9oX0L4EcVMbTvGfhVyVuImWffXP4e2jdVyVuImVffXJVxaN9EJW8hZl59M1XG0L6xSt5CzLz65qqMQ/t+VfIWYubVN1NlHNq3VMlbiJlX30KVcWjfXCVvIWZefb/qxH+xBfF/AAAAAElFTkSuQmCC`;
+const LOGO_SRC = `data:image/png;base64,${LOGO_BASE64}`;
+
 // Configura o CORS
 const corsOptions = {
     origin: true,
@@ -23,6 +27,12 @@ router.post('/api/tratativa/generate', async (req, res) => {
     try {
         const data = req.body;
 
+        // Adicionar logo aos dados
+        const dadosComLogo = {
+            ...data,
+            logo_src: LOGO_SRC
+        };
+
         // Gera PDF usando a estrutura existente
         const browser = await puppeteer.launch({
             headless: true,
@@ -35,7 +45,7 @@ router.post('/api/tratativa/generate', async (req, res) => {
 
         // Renderiza o template
         const html = await new Promise((resolve, reject) => {
-            req.app.render('templateTratativa', data, (err, html) => {
+            req.app.render('templateTratativa', dadosComLogo, (err, html) => {
                 if (err) reject(err);
                 else resolve(html);
             });
@@ -74,7 +84,7 @@ router.post('/api/tratativa/generate', async (req, res) => {
 
         // Upload do PDF
         const { error: uploadError } = await supabase.storage
-            .from('tratativas')
+            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
             .upload(fileName, pdfBuffer, {
                 contentType: 'application/pdf',
                 upsert: true
@@ -83,7 +93,7 @@ router.post('/api/tratativa/generate', async (req, res) => {
         if (uploadError) throw uploadError;
 
         const { data: { publicUrl } } = supabase.storage
-            .from('tratativas')
+            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
             .getPublicUrl(fileName);
 
         console.log('\n[Link do documento] 🔗\n' + publicUrl + '\n');
@@ -118,69 +128,9 @@ router.post('/api/tratativa/test', async (req, res) => {
             throw new Error('Body vazio. Certifique-se de enviar os dados no formato JSON correto e com Content-Type: application/json');
         }
 
-        let logo_src;
-        try {
-            // Tentar diferentes caminhos possíveis
-            const possiblePaths = [
-                path.resolve(__dirname, '../public/images/logoib.png'),
-                path.resolve(process.cwd(), 'public/images/logoib.png'),
-                '/var/www/html/server_pdf/public/images/logoib.png', // caminho absoluto em produção
-                path.join(process.cwd(), 'server_pdf/public/images/logoib.png')
-            ];
-
-            console.log('Diretório atual:', process.cwd());
-            console.log('Diretório do arquivo:', __dirname);
-            console.log('Tentando carregar logo dos seguintes caminhos:');
-            possiblePaths.forEach(p => {
-                console.log(`- ${p} (existe: ${fs.existsSync(p)})`);
-            });
-
-            // Tentar cada caminho até encontrar a logo
-            let logoPath;
-            for (const p of possiblePaths) {
-                if (fs.existsSync(p)) {
-                    console.log('Logo encontrada em:', p);
-                    logoPath = p;
-                    break;
-                }
-            }
-
-            if (!logoPath) {
-                throw new Error('Logo não encontrada em nenhum dos caminhos testados');
-            }
-
-            const logoBase64 = fs.readFileSync(logoPath, { encoding: 'base64' });
-            logo_src = `data:image/png;base64,${logoBase64}`;
-            console.log('Logo carregada com sucesso');
-        } catch (error) {
-            console.error('Erro ao carregar logo:', error);
-            // URL de uma imagem placeholder como fallback
-            logo_src = 'https://placehold.co/45x35/png';
-            console.log('Usando imagem placeholder como fallback');
-        }
-
-        console.log('[1/8] Preparando dados de teste');
-        
-        // Dados para o template
         const dadosTeste = {
-            nome_funcionario: req.body.nome_funcionario,
-            nome_lider: req.body.nome_lider,
-            funcao: req.body.funcao,
-            setor: req.body.setor,
-            codigo_infracao: req.body.codigo_infracao,
-            infracao_cometida: req.body.infracao_cometida,
-            data_infracao: req.body.data_infracao,
-            hora_infracao: req.body.hora_infracao,
-            penalidade: req.body.penalidade,
-            penalidade_aplicada: req.body.penalidade_aplicada,
-            numero_documento: req.body.numero_documento,
-            data_formatada_extenso: req.body.data_formatada_extenso,
-            logo_src: logo_src,
-            evidencias: {
-                imagem_evidencia: req.body.evidencias.imagem_evidencia,
-                texto_excesso: req.body.evidencias.texto_excesso,
-                texto_limite: req.body.evidencias.texto_limite
-            }
+            ...req.body,
+            logo_src: LOGO_SRC
         };
 
         console.log('Dados preparados:', dadosTeste);

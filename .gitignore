@@ -26,3 +26,11 @@ Thumbs.db
 # Outros
 coverage/
 *.tgz
+
+# Certificados
+server.key
+server.cert
+
+# Arquivos temporários
+logo-base64.txt
+generate-base64.js
