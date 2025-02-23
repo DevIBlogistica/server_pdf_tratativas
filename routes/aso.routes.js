@@ -738,11 +738,6 @@ router.post('/generate-tratativa', async (req, res) => {
     }
 });
 
-// Adicionando log periódico para manter a instância ativa
-setInterval(() => {
-    // Removido log desnecessário
-}, 60000); // 1 minuto
-
 // Função auxiliar para baixar PDF da URL
 const downloadPDF = async (url) => {
     try {
@@ -946,5 +941,10 @@ const generatePDFFromBooking = async (booking, req) => {
 
     return { url: publicUrl };
 };
+
+// Mantendo a instância ativa
+setInterval(() => {
+    console.log('[INFO] Servidor ativo - mantendo a instância em execução...');
+}, 60000);
 
 module.exports = router; 
