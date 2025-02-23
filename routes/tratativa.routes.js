@@ -12,12 +12,9 @@ const LOGO_SRC = 'https://kjlwqezxzqjfhacmjhbh.supabase.co/storage/v1/object/pub
 
 // Configura o CORS
 const corsOptions = {
-    origin: true,
-    credentials: true,
+    origin: '*',
     methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    exposedHeaders: ['Content-Length', 'Content-Type'],
-    maxAge: 86400
+    allowedHeaders: ['Content-Type', 'Authorization']
 };
 
 router.use(cors(corsOptions));
@@ -225,6 +222,11 @@ router.post('/api/tratativa/test', async (req, res) => {
 // Rota de teste de conexão
 router.post('/api/test-connection', (req, res) => {
     try {
+        // Adicionar headers de CORS manualmente
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
         console.log('Teste de conexão recebido');
         res.status(200).json({ 
             success: true,

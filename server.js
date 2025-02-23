@@ -84,7 +84,7 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Simplificar mensagens de inicialização
+// Voltar para a versão com HTTPS
 if (process.env.NODE_ENV === 'production') {
     try {
         const sslOptions = {
@@ -94,7 +94,6 @@ if (process.env.NODE_ENV === 'production') {
 
         https.createServer(sslOptions, app).listen(port, () => {
             console.log(`Servidor HTTPS rodando na porta ${port}`);
-            console.log('CORS configurado para aceitar todas as origens...');
         });
     } catch (error) {
         console.error('Erro ao iniciar servidor HTTPS:', error);
@@ -103,6 +102,5 @@ if (process.env.NODE_ENV === 'production') {
 } else {
     app.listen(port, () => {
         console.log(`Servidor HTTP rodando na porta ${port}`);
-        console.log('CORS configurado para aceitar todas as origens...');
     });
 }
