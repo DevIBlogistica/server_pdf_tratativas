@@ -1,52 +1,135 @@
-const fs = require('fs');
-const handlebars = require('handlebars');
 const { supabase } = require('../config/supabase');
-const { generatePDF } = require('../utils/pdf-generator');
-const { createClient } = require('@supabase/supabase-js');
 const puppeteer = require('puppeteer');
+const handlebars = require('handlebars');
+const fs = require('fs');
 const path = require('path');
 
 class TratativaService {
-  constructor() {
-    this.supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+  // Função para normalizar o nome do arquivo
+  normalizeFileName(str) {
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[^a-zA-Z0-9]/g, '_') // Substitui caracteres especiais por _
+      .replace(/_{2,}/g, '_') // Remove underscores duplicados
+      .toUpperCase(); // Converte para maiúsculas
+  }
+
+  // Função para tratar caracteres especiais
+  troquePor(str) {
+    const acentos = {
+      'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a', 'ä': 'a',
+      'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
+      'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i',
+      'ó': 'o', 'ò': 'o', 'õ': 'o', 'ô': 'o', 'ö': 'o',
+      'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u',
+      'ç': 'c',
+      'Ç': 'C',
+      'Á': 'A', 'À': 'A', 'Ã': 'A', 'Â': 'A', 'Ä': 'A',
+      'É': 'E', 'È': 'E', 'Ê': 'E', 'Ë': 'E',
+      'Í': 'I', 'Ì': 'I', 'Î': 'I', 'Ï': 'I',
+      'Ó': 'O', 'Ò': 'O', 'Õ': 'O', 'Ô': 'O', 'Ö': 'O',
+      'Ú': 'U', 'Ù': 'U', 'Û': 'U', 'Ü': 'U'
+    };
+    
+    return str.split('').map(char => acentos[char] || char).join('').replace(/\//g, '_');
+  }
+
+  // Função para gerar nome único do arquivo
+  generateUniqueFileName(numero, nome, setor, data) {
+    console.log('\n[Gerando nome do arquivo]');
+    console.log('Dados recebidos:', { numero, nome, setor, data });
+    
+    const dataFormatada = data.split('/').join('-');
+    console.log('Data formatada:', dataFormatada);
+    
+    const nomeFormatado = this.troquePor(nome.trim()).toUpperCase();
+    console.log('Nome formatado:', nomeFormatado);
+    
+    const setorFormatado = this.troquePor(setor.trim()).toUpperCase();
+    console.log('Setor formatado:', setorFormatado);
+    
+    const fileName = `${numero}_${nomeFormatado}_${setorFormatado}_${dataFormatada}.pdf`
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9_.-]/g, '');
+    
+    console.log('Nome final do arquivo:', fileName);
+    return fileName;
   }
 
   async generatePDF(data) {
     try {
-      // Carregar template
-      const template = fs.readFileSync('./public/tratativa-preview.html', 'utf8');
-      const compiledTemplate = handlebars.compile(template);
-
       // Formatar dados
       const formattedData = this.formatData(data);
 
-      // Gerar HTML
+      // Inicia o navegador Puppeteer
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
+      const page = await browser.newPage();
+
+      // Renderiza o template
+      const templatePath = path.join(__dirname, '../views/templateTratativa.handlebars');
+      const template = fs.readFileSync(templatePath, 'utf8');
+      const compiledTemplate = handlebars.compile(template);
       const html = compiledTemplate(formattedData);
 
-      // Configurações do PDF
-      const pdfOptions = {
-        format: 'A4',
-        margin: { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' }
-      };
+      // Lê o arquivo CSS
+      const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
+      const css = fs.readFileSync(cssPath, 'utf8');
 
-      // Gerar PDF
-      const pdfBuffer = await generatePDF(html, pdfOptions);
+      // Injeta o CSS diretamente no HTML
+      const htmlWithStyles = html.replace('</head>', `<style>${css}</style></head>`);
+
+      // Configura o conteúdo HTML na página
+      await page.setContent(htmlWithStyles, {
+        waitUntil: 'networkidle0',
+        timeout: 60000
+      });
+
+      // Gera o PDF
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '0mm',
+          right: '0mm',
+          bottom: '0mm',
+          left: '0mm'
+        }
+      });
+
+      await browser.close();
+
+      // Gera nome do arquivo
+      const dataAtual = new Date().toLocaleDateString('pt-BR');
+      const fileName = this.generateUniqueFileName(
+        data.numero_documento,
+        data.nome_funcionario,
+        data.setor,
+        dataAtual
+      );
 
       // Upload para o Supabase
-      const { data: uploadResult, error: uploadError } = await this.uploadPDF(
-        pdfBuffer,
-        data.numero_documento
-      );
+      const { data: uploadResult, error: uploadError } = await supabase.storage
+        .from('tratativas')
+        .upload(fileName, pdfBuffer, {
+          contentType: 'application/pdf',
+          upsert: true
+        });
 
       if (uploadError) throw uploadError;
 
-      // Atualizar registro na tabela
-      await this.updateTratativa(data.tratativa_id, uploadResult.path);
+      // Gera URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('tratativas')
+        .getPublicUrl(fileName);
 
       return {
         success: true,
         message: 'Tratativa gerada e enviada com sucesso',
-        pdf_url: uploadResult.path
+        url: publicUrl
       };
 
     } catch (error) {
@@ -58,36 +141,14 @@ class TratativaService {
   formatData(data) {
     return {
       ...data,
-      texto_excesso: `${data.descricao_ocorrencia}: ${data.valor_praticado}${data.unidade}`,
-      texto_limite: `Limite estabelecido: ${data.limite}${data.unidade}`
+      texto_excesso: data.valor_praticado ? `${data.descricao_ocorrencia}: ${data.valor_praticado}${data.unidade}` : data.descricao_ocorrencia,
+      texto_limite: data.limite ? `Limite estabelecido: ${data.limite}${data.unidade}` : ''
     };
-  }
-
-  async uploadPDF(pdfBuffer, numeroDocumento) {
-    return await supabase
-      .storage
-      .from('tratativas')
-      .upload(`${numeroDocumento}.pdf`, pdfBuffer, {
-        contentType: 'application/pdf',
-        upsert: true
-      });
-  }
-
-  async updateTratativa(tratativaId, pdfPath) {
-    const { error } = await supabase
-      .from('tratativas')
-      .update({ 
-        pdf_enviado: true,
-        pdf_url: pdfPath
-      })
-      .eq('id', tratativaId);
-
-    if (error) throw error;
   }
 
   async listTratativas() {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await supabase
         .from('tratativas')
         .select(`
           *,
@@ -106,7 +167,7 @@ class TratativaService {
 
   async getTratativaById(id) {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await supabase
         .from('tratativas')
         .select(`
           *,
@@ -135,7 +196,7 @@ class TratativaService {
         updateData.justificativa = justificativa;
       }
 
-      const { data, error } = await this.supabase
+      const { data, error } = await supabase
         .from('tratativas')
         .update(updateData)
         .eq('id', id)
@@ -152,7 +213,7 @@ class TratativaService {
 
   async listTiposOcorrencia() {
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await supabase
         .from('tipos_ocorrencia')
         .select('*')
         .order('codigo');
@@ -167,17 +228,17 @@ class TratativaService {
 
   async getDashboardStats() {
     try {
-      const { data: enviadas, error: error1 } = await this.supabase
+      const { data: enviadas, error: error1 } = await supabase
         .from('tratativas')
         .select('count')
         .eq('status', 'Enviada');
 
-      const { data: devolvidas, error: error2 } = await this.supabase
+      const { data: devolvidas, error: error2 } = await supabase
         .from('tratativas')
         .select('count')
         .eq('status', 'Devolvida');
 
-      const { data: canceladas, error: error3 } = await this.supabase
+      const { data: canceladas, error: error3 } = await supabase
         .from('tratativas')
         .select('count')
         .eq('status', 'Cancelada');
@@ -197,7 +258,7 @@ class TratativaService {
 
   async getRecentActivity() {
     try {
-      const { data: novasTratativas, error: error1 } = await this.supabase
+      const { data: novasTratativas, error: error1 } = await supabase
         .from('tratativas')
         .select(`
           id,
@@ -209,7 +270,7 @@ class TratativaService {
         .order('created_at', { ascending: false })
         .limit(5);
 
-      const { data: tratativasDevolvidas, error: error2 } = await this.supabase
+      const { data: tratativasDevolvidas, error: error2 } = await supabase
         .from('tratativas')
         .select(`
           id,
