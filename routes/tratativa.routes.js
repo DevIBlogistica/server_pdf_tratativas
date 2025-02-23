@@ -70,7 +70,7 @@ router.post('/api/tratativa/generate', async (req, res) => {
         await browser.close();
 
         // Gera nome do arquivo
-        const fileName = `tratativa_${data.funcionario_id}_${Date.now()}.pdf`;
+        const fileName = `tratativa_${Date.now()}.pdf`;
 
         // Upload do PDF
         const { error: uploadError } = await supabase.storage
@@ -126,7 +126,6 @@ router.post('/api/tratativa/test', async (req, res) => {
         
         // Dados para o template
         const dadosTeste = {
-            funcionario_id: req.body.funcionario_id,
             nome_funcionario: req.body.nome_funcionario,
             nome_lider: req.body.nome_lider,
             funcao: req.body.funcao,
