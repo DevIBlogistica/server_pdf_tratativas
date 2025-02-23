@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node start-server.js",
     "dev": "nodemon start-server.js",
-    "cert": "node generate-cert.js"
+    "cert": "node generate-cert.js",
+    "post-pull": "npm run cert && pm2 restart server"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.48.1",
