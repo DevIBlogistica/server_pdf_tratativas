@@ -609,14 +609,138 @@ router.get('/proxy/generate-from-booking/:id', async (req, res) => {
     }
 });
 
-// Teste da função removeAcentos
-const teste = "MUDANÇA DE FUNÇÃO";
-const resultado = troquePor(teste);
-console.log('Resultado do teste:', resultado); // Deve imprimir "MUDANCA DE FUNCAO"
+// Rota para gerar documento de tratativa
+router.post('/generate-tratativa', async (req, res) => {
+    try {
+        const {
+            funcionario_id,
+            codigo,
+            descricao_ocorrencia,
+            hora_ocorrencia,
+            tipo_medida,
+            evidencias
+        } = req.body;
+
+        // Busca último número de documento
+        const { data: ultimoDoc, error: docError } = await supabase
+            .from('tratativas')
+            .select('numero_documento')
+            .order('numero_documento', { ascending: false })
+            .limit(1);
+
+        const numero_documento = ultimoDoc.length > 0 ? ultimoDoc[0].numero_documento + 1 : 1000;
+
+        // Busca dados do funcionário
+        const { data: funcionario, error: funcError } = await supabase
+            .from('funcionarios')
+            .select('*, lider:lider_id(*)')
+            .eq('id', funcionario_id)
+            .single();
+
+        if (funcError) throw funcError;
+
+        // Formata data atual
+        const dataAtual = new Date();
+        const dataFormatada = dataAtual.toLocaleDateString('pt-BR', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        // Monta dados para o template
+        const templateData = {
+            numero_documento,
+            data_extenso: dataFormatada,
+            nome_funcionario: funcionario.nome,
+            funcao: funcionario.funcao,
+            setor: funcionario.setor,
+            codigo,
+            descricao_ocorrencia,
+            data_ocorrencia: dataAtual.toLocaleDateString('pt-BR'),
+            hora_ocorrencia,
+            tipo_medida,
+            evidencias,
+            nome_lider: funcionario.lider.nome,
+            logo_url: process.env.LOGO_URL
+        };
+
+        // Gera PDF usando a estrutura existente
+        const browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+        const page = await browser.newPage();
+
+        // Renderiza o template
+        const html = await new Promise((resolve, reject) => {
+            req.app.render('templateTratativa', templateData, (err, html) => {
+                if (err) reject(err);
+                else resolve(html);
+            });
+        });
+
+        // Lê o CSS
+        const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
+        const css = fs.readFileSync(cssPath, 'utf8');
+
+        // Injeta o CSS
+        const htmlWithStyles = html.replace('</head>', `<style>${css}</style></head>`);
+
+        // Configura o conteúdo
+        await page.setContent(htmlWithStyles, {
+            waitUntil: 'networkidle0',
+            timeout: 60000
+        });
+
+        // Gera PDF
+        const pdfBuffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: {
+                top: '25px',
+                right: '25px',
+                bottom: '25px',
+                left: '25px'
+            }
+        });
+
+        await browser.close();
+
+        // Gera nome do arquivo
+        const fileName = `tratativa_${numero_documento}_${funcionario.nome.replace(/\s+/g, '_')}.pdf`;
+
+        // Upload do PDF
+        const publicUrl = await uploadPDFToSupabase(pdfBuffer, `tratativas/${fileName}`);
+
+        // Salva registro no banco
+        await supabase.from('tratativas').insert({
+            numero_documento,
+            funcionario_id,
+            tipo_medida,
+            data_ocorrencia: dataAtual.toISOString(),
+            pdf_url: publicUrl
+        });
+
+        res.json({
+            success: true,
+            message: 'Documento de tratativa gerado com sucesso',
+            url: publicUrl
+        });
+
+    } catch (error) {
+        console.error('Erro ao gerar tratativa:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao gerar documento de tratativa',
+            error: error.message
+        });
+    }
+});
 
 // Adicionando log periódico para manter a instância ativa
 setInterval(() => {
-    console.log('[INFO] Servidor ativo - mantendo a instância em execução...');
+    // Removido log desnecessário
 }, 60000); // 1 minuto
 
 // Função auxiliar para baixar PDF da URL
@@ -822,134 +946,5 @@ const generatePDFFromBooking = async (booking, req) => {
 
     return { url: publicUrl };
 };
-
-// Rota para gerar documento de tratativa
-router.post('/generate-tratativa', async (req, res) => {
-    try {
-        const {
-            funcionario_id,
-            codigo,
-            descricao_ocorrencia,
-            hora_ocorrencia,
-            tipo_medida,
-            evidencias
-        } = req.body;
-
-        // Busca último número de documento
-        const { data: ultimoDoc, error: docError } = await supabase
-            .from('tratativas')
-            .select('numero_documento')
-            .order('numero_documento', { ascending: false })
-            .limit(1);
-
-        const numero_documento = ultimoDoc.length > 0 ? ultimoDoc[0].numero_documento + 1 : 1000;
-
-        // Busca dados do funcionário
-        const { data: funcionario, error: funcError } = await supabase
-            .from('funcionarios')
-            .select('*, lider:lider_id(*)')
-            .eq('id', funcionario_id)
-            .single();
-
-        if (funcError) throw funcError;
-
-        // Formata data atual
-        const dataAtual = new Date();
-        const dataFormatada = dataAtual.toLocaleDateString('pt-BR', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-
-        // Monta dados para o template
-        const templateData = {
-            numero_documento,
-            data_extenso: dataFormatada,
-            nome_funcionario: funcionario.nome,
-            funcao: funcionario.funcao,
-            setor: funcionario.setor,
-            codigo,
-            descricao_ocorrencia,
-            data_ocorrencia: dataAtual.toLocaleDateString('pt-BR'),
-            hora_ocorrencia,
-            tipo_medida,
-            evidencias,
-            nome_lider: funcionario.lider.nome,
-            logo_url: process.env.LOGO_URL
-        };
-
-        // Gera PDF usando a estrutura existente
-        const browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
-        const page = await browser.newPage();
-
-        // Renderiza o template
-        const html = await new Promise((resolve, reject) => {
-            req.app.render('templateTratativa', templateData, (err, html) => {
-                if (err) reject(err);
-                else resolve(html);
-            });
-        });
-
-        // Lê o CSS
-        const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
-        const css = fs.readFileSync(cssPath, 'utf8');
-
-        // Injeta o CSS
-        const htmlWithStyles = html.replace('</head>', `<style>${css}</style></head>`);
-
-        // Configura o conteúdo
-        await page.setContent(htmlWithStyles, {
-            waitUntil: 'networkidle0',
-            timeout: 60000
-        });
-
-        // Gera PDF
-        const pdfBuffer = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: {
-                top: '25px',
-                right: '25px',
-                bottom: '25px',
-                left: '25px'
-            }
-        });
-
-        await browser.close();
-
-        // Gera nome do arquivo
-        const fileName = `tratativa_${numero_documento}_${funcionario.nome.replace(/\s+/g, '_')}.pdf`;
-
-        // Upload do PDF
-        const publicUrl = await uploadPDFToSupabase(pdfBuffer, `tratativas/${fileName}`);
-
-        // Salva registro no banco
-        await supabase.from('tratativas').insert({
-            numero_documento,
-            funcionario_id,
-            tipo_medida,
-            data_ocorrencia: dataAtual.toISOString(),
-            pdf_url: publicUrl
-        });
-
-        res.json({
-            success: true,
-            message: 'Documento de tratativa gerado com sucesso',
-            url: publicUrl
-        });
-
-    } catch (error) {
-        console.error('Erro ao gerar tratativa:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erro ao gerar documento de tratativa',
-            error: error.message
-        });
-    }
-});
 
 module.exports = router; 
