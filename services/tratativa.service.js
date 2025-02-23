@@ -1,4 +1,4 @@
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabase-tratativas');
 const puppeteer = require('puppeteer');
 const handlebars = require('handlebars');
 const fs = require('fs');
