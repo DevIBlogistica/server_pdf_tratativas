@@ -88,7 +88,7 @@ class TratativaService {
         timeout: 60000
       });
 
-      // Gera o PDF
+      // Gera o PDF com margens zeradas
       const pdfBuffer = await page.pdf({
         format: 'A4',
         printBackground: true,
@@ -97,7 +97,8 @@ class TratativaService {
           right: '0mm',
           bottom: '0mm',
           left: '0mm'
-        }
+        },
+        preferCSSPageSize: true
       });
 
       await browser.close();
