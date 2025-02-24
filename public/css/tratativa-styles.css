@@ -173,58 +173,30 @@ body {
     border-bottom: 1px solid black;
     padding: 10px;
     text-align: center;
-    min-height: 505px; /* Altura mínima para empurrar assinaturas para baixo */
-    display: flex;
-    flex-direction: column;
 }
 
 .evidence-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
-    flex: 1; /* Faz o container crescer para ocupar o espaço disponível */
-    justify-content: flex-start; /* Mantém o conteúdo no topo */
-}
-
-.evidence-images {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-bottom: 10px;
-    width: 100%;
-    padding: 20px 0; /* Espaçamento vertical adicional */
 }
 
 .evidence-image-box {
-    width: calc(50% - 5px);
-    aspect-ratio: 4/5;
+    width: 400px;
+    height: 469px;
     border: 1px solid black;
-    margin: 0;
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: white;
-    min-width: 0;
-    max-width: 320px;
+    margin-bottom: 5px;
 }
 
 .evidence-img {
-    max-width: 100%;
-    max-height: 100%;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
 }
 
 .evidence-info {
-    width: 100%;
     text-align: center;
     font-size: 9px;
-    border-top: 1px solid #ddd;
-    padding-top: 10px;
-    margin-top: auto; /* Empurra o texto para o final do container */
 }
 
 .evidence-info p {

@@ -8,12 +8,11 @@ const fs = require('fs'); // Import the fs module
 require('dotenv').config();
 
 // Importação das rotas
-const asoRoutes = require('./routes/aso.routes');
 const tratativaRoutes = require('./routes/tratativa.routes');
 
 // Inicialização do Express
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 
 // Configuração do CORS para permitir requisições de qualquer origem
 const corsOptions = {
@@ -71,8 +70,7 @@ app.use((req, res, next) => {
 });
 
 // Configuração das rotas
-app.use('/api/aso', asoRoutes);
-app.use('/', tratativaRoutes);
+app.use('/api/tratativa', tratativaRoutes);
 
 // Middleware para tratamento de erros
 app.use((err, req, res, next) => {

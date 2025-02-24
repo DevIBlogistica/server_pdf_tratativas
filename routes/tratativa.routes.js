@@ -7,8 +7,10 @@ const supabase = require('../config/supabase');
 const fs = require('fs');
 const handlebars = require('handlebars');
 
-// Logo URL do Supabase
-const LOGO_SRC = 'https://kjlwqezxzqjfhacmjhbh.supabase.co/storage/v1/object/public/tratativas/assets/logoib.png';
+// Logo local path
+const LOGO_PATH = path.join(__dirname, '../public/images/logo.png');
+// Converte a imagem para base64
+const LOGO_BASE64 = `data:image/png;base64,${fs.readFileSync(LOGO_PATH).toString('base64')}`;
 
 // Configura o CORS
 const corsOptions = {
@@ -20,14 +22,15 @@ const corsOptions = {
 router.use(cors(corsOptions));
 
 // Rota para gerar PDF da tratativa
-router.post('/api/tratativa/generate', async (req, res) => {
+router.post('/generate', async (req, res) => {
     try {
         const data = req.body;
+        console.log('Dados recebidos:', data);
 
         // Adicionar logo aos dados
         const dadosComLogo = {
             ...data,
-            logo_src: LOGO_SRC
+            logo_src: LOGO_BASE64
         };
 
         // Gera PDF usando a estrutura existente
@@ -112,7 +115,7 @@ router.post('/api/tratativa/generate', async (req, res) => {
 });
 
 // Rota de teste com dados mockados
-router.post('/api/tratativa/test', async (req, res) => {
+router.post('/test', async (req, res) => {
     try {
         console.log('\n[Tratativa] Iniciando geração de documento de teste');
         console.log('Headers recebidos:', req.headers);
@@ -127,7 +130,7 @@ router.post('/api/tratativa/test', async (req, res) => {
 
         const dadosTeste = {
             ...req.body,
-            logo_src: LOGO_SRC
+            logo_src: LOGO_BASE64
         };
 
         console.log('Dados preparados:', dadosTeste);
@@ -220,13 +223,8 @@ router.post('/api/tratativa/test', async (req, res) => {
 });
 
 // Rota de teste de conexão
-router.post('/api/test-connection', (req, res) => {
+router.post('/test-connection', (req, res) => {
     try {
-        // Adicionar headers de CORS manualmente
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
         console.log('Teste de conexão recebido');
         res.status(200).json({ 
             success: true,
