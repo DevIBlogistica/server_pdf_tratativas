@@ -97,23 +97,20 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Voltar para a versão com HTTPS
-if (process.env.NODE_ENV === 'production') {
-    try {
-        const sslOptions = {
-            key: fs.readFileSync('server.key'),
-            cert: fs.readFileSync('server.cert')
-        };
+// Configuração do servidor HTTPS com certificado autoassinado
+const httpsOptions = {
+    key: fs.readFileSync(path.join(__dirname, 'certificates/key.pem')),
+    cert: fs.readFileSync(path.join(__dirname, 'certificates/cert.pem'))
+};
 
-        https.createServer(sslOptions, app).listen(port, () => {
-            console.log(`Servidor HTTPS rodando na porta ${port}`);
-        });
-    } catch (error) {
-        console.error('Erro ao iniciar servidor HTTPS:', error);
-        process.exit(1);
-    }
-} else {
-    app.listen(port, () => {
-        console.log(`Servidor HTTP rodando na porta ${port}`);
-    });
-}
+// Iniciar servidor HTTPS
+https.createServer(httpsOptions, app).listen(port, () => {
+    console.log(`Servidor HTTPS rodando na porta ${port}`);
+});
+
+// Redirecionar HTTP para HTTPS
+const httpApp = express();
+httpApp.all('*', (req, res) => res.redirect(`https://${req.hostname}:${port}${req.url}`));
+httpApp.listen(3000, () => {
+    console.log('Servidor HTTP redirecionando para HTTPS na porta 3000');
+});

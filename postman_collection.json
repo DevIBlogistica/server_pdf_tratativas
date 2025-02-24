@@ -1,0 +1,71 @@
+{
+	"info": {
+		"name": "PDF Tratativas",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Test Connection",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{BASE_URL}}/api/tratativa/test-connection",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "tratativa", "test-connection"]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{}"
+				}
+			}
+		},
+		{
+			"name": "2. Generate PDF (Test)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{BASE_URL}}/api/tratativa/test",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "tratativa", "test"]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"numero_documento\": \"MD-2024-001\",\n    \"nome_funcionario\": \"João Silva\",\n    \"funcao\": \"Desenvolvedor\",\n    \"setor\": \"TI\",\n    \"data_formatada_extenso\": \"24 de fevereiro de 2024\",\n    \"codigo_infracao\": \"ATR-001\",\n    \"infracao_cometida\": \"Atraso no horário de trabalho\",\n    \"data_infracao\": \"24/02/2024\",\n    \"hora_infracao\": \"09:15\",\n    \"penalidade\": \"Advertência\",\n    \"penalidade_aplicada\": \"Advertência verbal por atraso injustificado\",\n    \"nome_lider\": \"Maria Gestora\",\n    \"evidencias\": [\n        {\n            \"url\": \"https://via.placeholder.com/320x400/2196F3/FFFFFF?text=Evidencia+1\"\n        },\n        {\n            \"url\": \"https://via.placeholder.com/320x400/4CAF50/FFFFFF?text=Evidencia+2\"\n        }\n    ],\n    \"texto_excesso\": \"Tempo em excesso: 00:45:32\",\n    \"texto_limite\": \"Limite permitido: 00:15:00\"\n}"
+				}
+			}
+		},
+		{
+			"name": "3. Generate PDF (Production)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{BASE_URL}}/api/tratativa/generate",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "tratativa", "generate"]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"numero_documento\": \"MD-2024-001\",\n    \"nome_funcionario\": \"João Silva\",\n    \"funcao\": \"Desenvolvedor\",\n    \"setor\": \"TI\",\n    \"data_formatada_extenso\": \"24 de fevereiro de 2024\",\n    \"codigo_infracao\": \"ATR-001\",\n    \"infracao_cometida\": \"Atraso no horário de trabalho\",\n    \"data_infracao\": \"24/02/2024\",\n    \"hora_infracao\": \"09:15\",\n    \"penalidade\": \"Advertência\",\n    \"penalidade_aplicada\": \"Advertência verbal por atraso injustificado\",\n    \"nome_lider\": \"Maria Gestora\",\n    \"evidencias\": [\n        {\n            \"url\": \"https://via.placeholder.com/320x400/2196F3/FFFFFF?text=Evidencia+1\"\n        },\n        {\n            \"url\": \"https://via.placeholder.com/320x400/4CAF50/FFFFFF?text=Evidencia+2\"\n        }\n    ],\n    \"texto_excesso\": \"Tempo em excesso: 00:45:32\",\n    \"texto_limite\": \"Limite permitido: 00:15:00\"\n}"
+				}
+			}
+		}
+	]
+} 
