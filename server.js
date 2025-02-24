@@ -104,23 +104,17 @@ const httpsOptions = {
 };
 
 // Iniciar servidor HTTPS
-https.createServer(httpsOptions, app).listen(port, () => {
+const httpsServer = https.createServer(httpsOptions, app);
+
+// Configurar para escutar tanto IPv4 quanto IPv6
+httpsServer.listen(port, '0.0.0.0', () => {
     console.log(`Servidor HTTPS rodando na porta ${port}`);
+}).on('error', (err) => {
+    console.error('Erro ao iniciar servidor HTTPS:', err);
 });
 
 // Criar servidor HTTP apenas para redirecionamento HTTPS
 const httpApp = express();
-
-// Middleware para forçar HTTPS
-httpApp.use((req, res, next) => {
-    if (req.secure) {
-        next();
-    } else {
-        const httpsUrl = `https://${req.hostname}:${port}${req.url}`;
-        console.log(`Forçando HTTPS: Redirecionando para ${httpsUrl}`);
-        res.redirect(301, httpsUrl); // 301 é redirecionamento permanente
-    }
-});
 
 // Redirecionar todas as requisições HTTP para HTTPS
 httpApp.all('*', (req, res) => {
@@ -129,7 +123,9 @@ httpApp.all('*', (req, res) => {
     res.redirect(301, httpsUrl);
 });
 
-// Iniciar servidor HTTP na porta 80 (padrão para HTTP)
-httpApp.listen(80, () => {
+// Iniciar servidor HTTP na porta 80
+httpApp.listen(80, '0.0.0.0', () => {
     console.log(`Servidor HTTP rodando na porta 80 (apenas para redirecionamento HTTPS)`);
+}).on('error', (err) => {
+    console.error('Erro ao iniciar servidor HTTP:', err);
 });
