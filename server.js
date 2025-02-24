@@ -14,9 +14,10 @@ const tratativaRoutes = require('./routes/tratativa.routes');
 const app = express();
 const port = process.env.PORT || 3001;
 
-// Configuração do CORS para permitir requisições de qualquer origem
+// Configuração do CORS para permitir requisições de todas as origens
 const corsOptions = {
     origin: '*',
+    credentials: true,
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     exposedHeaders: ['Content-Length', 'Content-Type']
@@ -24,6 +25,17 @@ const corsOptions = {
 
 // Aplica CORS globalmente
 app.use(cors(corsOptions));
+
+// Adiciona headers de segurança
+app.use((req, res, next) => {
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    if (process.env.NODE_ENV === 'production') {
+        res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
+    next();
+});
 
 // Configuração para aceitar dados JSON e aumentar o limite
 app.use(express.json({ 
