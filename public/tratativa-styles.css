@@ -173,9 +173,10 @@ body {
     border-bottom: 1px solid black;
     padding: 10px;
     text-align: center;
-    min-height: 505px; /* Altura mínima para empurrar assinaturas para baixo */
+    min-height: 505px;
     display: flex;
     flex-direction: column;
+    background-color: gray;
 }
 
 .evidence-container {
@@ -185,29 +186,31 @@ body {
     width: 100%;
     max-width: 800px;
     margin: 0 auto;
-    flex: 1; /* Faz o container crescer para ocupar o espaço disponível */
-    justify-content: flex-start; /* Mantém o conteúdo no topo */
+    flex: 1;
+    justify-content: space-between;
+    background-color: green;
 }
 
 .evidence-images {
     display: flex;
-    gap: 10px;
+    gap: 5px;
     justify-content: center;
-    margin-bottom: 10px;
     width: 100%;
-    padding: 20px 0; /* Espaçamento vertical adicional */
+    padding: 10px 0;
+    flex: 1;
+    background-color: orange;
 }
 
 .evidence-image-box {
     width: calc(50% - 5px);
-    aspect-ratio: 4/5;
+    height: auto;
+    min-height: 420px;
     border: 1px solid black;
     margin: 0;
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: white;
     min-width: 0;
     max-width: 320px;
 }
@@ -222,9 +225,9 @@ body {
     width: 100%;
     text-align: center;
     font-size: 9px;
-    border-top: 1px solid #ddd;
-    padding-top: 10px;
-    margin-top: auto; /* Empurra o texto para o final do container */
+    padding: 10px 0;
+    margin-top: auto;
+    background-color: purple;
 }
 
 .evidence-info p {

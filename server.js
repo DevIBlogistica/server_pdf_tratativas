@@ -44,6 +44,9 @@ app.engine('handlebars', engine({
         },
         keepNA: function(value) {
             return value;
+        },
+        add: function(value, addend) {
+            return value + addend;
         }
     }
 }));

@@ -116,17 +116,24 @@
                 <!-- Evidências -->
                 <div class="evidence-section">
                     <div class="evidence-container">
-                        <div class="evidence-grid">
-                            {{#each evidencias.imagens}}
-                            <div class="evidence-item">
-                                <img src="{{this.url}}" alt="Evidência" class="evidence-img">
-                                <div class="evidence-description">{{this.descricao}}</div>
-                            </div>
-                            {{/each}}
+                        <div class="evidence-images">
+                            {{#if evidencias.length}}
+                                {{#each evidencias}}
+                                <div class="evidence-image-box">
+                                    <img src="{{this.url}}" alt="Evidência {{add @index 1}}" class="evidence-img">
+                                </div>
+                                {{/each}}
+                            {{else}}
+                                {{#if imagem_evidencia}}
+                                <div class="evidence-image-box">
+                                    <img src="{{imagem_evidencia}}" alt="Evidência" class="evidence-img">
+                                </div>
+                                {{/if}}
+                            {{/if}}
                         </div>
                         <div class="evidence-info">
-                            <p>{{evidencias.texto_excesso}}</p>
-                            <p>{{evidencias.texto_limite}}</p>
+                            <p>{{texto_excesso}}</p>
+                            <p>{{texto_limite}}</p>
                         </div>
                     </div>
                 </div>
