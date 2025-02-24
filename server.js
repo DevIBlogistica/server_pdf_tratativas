@@ -106,9 +106,10 @@ const httpsOptions = {
 // Iniciar servidor HTTPS
 const httpsServer = https.createServer(httpsOptions, app);
 
-// Configurar para escutar tanto IPv4 quanto IPv6
-httpsServer.listen(port, '0.0.0.0', () => {
+// Configurar para escutar em IPv4
+httpsServer.listen(port, () => {
     console.log(`Servidor HTTPS rodando na porta ${port}`);
+    console.log('Endereço:', httpsServer.address());
 }).on('error', (err) => {
     console.error('Erro ao iniciar servidor HTTPS:', err);
 });
@@ -124,7 +125,7 @@ httpApp.all('*', (req, res) => {
 });
 
 // Iniciar servidor HTTP na porta 80
-httpApp.listen(80, '0.0.0.0', () => {
+httpApp.listen(80, () => {
     console.log(`Servidor HTTP rodando na porta 80 (apenas para redirecionamento HTTPS)`);
 }).on('error', (err) => {
     console.error('Erro ao iniciar servidor HTTP:', err);
