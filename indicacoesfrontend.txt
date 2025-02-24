@@ -6,8 +6,13 @@ Estamos desenvolvendo um sistema de tratativas disciplinares com backend em Node
 ## Backend Existente (Já Implementado)
 
 ### URL Base
-- Desenvolvimento: `https://localhost:3000`
-- Produção: `https://159.112.182.31:3000`
+- Desenvolvimento: `http://localhost:3000` (redirecionará para HTTPS)
+- Produção: `http://iblogistica.ddns.net:3000` (redirecionará para HTTPS)
+
+### Observações Importantes sobre HTTPS
+1. O servidor está configurado para redirecionar automaticamente de HTTP para HTTPS
+2. Em produção, estamos usando certificado autoassinado
+3. Para desenvolvimento local, será necessário desabilitar a verificação de certificado
 
 ### Endpoints Disponíveis
 
@@ -78,10 +83,10 @@ Content-Type: application/json
 2. **Configuração do Ambiente**
 ```javascript
 // .env.development
-VITE_API_URL=https://localhost:3000
+VITE_API_URL=http://localhost:3000
 
 // .env.production
-VITE_API_URL=https://159.112.182.31:3000
+VITE_API_URL=http://iblogistica.ddns.net:3000
 ```
 
 3. **Exemplo de Configuração do Axios**
@@ -97,10 +102,10 @@ const api = axios.create({
     }
 });
 
-// Para desenvolvimento local (certificado autoassinado)
-if (import.meta.env.DEV) {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-}
+// Configuração para aceitar certificados autoassinados
+api.defaults.httpsAgent = new (require('https').Agent)({
+    rejectUnauthorized: false
+});
 
 export const generatePDF = async (data) => {
     try {
@@ -108,6 +113,17 @@ export const generatePDF = async (data) => {
         return response.data;
     } catch (error) {
         console.error('Erro ao gerar PDF:', error);
+        throw error;
+    }
+};
+
+// Função de teste de conexão
+export const testConnection = async () => {
+    try {
+        const response = await api.post('/api/tratativa/test-connection', {});
+        return response.data;
+    } catch (error) {
+        console.error('Erro ao testar conexão:', error);
         throw error;
     }
 };
@@ -122,11 +138,12 @@ export const generatePDF = async (data) => {
    - Histórico de tratativas geradas
 
 5. **Observações Importantes**
-   - O servidor usa HTTPS com certificado autoassinado
+   - O servidor usa certificado autoassinado
+   - As requisições HTTP serão automaticamente redirecionadas para HTTPS
+   - Configure o Axios para aceitar certificados autoassinados
    - As imagens devem ser convertidas para URL ou base64 antes do envio
    - O sistema é de uso interno da empresa
    - Não há necessidade de autenticação no momento
-   - O servidor redireciona automaticamente de HTTP para HTTPS
 
 ## Próximos Passos
 1. Criar estrutura inicial do projeto Vue
@@ -157,4 +174,29 @@ npm run dev
 4. **Build para Produção**
 ```bash
 npm run build
+```
+
+## Testando a Conexão
+
+Antes de começar o desenvolvimento, teste a conexão com o backend:
+
+```javascript
+// Exemplo de teste no console do navegador
+const testAPI = async () => {
+    try {
+        const response = await fetch('http://iblogistica.ddns.net:3000/api/tratativa/test-connection', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
+        });
+        const data = await response.json();
+        console.log('Resposta:', data);
+    } catch (error) {
+        console.error('Erro:', error);
+    }
+};
+
+testAPI();
 ``` 

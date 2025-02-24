@@ -88,7 +88,7 @@ body {
 }
 
 .occurrence-header {
-    background-color: #f5f5f5;
+    background-color: #dadada;
     padding: 5px;
     text-align: center;
     border-top: 1px solid black;
@@ -127,7 +127,7 @@ body {
 }
 
 .disciplinary-header {
-    background-color: #f5f5f5;
+    background-color: #dadada;
     padding: 5px;
     text-align: center;
     border-top: 1px solid black;
@@ -176,7 +176,6 @@ body {
     min-height: 505px;
     display: flex;
     flex-direction: column;
-    background-color: gray;
 }
 
 .evidence-container {
@@ -188,7 +187,6 @@ body {
     margin: 0 auto;
     flex: 1;
     justify-content: space-between;
-    background-color: green;
 }
 
 .evidence-images {
@@ -198,7 +196,6 @@ body {
     width: 100%;
     padding: 10px 0;
     flex: 1;
-    background-color: orange;
 }
 
 .evidence-image-box {
@@ -227,7 +224,6 @@ body {
     font-size: 9px;
     padding: 10px 0;
     margin-top: auto;
-    background-color: purple;
 }
 
 .evidence-info p {
@@ -242,7 +238,7 @@ body {
 }
 
 .signature-header {
-    background-color: #f5f5f5;
+    background-color:#dadada;
     padding: 5px;
     text-align: center;
     border-bottom: 1px solid black;
