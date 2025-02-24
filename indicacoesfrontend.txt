@@ -1,0 +1,160 @@
+# Desenvolvimento Frontend - Sistema de Tratativas Disciplinares
+
+## Contexto
+Estamos desenvolvendo um sistema de tratativas disciplinares com backend em Node.js já implementado e funcional. Precisamos criar o frontend em Vue.js que se conectará a este backend.
+
+## Backend Existente (Já Implementado)
+
+### URL Base
+- Desenvolvimento: `https://localhost:3000`
+- Produção: `https://159.112.182.31:3000`
+
+### Endpoints Disponíveis
+
+1. **Teste de Conexão**
+```http
+POST /api/tratativa/test-connection
+Content-Type: application/json
+Body: {} (vazio)
+```
+
+2. **Gerar PDF (Ambiente de Teste)**
+```http
+POST /api/tratativa/test
+Content-Type: application/json
+```
+
+3. **Gerar PDF (Produção)**
+```http
+POST /api/tratativa/generate
+Content-Type: application/json
+```
+
+### Estrutura do Payload (para /test e /generate)
+```json
+{
+    "numero_documento": "MD-2024-001",
+    "nome_funcionario": "João Silva",
+    "funcao": "Desenvolvedor",
+    "setor": "TI",
+    "data_formatada_extenso": "24 de fevereiro de 2024",
+    "codigo_infracao": "ATR-001",
+    "infracao_cometida": "Atraso no horário de trabalho",
+    "data_infracao": "24/02/2024",
+    "hora_infracao": "09:15",
+    "penalidade": "Advertência",
+    "penalidade_aplicada": "Advertência verbal por atraso injustificado",
+    "nome_lider": "Maria Gestora",
+    "evidencias": [
+        {
+            "url": "https://via.placeholder.com/320x400/2196F3/FFFFFF?text=Evidencia+1"
+        },
+        {
+            "url": "https://via.placeholder.com/320x400/4CAF50/FFFFFF?text=Evidencia+2"
+        }
+    ],
+    "texto_excesso": "Tempo em excesso: 00:45:32",
+    "texto_limite": "Limite permitido: 00:15:00"
+}
+```
+
+### Resposta do Servidor
+```json
+{
+    "success": true,
+    "message": "Documento de tratativa gerado com sucesso",
+    "url": "https://kjlwqezxzqjfhacmjhbh.supabase.co/storage/v1/object/public/tratativas/[nome_do_arquivo].pdf"
+}
+```
+
+## Requisitos do Frontend
+
+1. **Tecnologias a serem utilizadas**
+   - Vue.js 3
+   - Composition API
+   - TypeScript (opcional, mas recomendado)
+   - Axios para requisições HTTP
+
+2. **Configuração do Ambiente**
+```javascript
+// .env.development
+VITE_API_URL=https://localhost:3000
+
+// .env.production
+VITE_API_URL=https://159.112.182.31:3000
+```
+
+3. **Exemplo de Configuração do Axios**
+```javascript
+// src/services/api.js
+import axios from 'axios';
+
+const api = axios.create({
+    baseURL: import.meta.env.VITE_API_URL,
+    timeout: 30000,
+    headers: {
+        'Content-Type': 'application/json'
+    }
+});
+
+// Para desenvolvimento local (certificado autoassinado)
+if (import.meta.env.DEV) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
+export const generatePDF = async (data) => {
+    try {
+        const response = await api.post('/api/tratativa/generate', data);
+        return response.data;
+    } catch (error) {
+        console.error('Erro ao gerar PDF:', error);
+        throw error;
+    }
+};
+```
+
+4. **Funcionalidades Necessárias**
+   - Formulário para preenchimento dos dados da tratativa
+   - Upload de imagens (evidências)
+   - Visualização prévia das imagens antes do envio
+   - Botão para gerar PDF
+   - Visualização do PDF gerado
+   - Histórico de tratativas geradas
+
+5. **Observações Importantes**
+   - O servidor usa HTTPS com certificado autoassinado
+   - As imagens devem ser convertidas para URL ou base64 antes do envio
+   - O sistema é de uso interno da empresa
+   - Não há necessidade de autenticação no momento
+   - O servidor redireciona automaticamente de HTTP para HTTPS
+
+## Próximos Passos
+1. Criar estrutura inicial do projeto Vue
+2. Configurar ambiente de desenvolvimento
+3. Implementar componentes base
+4. Integrar com o backend
+5. Implementar o layout conforme os prints fornecidos
+
+## Comandos Úteis
+
+1. **Criar Projeto Vue**
+```bash
+npm create vue@latest
+```
+
+2. **Instalar Dependências**
+```bash
+npm install axios
+npm install @vueuse/core  # Útil para composables
+npm install vue-pdf-embed # Para visualização de PDF
+```
+
+3. **Desenvolvimento**
+```bash
+npm run dev
+```
+
+4. **Build para Produção**
+```bash
+npm run build
+``` 
