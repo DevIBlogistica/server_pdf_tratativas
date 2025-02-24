@@ -12,7 +12,7 @@ const tratativaRoutes = require('./routes/tratativa.routes');
 
 // Inicialização do Express
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3000;
 
 // Configuração do CORS para permitir requisições de todas as origens
 const corsOptions = {
@@ -97,10 +97,10 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Configuração do servidor HTTPS com certificado autoassinado
+// Configuração do servidor HTTPS com certificado do Let's Encrypt
 const httpsOptions = {
-    key: fs.readFileSync(path.join(__dirname, 'certificates/key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, 'certificates/cert.pem'))
+    key: fs.readFileSync('certificates/privkey.pem'),
+    cert: fs.readFileSync('certificates/fullchain.pem')
 };
 
 // Iniciar servidor HTTPS
@@ -108,9 +108,28 @@ https.createServer(httpsOptions, app).listen(port, () => {
     console.log(`Servidor HTTPS rodando na porta ${port}`);
 });
 
-// Redirecionar HTTP para HTTPS
+// Criar servidor HTTP apenas para redirecionamento HTTPS
 const httpApp = express();
-httpApp.all('*', (req, res) => res.redirect(`https://${req.hostname}:${port}${req.url}`));
-httpApp.listen(3000, () => {
-    console.log('Servidor HTTP redirecionando para HTTPS na porta 3000');
+
+// Middleware para forçar HTTPS
+httpApp.use((req, res, next) => {
+    if (req.secure) {
+        next();
+    } else {
+        const httpsUrl = `https://${req.hostname}:${port}${req.url}`;
+        console.log(`Forçando HTTPS: Redirecionando para ${httpsUrl}`);
+        res.redirect(301, httpsUrl); // 301 é redirecionamento permanente
+    }
+});
+
+// Redirecionar todas as requisições HTTP para HTTPS
+httpApp.all('*', (req, res) => {
+    const httpsUrl = `https://${req.hostname}:${port}${req.url}`;
+    console.log(`Redirecionando para: ${httpsUrl}`);
+    res.redirect(301, httpsUrl);
+});
+
+// Iniciar servidor HTTP na porta 80 (padrão para HTTP)
+httpApp.listen(80, () => {
+    console.log(`Servidor HTTP rodando na porta 80 (apenas para redirecionamento HTTPS)`);
 });
