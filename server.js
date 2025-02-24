@@ -100,14 +100,27 @@ app.use((err, req, res, next) => {
 // Configuração do servidor HTTPS com certificado do Let's Encrypt
 const httpsOptions = {
     key: fs.readFileSync('certificates/privkey.pem'),
-    cert: fs.readFileSync('certificates/fullchain.pem')
+    cert: fs.readFileSync('certificates/fullchain.pem'),
+    secureOptions: require('constants').SSL_OP_NO_TLSv1 | require('constants').SSL_OP_NO_TLSv1_1,
+    minVersion: 'TLSv1.2',
+    ciphers: [
+        'ECDHE-ECDSA-AES128-GCM-SHA256',
+        'ECDHE-RSA-AES128-GCM-SHA256',
+        'ECDHE-ECDSA-AES256-GCM-SHA384',
+        'ECDHE-RSA-AES256-GCM-SHA384',
+        'ECDHE-ECDSA-CHACHA20-POLY1305',
+        'ECDHE-RSA-CHACHA20-POLY1305',
+        'DHE-RSA-AES128-GCM-SHA256',
+        'DHE-RSA-AES256-GCM-SHA384'
+    ].join(':'),
+    honorCipherOrder: true
 };
 
 // Iniciar servidor HTTPS
 const httpsServer = https.createServer(httpsOptions, app);
 
 // Configurar para escutar em IPv4
-httpsServer.listen(port, () => {
+httpsServer.listen(port, '0.0.0.0', () => {
     console.log(`Servidor HTTPS rodando na porta ${port}`);
     console.log('Endereço:', httpsServer.address());
 }).on('error', (err) => {
