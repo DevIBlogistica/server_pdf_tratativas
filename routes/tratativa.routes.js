@@ -6,6 +6,45 @@ const puppeteer = require('puppeteer');
 const supabase = require('../config/supabase');
 const fs = require('fs');
 const handlebars = require('handlebars');
+const { v4: uuidv4 } = require('uuid');
+
+// Create temp directory if it doesn't exist
+const TEMP_DIR = path.join(__dirname, '../temp');
+if (!fs.existsSync(TEMP_DIR)) {
+    fs.mkdirSync(TEMP_DIR, { recursive: true });
+}
+
+// Function to clean up temp files
+const cleanupTempFiles = (files) => {
+    files.forEach(file => {
+        try {
+            if (fs.existsSync(file)) {
+                fs.unlinkSync(file);
+            }
+        } catch (error) {
+            console.error(`Error cleaning up temp file ${file}:`, error);
+        }
+    });
+};
+
+// Function to process and save temporary image
+const processTempImage = async (base64Data) => {
+    if (!base64Data) return null;
+    
+    try {
+        // Remove data:image prefix if present
+        const base64Image = base64Data.replace(/^data:image\/\w+;base64,/, '');
+        const tempFileName = path.join(TEMP_DIR, `${uuidv4()}.png`);
+        
+        // Save image to temp directory
+        fs.writeFileSync(tempFileName, base64Image, { encoding: 'base64' });
+        
+        return tempFileName;
+    } catch (error) {
+        console.error('Error processing image:', error);
+        return null;
+    }
+};
 
 // Função para processar o campo de penalidade
 function processarPenalidade(codigo) {
@@ -59,6 +98,8 @@ router.use(cors(corsOptions));
 
 // NOVA ROTA: Para criar um registro de tratativa no Supabase e gerar o PDF
 router.post('/create', async (req, res) => {
+    const tempFiles = []; // Track temp files for cleanup
+    
     try {
         // Obter informações da origem da requisição
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
@@ -69,6 +110,15 @@ router.post('/create', async (req, res) => {
         console.log('\n[Tratativa] ✅ Iniciando criação de tratativa:', data.numero_documento);
         console.log(`[Tratativa] 🌐 IP de Origem: ${ip}`);
         console.log(`[Tratativa] 🔗 Origem: ${origin}`);
+
+        // Process attached image if present
+        if (data.imagem) {
+            const tempImagePath = await processTempImage(data.imagem);
+            if (tempImagePath) {
+                tempFiles.push(tempImagePath);
+                data.imagem = `file://${tempImagePath}`;
+            }
+        }
 
         // Validação do payload
         if (!data || !data.numero_documento || !data.nome_funcionario) {
@@ -239,6 +289,17 @@ router.post('/create', async (req, res) => {
             timeout: 60000
         });
 
+        // Wait for images to load
+        await page.evaluate(() => {
+            return Promise.all(
+                Array.from(document.images)
+                    .filter(img => !img.complete)
+                    .map(img => new Promise(resolve => {
+                        img.onload = img.onerror = resolve;
+                    }))
+            );
+        });
+
         console.log('[7/9] Gerando PDF');
         // Gera PDF
         const pdfBuffer = await page.pdf({
@@ -254,8 +315,11 @@ router.post('/create', async (req, res) => {
 
         await browser.close();
 
+        // Clean up temp files
+        cleanupTempFiles(tempFiles);
+
         // Gera nome do arquivo incluindo o ID do registro
-        const fileName = `tratativa_${tratativaId}_${Date.now()}.pdf`;
+        const fileName = `enviadas/tratativa_${tratativaId}_${Date.now()}.pdf`;
 
         console.log('[8/9] Fazendo upload do PDF para Supabase');
         // Upload do PDF
@@ -293,6 +357,9 @@ router.post('/create', async (req, res) => {
         });
 
     } catch (error) {
+        // Clean up temp files in case of error
+        cleanupTempFiles(tempFiles);
+        
         console.error('Erro ao criar tratativa:', error);
         res.status(500).json({
             success: false,
@@ -516,7 +583,7 @@ router.post('/generate', async (req, res) => {
         await browser.close();
 
         // Gera nome do arquivo
-        const fileName = `tratativa_${Date.now()}.pdf`;
+        const fileName = `enviadas/tratativa_${Date.now()}.pdf`;
 
         // Upload do PDF
         const { error: uploadError } = await supabase.storage
@@ -796,11 +863,29 @@ router.put('/:id', async (req, res) => {
         if (data.status === 'DEVOLVIDA') {
             updateData.status = 'DEVOLVIDA';
             updateData.data_devolvida = new Date().toISOString();
-        }
-        
-        // If there's a new document uploaded for devolution
-        if (data.documento_devolvido_url) {
-            updateData.documento_devolvido_url = data.documento_devolvido_url;
+            
+            // If there's a new document uploaded for devolution
+            if (data.documento_devolvido_url) {
+                // Save returned document in recebidas folder
+                const fileName = `recebidas/tratativa_${id}_${Date.now()}.pdf`;
+                
+                // Upload the document to recebidas folder
+                const { error: uploadError } = await supabase.storage
+                    .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
+                    .upload(fileName, Buffer.from(data.documento_devolvido_url), {
+                        contentType: 'application/pdf',
+                        upsert: true
+                    });
+
+                if (uploadError) throw uploadError;
+
+                // Get the public URL
+                const { data: { publicUrl } } = supabase.storage
+                    .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
+                    .getPublicUrl(fileName);
+
+                updateData.documento_devolvido_url = publicUrl;
+            }
         }
         
         // Update other fields if provided
