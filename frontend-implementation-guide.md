@@ -940,4 +940,89 @@ npm run build
 ### Iniciar em produção
 ```bash
 npm run start
-``` 
+```
+
+## Image Upload and PDF Generation Flow
+
+1. **Form Data Structure**
+   - Use `FormData` to send the request
+   - The image should be sent as a file, not as base64
+   - Example:
+   ```javascript
+   const formData = new FormData();
+   formData.append('imagem', imageFile); // Direct file from input
+   formData.append('numero_documento', '12345');
+   formData.append('nome_funcionario', 'João Silva');
+   // ... other fields ...
+   ```
+
+2. **API Endpoint**
+   - URL: `POST /tratativa/create`
+   - Content-Type: `multipart/form-data`
+   - The server will:
+     1. Upload the image to a temporary folder in Supabase
+     2. Use the image URL to generate the PDF
+     3. Delete the temporary image after PDF generation
+     4. Return the final PDF URL
+
+3. **Request Example**
+   ```javascript
+   const response = await fetch('/api/tratativa/create', {
+     method: 'POST',
+     body: formData // FormData with file and other fields
+   });
+   ```
+
+4. **Response Format**
+   ```json
+   {
+     "success": true,
+     "message": "Tratativa criada e documento gerado com sucesso",
+     "tratativa_id": "123e4567-e89b-12d3-a456-426614174000",
+     "url": "https://..."
+   }
+   ```
+
+5. **Error Handling**
+   ```json
+   {
+     "success": false,
+     "message": "Erro ao criar tratativa e gerar documento",
+     "error": "Detalhes do erro"
+   }
+   ```
+
+## Important Notes
+
+1. **Image Handling**
+   - No need to resize or convert images on the frontend
+   - The template has built-in image sizing constraints
+   - Send the raw image file from the input field
+
+2. **Loading States**
+   - Implement loading state while the request is processing
+   - The process includes:
+     - Image upload
+     - PDF generation
+     - Final document storage
+   - Typical processing time: 2-5 seconds
+
+3. **Error Scenarios**
+   - Handle network errors
+   - Handle invalid file types
+   - Handle server errors
+   - Show appropriate error messages to users
+
+4. **Testing**
+   - Test with various image sizes
+   - Test with different file types (jpg, png)
+   - Test with missing images
+   - Test network errors
+
+## Available Endpoints
+
+1. `POST /tratativa/create` - Create new document
+2. `POST /tratativa/generate` - Generate PDF from existing data
+3. `POST /tratativa/test` - Test endpoint with mock data
+4. `GET /tratativa/list` - List all documents
+5. `PUT /tratativa/update/:id` - Update existing document 

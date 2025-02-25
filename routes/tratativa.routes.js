@@ -59,23 +59,49 @@ const cleanupTempDirs = () => {
     }
 };
 
-// Function to process and save temporary image
-const processTempImage = async (base64Data) => {
-    if (!base64Data) return null;
-    
+// Function to upload temp image to Supabase
+const uploadTempImage = async (imageFile) => {
     try {
-        // Remove data:image prefix if present
-        const base64Image = base64Data.replace(/^data:image\/\w+;base64,/, '');
-        const tempFileName = path.join(TEMP_IMAGES_DIR, `${uuidv4()}.png`);
+        const fileName = `temp/${uuidv4()}-${imageFile.originalname}`;
         
-        // Save image to temp directory
-        fs.writeFileSync(tempFileName, base64Image, { encoding: 'base64' });
-        console.log(`[Image] Saved temp image: ${tempFileName}`);
-        
-        return tempFileName;
+        const { error: uploadError } = await supabase.storage
+            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
+            .upload(fileName, imageFile.buffer, {
+                contentType: imageFile.mimetype,
+                upsert: false
+            });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
+            .getPublicUrl(fileName);
+
+        console.log(`[Image] Uploaded temp image: ${fileName}`);
+        return { fileName, publicUrl };
     } catch (error) {
-        console.error('[Image] Error processing image:', error);
-        return null;
+        console.error('[Image] Error uploading image:', error);
+        throw error;
+    }
+};
+
+// Function to delete temp file from Supabase
+const deleteTempFile = async (fileName) => {
+    try {
+        const { error } = await supabase.storage
+            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
+            .remove([fileName]);
+
+        if (error) {
+            console.error(`[Cleanup] Error removing temp file ${fileName}:`, error);
+            return false;
+        }
+
+        console.log(`[Cleanup] Removed temp file: ${fileName}`);
+        return true;
+    } catch (error) {
+        console.error(`[Cleanup] Error removing temp file ${fileName}:`, error);
+        return false;
     }
 };
 
@@ -162,7 +188,7 @@ router.use(cors(corsOptions));
 
 // NOVA ROTA: Para criar um registro de tratativa no Supabase e gerar o PDF
 router.post('/create', async (req, res) => {
-    const tempFiles = []; // Track temp files for cleanup
+    let tempFileName = null;
     
     try {
         // Obter informações da origem da requisição
@@ -175,13 +201,11 @@ router.post('/create', async (req, res) => {
         console.log(`[Tratativa] 🌐 IP de Origem: ${ip}`);
         console.log(`[Tratativa] 🔗 Origem: ${origin}`);
 
-        // Process attached image if present
-        if (data.imagem) {
-            const tempImagePath = await processTempImage(data.imagem);
-            if (tempImagePath) {
-                tempFiles.push(tempImagePath);
-                data.imagem = `file://${tempImagePath}`;
-            }
+        // Process attached image if present in request.files
+        if (req.files && req.files.imagem) {
+            const { fileName, publicUrl } = await uploadTempImage(req.files.imagem);
+            tempFileName = fileName;
+            data.imagem = publicUrl;
         }
 
         // Validação do payload
@@ -369,7 +393,7 @@ router.post('/create', async (req, res) => {
         console.log('[7/9] Gerando PDF');
         // Generate PDF to temp directory
         const { pdfPath, pdfFileName } = await generatePDFToTemp(page, dadosComLogo);
-        tempFiles.push(pdfPath);
+        tempFileName = pdfFileName;
 
         await browser.close();
 
@@ -406,9 +430,14 @@ router.post('/create', async (req, res) => {
         if (updateError) throw updateError;
 
         // Clean up all temp files
-        cleanupTempFiles(tempFiles);
+        cleanupTempFiles([pdfPath]);
         
         console.log('\n[Link do documento] 🔗\n' + publicUrl + '\n');
+
+        // After successful PDF generation and upload
+        if (tempFileName) {
+            await deleteTempFile(tempFileName);
+        }
 
         res.json({
             success: true,
@@ -419,7 +448,7 @@ router.post('/create', async (req, res) => {
 
     } catch (error) {
         // Clean up temp files in case of error
-        cleanupTempFiles(tempFiles);
+        cleanupTempFiles([pdfPath]);
         
         console.error('Erro ao criar tratativa:', error);
         res.status(500).json({
