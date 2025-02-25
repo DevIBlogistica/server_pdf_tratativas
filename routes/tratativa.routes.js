@@ -39,6 +39,22 @@ router.post('/create', async (req, res) => {
             throw new Error('Dados incompletos. É necessário fornecer pelo menos número do documento e nome do funcionário.');
         }
 
+        // Processar data e hora para um formato compatível com o Supabase
+        let dataFormatada = null;
+        if (data.data_infracao && data.hora_infracao) {
+            // Obter partes da data
+            const partesData = data.data_infracao.split('/');
+            if (partesData.length === 3) {
+                const dia = partesData[0];
+                const mes = partesData[1];
+                const ano = partesData[2];
+                
+                // Formatar como um timestamp ISO
+                dataFormatada = `${ano}-${mes}-${dia}T${data.hora_infracao}:00`;
+                console.log('[Tratativa] 📅 Data/hora formatada:', dataFormatada);
+            }
+        }
+
         // 1. Criar registro no Supabase
         console.log('[1/9] Criando registro no Supabase');
         const { data: newTratativa, error: dbError } = await supabase
@@ -53,7 +69,7 @@ router.post('/create', async (req, res) => {
                     codigo_infracao: data.codigo_infracao,
                     infracao_cometida: data.infracao_cometida,
                     data_infracao: data.data_infracao,
-                    hora_infracao: data.hora_infracao,
+                    hora_infracao: dataFormatada || data.hora_infracao, // Usar o formato combinado
                     penalidade: data.penalidade,
                     penalidade_aplicada: data.penalidade_aplicada,
                     nome_lider: data.nome_lider,
@@ -252,6 +268,21 @@ router.post('/generate', async (req, res) => {
         console.log(`[Geração de PDF] 🔗 Origem: ${origin}`);
         console.log('[Geração de PDF] 📄 Documento:', data.numero_documento);
 
+        // Processar data e hora se for necessário salvar no banco
+        if (data.data_infracao && data.hora_infracao) {
+            // Obter partes da data
+            const partesData = data.data_infracao.split('/');
+            if (partesData.length === 3) {
+                const dia = partesData[0];
+                const mes = partesData[1];
+                const ano = partesData[2];
+                
+                // Formatar como um timestamp ISO
+                data.hora_infracao_formatada = `${ano}-${mes}-${dia}T${data.hora_infracao}:00`;
+                console.log('[Geração de PDF] 📅 Data/hora formatada:', data.hora_infracao_formatada);
+            }
+        }
+
         // Adicionar logo aos dados
         const dadosComLogo = {
             ...data,
@@ -358,8 +389,24 @@ router.post('/test', async (req, res) => {
             throw new Error('Body vazio. Certifique-se de enviar os dados no formato JSON correto e com Content-Type: application/json');
         }
 
+        // Processar data e hora se disponíveis
+        const data = req.body;
+        if (data.data_infracao && data.hora_infracao) {
+            // Obter partes da data
+            const partesData = data.data_infracao.split('/');
+            if (partesData.length === 3) {
+                const dia = partesData[0];
+                const mes = partesData[1];
+                const ano = partesData[2];
+                
+                // Formatar como um timestamp ISO
+                data.hora_infracao_formatada = `${ano}-${mes}-${dia}T${data.hora_infracao}:00`;
+                console.log('[Teste de PDF] 📅 Data/hora formatada:', data.hora_infracao_formatada);
+            }
+        }
+
         const dadosTeste = {
-            ...req.body,
+            ...data,
             logo_src: LOGO_BASE64
         };
 
