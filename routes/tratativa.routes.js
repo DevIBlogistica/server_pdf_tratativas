@@ -86,12 +86,27 @@ router.post('/create', async (req, res) => {
         data.penalidade = penalidade.codigo;
         data.penalidade_aplicada = penalidade.descricao;
 
-        // Formatar texto_limite e texto_excesso
-        if (data.valor_limite && data.medida) {
-            data.texto_limite = `Limite estabelecido: ${data.valor_limite}${data.medida}`;
-        }
-        if (data.valor_praticado && data.medida) {
-            data.texto_excesso = `Valor praticado: ${data.valor_praticado}${data.medida}`;
+        // Processar valores de limite e excesso
+        if (data.valor_limite || data.valor_praticado) {
+            // Garantir que a métrica esteja presente se houver valores
+            if (!data.metrica) {
+                data.metrica = 'unidade';
+                console.warn('[Alerta] Métrica não fornecida, usando "unidade" como padrão');
+            }
+
+            // Formatar texto_limite se valor_limite estiver presente
+            if (data.valor_limite) {
+                data.texto_limite = `Limite estabelecido: ${data.valor_limite}${data.metrica}`;
+            }
+
+            // Formatar texto_excesso se valor_praticado estiver presente
+            if (data.valor_praticado) {
+                data.texto_excesso = `Valor praticado: ${data.valor_praticado}${data.metrica}`;
+            }
+
+            console.log('[Tratativa] 📊 Valores processados:');
+            if (data.texto_limite) console.log(`[Tratativa] ⬇️ ${data.texto_limite}`);
+            if (data.texto_excesso) console.log(`[Tratativa] ⬆️ ${data.texto_excesso}`);
         }
 
         // Processar data da ocorrência (se fornecida)
@@ -348,12 +363,27 @@ router.post('/generate', async (req, res) => {
         data.penalidade = penalidade.codigo;
         data.penalidade_aplicada = penalidade.descricao;
 
-        // Formatar texto_limite e texto_excesso
-        if (data.valor_limite && data.medida) {
-            data.texto_limite = `Limite estabelecido: ${data.valor_limite}${data.medida}`;
-        }
-        if (data.valor_praticado && data.medida) {
-            data.texto_excesso = `Valor praticado: ${data.valor_praticado}${data.medida}`;
+        // Processar valores de limite e excesso
+        if (data.valor_limite || data.valor_praticado) {
+            // Garantir que a métrica esteja presente se houver valores
+            if (!data.metrica) {
+                data.metrica = 'unidade';
+                console.warn('[Alerta] Métrica não fornecida, usando "unidade" como padrão');
+            }
+
+            // Formatar texto_limite se valor_limite estiver presente
+            if (data.valor_limite) {
+                data.texto_limite = `Limite estabelecido: ${data.valor_limite}${data.metrica}`;
+            }
+
+            // Formatar texto_excesso se valor_praticado estiver presente
+            if (data.valor_praticado) {
+                data.texto_excesso = `Valor praticado: ${data.valor_praticado}${data.metrica}`;
+            }
+
+            console.log('[Geração de PDF] 📊 Valores processados:');
+            if (data.texto_limite) console.log(`[Geração de PDF] ⬇️ ${data.texto_limite}`);
+            if (data.texto_excesso) console.log(`[Geração de PDF] ⬆️ ${data.texto_excesso}`);
         }
 
         // Processar data da ocorrência (se fornecida)
@@ -506,12 +536,27 @@ router.post('/test', async (req, res) => {
         data.penalidade = penalidade.codigo;
         data.penalidade_aplicada = penalidade.descricao;
 
-        // Formatar texto_limite e texto_excesso
-        if (data.valor_limite && data.medida) {
-            data.texto_limite = `Limite estabelecido: ${data.valor_limite}${data.medida}`;
-        }
-        if (data.valor_praticado && data.medida) {
-            data.texto_excesso = `Valor praticado: ${data.valor_praticado}${data.medida}`;
+        // Processar valores de limite e excesso
+        if (data.valor_limite || data.valor_praticado) {
+            // Garantir que a métrica esteja presente se houver valores
+            if (!data.metrica) {
+                data.metrica = 'unidade';
+                console.warn('[Alerta] Métrica não fornecida, usando "unidade" como padrão');
+            }
+
+            // Formatar texto_limite se valor_limite estiver presente
+            if (data.valor_limite) {
+                data.texto_limite = `Limite estabelecido: ${data.valor_limite}${data.metrica}`;
+            }
+
+            // Formatar texto_excesso se valor_praticado estiver presente
+            if (data.valor_praticado) {
+                data.texto_excesso = `Valor praticado: ${data.valor_praticado}${data.metrica}`;
+            }
+
+            console.log('[Teste de PDF] 📊 Valores processados:');
+            if (data.texto_limite) console.log(`[Teste de PDF] ⬇️ ${data.texto_limite}`);
+            if (data.texto_excesso) console.log(`[Teste de PDF] ⬆️ ${data.texto_excesso}`);
         }
 
         if (data.data_ocorrencia) {
