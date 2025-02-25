@@ -8,11 +8,17 @@ const fs = require('fs');
 const handlebars = require('handlebars');
 const { v4: uuidv4 } = require('uuid');
 
-// Create temp directory if it doesn't exist
+// Create temp directory structure
 const TEMP_DIR = path.join(__dirname, '../temp');
-if (!fs.existsSync(TEMP_DIR)) {
-    fs.mkdirSync(TEMP_DIR, { recursive: true });
-}
+const TEMP_IMAGES_DIR = path.join(TEMP_DIR, 'images');
+const TEMP_PDFS_DIR = path.join(TEMP_DIR, 'pdfs');
+
+// Ensure temp directories exist
+[TEMP_DIR, TEMP_IMAGES_DIR, TEMP_PDFS_DIR].forEach(dir => {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+});
 
 // Function to clean up temp files
 const cleanupTempFiles = (files) => {
@@ -20,11 +26,37 @@ const cleanupTempFiles = (files) => {
         try {
             if (fs.existsSync(file)) {
                 fs.unlinkSync(file);
+                console.log(`[Cleanup] Removed temp file: ${file}`);
             }
         } catch (error) {
-            console.error(`Error cleaning up temp file ${file}:`, error);
+            console.error(`[Cleanup] Error removing temp file ${file}:`, error);
         }
     });
+};
+
+// Function to clean up temp directories
+const cleanupTempDirs = () => {
+    try {
+        // Clean images directory
+        if (fs.existsSync(TEMP_IMAGES_DIR)) {
+            const imageFiles = fs.readdirSync(TEMP_IMAGES_DIR);
+            imageFiles.forEach(file => {
+                fs.unlinkSync(path.join(TEMP_IMAGES_DIR, file));
+            });
+        }
+        
+        // Clean PDFs directory
+        if (fs.existsSync(TEMP_PDFS_DIR)) {
+            const pdfFiles = fs.readdirSync(TEMP_PDFS_DIR);
+            pdfFiles.forEach(file => {
+                fs.unlinkSync(path.join(TEMP_PDFS_DIR, file));
+            });
+        }
+        
+        console.log('[Cleanup] Temp directories cleaned successfully');
+    } catch (error) {
+        console.error('[Cleanup] Error cleaning temp directories:', error);
+    }
 };
 
 // Function to process and save temporary image
@@ -34,15 +66,47 @@ const processTempImage = async (base64Data) => {
     try {
         // Remove data:image prefix if present
         const base64Image = base64Data.replace(/^data:image\/\w+;base64,/, '');
-        const tempFileName = path.join(TEMP_DIR, `${uuidv4()}.png`);
+        const tempFileName = path.join(TEMP_IMAGES_DIR, `${uuidv4()}.png`);
         
         // Save image to temp directory
         fs.writeFileSync(tempFileName, base64Image, { encoding: 'base64' });
+        console.log(`[Image] Saved temp image: ${tempFileName}`);
         
         return tempFileName;
     } catch (error) {
-        console.error('Error processing image:', error);
+        console.error('[Image] Error processing image:', error);
         return null;
+    }
+};
+
+// Function to generate PDF and get temp path
+const generatePDFToTemp = async (page, data) => {
+    try {
+        const pdfFileName = `${uuidv4()}.pdf`;
+        const pdfPath = path.join(TEMP_PDFS_DIR, pdfFileName);
+        
+        // Generate PDF
+        const pdfBuffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: {
+                top: '25px',
+                right: '25px',
+                bottom: '25px',
+                left: '25px'
+            },
+            preferCSSPageSize: true,
+            scale: 1.0,
+            displayHeaderFooter: false,
+            landscape: false,
+            path: pdfPath // Save directly to file
+        });
+        
+        console.log(`[PDF] Generated temp PDF: ${pdfPath}`);
+        return { pdfPath, pdfFileName };
+    } catch (error) {
+        console.error('[PDF] Error generating PDF:', error);
+        throw error;
     }
 };
 
@@ -134,6 +198,9 @@ router.post('/create', async (req, res) => {
         // Processar penalidade
         const penalidade = processarPenalidade(data.penalidade_aplicada || data.penalidade);
         data.penalidade_aplicada = `${penalidade.codigo} - ${penalidade.descricao}`;
+        // Split penalidade for template display
+        data.penalidade = penalidade.codigo;
+        data.penalidade_descricao = penalidade.descricao;
 
         // Processar valores de limite e excesso
         if (data.valor_limite || data.valor_praticado) {
@@ -283,7 +350,6 @@ router.post('/create', async (req, res) => {
         </head>`);
 
         console.log('[6/9] Configurando conteúdo na página');
-        // Configura o conteúdo
         await page.setContent(htmlWithStyles, {
             waitUntil: 'networkidle0',
             timeout: 60000
@@ -301,22 +367,11 @@ router.post('/create', async (req, res) => {
         });
 
         console.log('[7/9] Gerando PDF');
-        // Gera PDF
-        const pdfBuffer = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: {
-                top: '25px',
-                right: '25px',
-                bottom: '25px',
-                left: '25px'
-            }
-        });
+        // Generate PDF to temp directory
+        const { pdfPath, pdfFileName } = await generatePDFToTemp(page, dadosComLogo);
+        tempFiles.push(pdfPath);
 
         await browser.close();
-
-        // Clean up temp files
-        cleanupTempFiles(tempFiles);
 
         // Gera nome do arquivo incluindo o ID do registro
         const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
@@ -328,7 +383,7 @@ router.post('/create', async (req, res) => {
         // Upload do PDF
         const { error: uploadError } = await supabase.storage
             .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-            .upload(fileName, pdfBuffer, {
+            .upload(fileName, fs.readFileSync(pdfPath), {
                 contentType: 'application/pdf',
                 upsert: true
             });
@@ -350,6 +405,9 @@ router.post('/create', async (req, res) => {
 
         if (updateError) throw updateError;
 
+        // Clean up all temp files
+        cleanupTempFiles(tempFiles);
+        
         console.log('\n[Link do documento] 🔗\n' + publicUrl + '\n');
 
         res.json({
@@ -457,6 +515,9 @@ router.post('/generate', async (req, res) => {
         // Processar penalidade
         const penalidade = processarPenalidade(data.penalidade_aplicada || data.penalidade);
         data.penalidade_aplicada = `${penalidade.codigo} - ${penalidade.descricao}`;
+        // Split penalidade for template display
+        data.penalidade = penalidade.codigo;
+        data.penalidade_descricao = penalidade.descricao;
 
         // Processar valores de limite e excesso
         if (data.valor_limite || data.valor_praticado) {
@@ -580,7 +641,11 @@ router.post('/generate', async (req, res) => {
                 right: '25px',
                 bottom: '25px',
                 left: '25px'
-            }
+            },
+            preferCSSPageSize: true,
+            scale: 1.0,
+            displayHeaderFooter: false,
+            landscape: false
         });
 
         await browser.close();
@@ -654,6 +719,9 @@ router.post('/test', async (req, res) => {
         // Processar penalidade
         const penalidade = processarPenalidade(data.penalidade_aplicada || data.penalidade);
         data.penalidade_aplicada = `${penalidade.codigo} - ${penalidade.descricao}`;
+        // Split penalidade for template display
+        data.penalidade = penalidade.codigo;
+        data.penalidade_descricao = penalidade.descricao;
 
         // Processar valores de limite e excesso
         if (data.valor_limite || data.valor_praticado) {
@@ -774,7 +842,11 @@ router.post('/test', async (req, res) => {
                 right: '25px',
                 bottom: '25px',
                 left: '25px'
-            }
+            },
+            preferCSSPageSize: true,
+            scale: 1.0,
+            displayHeaderFooter: false,
+            landscape: false
         });
 
         await browser.close();
