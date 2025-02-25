@@ -24,9 +24,15 @@ router.use(cors(corsOptions));
 // NOVA ROTA: Para criar um registro de tratativa no Supabase e gerar o PDF
 router.post('/create', async (req, res) => {
     try {
+        // Obter informações da origem da requisição
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+        const origin = req.headers['origin'] || req.headers['referer'] || 'Origem desconhecida';
+        
         // Recebe os dados do frontend
         const data = req.body;
-        console.log('[Tratativa] Iniciando criação de tratativa:', data.numero_documento);
+        console.log('\n[Tratativa] ✅ Iniciando criação de tratativa:', data.numero_documento);
+        console.log(`[Tratativa] 🌐 IP de Origem: ${ip}`);
+        console.log(`[Tratativa] 🔗 Origem: ${origin}`);
 
         // Validação do payload
         if (!data || !data.numero_documento || !data.nome_funcionario) {
@@ -236,8 +242,15 @@ router.get('/:id', async (req, res) => {
 // Rota para gerar PDF da tratativa
 router.post('/generate', async (req, res) => {
     try {
+        // Obter informações da origem da requisição
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+        const origin = req.headers['origin'] || req.headers['referer'] || 'Origem desconhecida';
+        
         const data = req.body;
-        console.log('Dados recebidos:', data);
+        console.log('\n[Geração de PDF] ✅ Solicitação recebida');
+        console.log(`[Geração de PDF] 🌐 IP de Origem: ${ip}`);
+        console.log(`[Geração de PDF] 🔗 Origem: ${origin}`);
+        console.log('[Geração de PDF] 📄 Documento:', data.numero_documento);
 
         // Adicionar logo aos dados
         const dadosComLogo = {
@@ -329,11 +342,16 @@ router.post('/generate', async (req, res) => {
 // Rota de teste com dados mockados
 router.post('/test', async (req, res) => {
     try {
-        console.log('\n[Tratativa] Iniciando geração de documento de teste');
-        console.log('Headers recebidos:', req.headers);
-        console.log('Content-Type:', req.headers['content-type']);
-        console.log('Body recebido:', req.body);
-        console.log('Body é objeto vazio?', Object.keys(req.body).length === 0);
+        // Obter informações da origem da requisição
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+        const origin = req.headers['origin'] || req.headers['referer'] || 'Origem desconhecida';
+        const userAgent = req.headers['user-agent'] || 'User-Agent desconhecido';
+        
+        console.log('\n[Teste de PDF] ✅ Iniciando geração de documento de teste');
+        console.log(`[Teste de PDF] 🌐 IP de Origem: ${ip}`);
+        console.log(`[Teste de PDF] 🔗 Origem: ${origin}`);
+        console.log(`[Teste de PDF] 📱 User-Agent: ${userAgent}`);
+        console.log('[Teste de PDF] 📄 Content-Type:', req.headers['content-type']);
         
         // Validação mais detalhada do body
         if (!req.body || Object.keys(req.body).length === 0) {
@@ -345,7 +363,7 @@ router.post('/test', async (req, res) => {
             logo_src: LOGO_BASE64
         };
 
-        console.log('Dados preparados:', dadosTeste);
+        console.log('[Teste de PDF] 📋 Dados preparados');
 
         console.log('[2/8] Iniciando navegador Puppeteer');
         const browser = await puppeteer.launch({
@@ -437,12 +455,26 @@ router.post('/test', async (req, res) => {
 // Rota de teste de conexão
 router.post('/test-connection', (req, res) => {
     try {
-        console.log('Teste de conexão recebido');
+        // Obter informações da origem da requisição
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+        const origin = req.headers['origin'] || req.headers['referer'] || 'Origem desconhecida';
+        const userAgent = req.headers['user-agent'] || 'User-Agent desconhecido';
+        
+        console.log('\n[Teste de Conexão] ✅ Requisição recebida');
+        console.log(`[Teste de Conexão] 🌐 IP de Origem: ${ip}`);
+        console.log(`[Teste de Conexão] 🔗 Origem: ${origin}`);
+        console.log(`[Teste de Conexão] 📱 User-Agent: ${userAgent}`);
+        
         res.status(200).json({ 
             success: true,
             message: 'Conexão bem-sucedida!',
             server: 'PDF Generator Server',
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            client: {
+                ip: ip,
+                origin: origin,
+                userAgent: userAgent
+            }
         });
     } catch (error) {
         console.error('Erro no teste de conexão:', error);
