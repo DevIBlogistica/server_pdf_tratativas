@@ -319,7 +319,10 @@ router.post('/create', async (req, res) => {
         cleanupTempFiles(tempFiles);
 
         // Gera nome do arquivo incluindo o ID do registro
-        const fileName = `enviadas/tratativa_${tratativaId}_${Date.now()}.pdf`;
+        const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
+        const nomeFormatado = data.nome_funcionario.trim().replace(/\s+/g, '_').toUpperCase();
+        const setorFormatado = data.setor.trim().replace(/\s+/g, '_').toUpperCase();
+        const fileName = `enviadas/${data.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
 
         console.log('[8/9] Fazendo upload do PDF para Supabase');
         // Upload do PDF
@@ -583,7 +586,10 @@ router.post('/generate', async (req, res) => {
         await browser.close();
 
         // Gera nome do arquivo
-        const fileName = `enviadas/tratativa_${Date.now()}.pdf`;
+        const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
+        const nomeFormatado = data.nome_funcionario.trim().replace(/\s+/g, '_').toUpperCase();
+        const setorFormatado = data.setor.trim().replace(/\s+/g, '_').toUpperCase();
+        const fileName = `enviadas/${data.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
 
         // Upload do PDF
         const { error: uploadError } = await supabase.storage
@@ -774,7 +780,10 @@ router.post('/test', async (req, res) => {
         await browser.close();
         console.log('[7/8] Navegador fechado');
 
-        const fileName = `mocks/tratativa_teste_${Date.now()}.pdf`;
+        const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
+        const nomeFormatado = data.nome_funcionario.trim().replace(/\s+/g, '_').toUpperCase();
+        const setorFormatado = data.setor.trim().replace(/\s+/g, '_').toUpperCase();
+        const fileName = `mocks/${data.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
         console.log('[8/8] Iniciando upload para Supabase:', fileName);
 
         console.log('Tentando upload com bucket:', process.env.SUPABASE_TRATATIVAS_BUCKET_NAME);
