@@ -39,6 +39,14 @@ router.post('/create', async (req, res) => {
             throw new Error('Dados incompletos. É necessário fornecer pelo menos número do documento e nome do funcionário.');
         }
 
+        // Formatar texto_limite e texto_excesso
+        if (data.valor_limite && data.medida) {
+            data.texto_limite = `Limite estabelecido: ${data.valor_limite}${data.medida}`;
+        }
+        if (data.valor_praticado && data.medida) {
+            data.texto_excesso = `Valor praticado: ${data.valor_praticado}${data.medida}`;
+        }
+
         // Processar data da ocorrência (se fornecida)
         if (data.data_ocorrencia) {
             const dataObj = new Date(data.data_ocorrencia);
@@ -282,6 +290,14 @@ router.post('/generate', async (req, res) => {
         console.log(`[Geração de PDF] 🔗 Origem: ${origin}`);
         console.log('[Geração de PDF] 📄 Documento:', data.numero_documento);
 
+        // Formatar texto_limite e texto_excesso
+        if (data.valor_limite && data.medida) {
+            data.texto_limite = `Limite estabelecido: ${data.valor_limite}${data.medida}`;
+        }
+        if (data.valor_praticado && data.medida) {
+            data.texto_excesso = `Valor praticado: ${data.valor_praticado}${data.medida}`;
+        }
+
         // Processar data da ocorrência (se fornecida)
         if (data.data_ocorrencia) {
             const dataObj = new Date(data.data_ocorrencia);
@@ -420,6 +436,15 @@ router.post('/test', async (req, res) => {
 
         // Processar data da ocorrência (se fornecida)
         const data = req.body;
+
+        // Formatar texto_limite e texto_excesso
+        if (data.valor_limite && data.medida) {
+            data.texto_limite = `Limite estabelecido: ${data.valor_limite}${data.medida}`;
+        }
+        if (data.valor_praticado && data.medida) {
+            data.texto_excesso = `Valor praticado: ${data.valor_praticado}${data.medida}`;
+        }
+
         if (data.data_ocorrencia) {
             const dataObj = new Date(data.data_ocorrencia);
             if (!isNaN(dataObj.getTime())) {
