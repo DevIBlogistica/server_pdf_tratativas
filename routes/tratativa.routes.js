@@ -83,7 +83,7 @@ router.post('/create', async (req, res) => {
                     codigo_infracao: data.codigo_infracao,
                     infracao_cometida: data.infracao_cometida,
                     data_infracao: data.data_infracao,
-                    hora_infracao: data.data_ocorrencia || data.hora_infracao, // Usa o timestamp original
+                    hora_infracao: data.hora_infracao, // Agora salvando apenas HH:MM
                     penalidade: data.penalidade,
                     penalidade_aplicada: data.penalidade_aplicada,
                     nome_lider: data.nome_lider,
