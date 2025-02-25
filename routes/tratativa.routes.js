@@ -177,7 +177,7 @@ router.post('/create', async (req, res) => {
                     codigo_infracao: data.codigo_infracao,
                     infracao_cometida: data.infracao_cometida,
                     data_infracao: data.data_infracao ? new Date(data.data_infracao).toISOString() : null,
-                    data_devolvida: new Date().toISOString(),
+                    data_devolvida: null, // Will be set when status changes to DEVOLVIDA
                     hora_infracao: data.hora_infracao,
                     penalidade_aplicada: data.penalidade_aplicada,
                     nome_lider: data.nome_lider,
@@ -186,7 +186,7 @@ router.post('/create', async (req, res) => {
                     valor_praticado: data.valor_praticado,
                     valor_limite: data.valor_limite,
                     metrica: data.metrica,
-                    status: 'pendente',
+                    status: 'ENVIADA',
                     created_at: new Date().toISOString()
                 }
             ])
@@ -277,8 +277,7 @@ router.post('/create', async (req, res) => {
         const { error: updateError } = await supabase
             .from('tratativas')
             .update({ 
-                documento_url: publicUrl,
-                status: 'concluido' 
+                documento_url: publicUrl
             })
             .eq('id', tratativaId);
 
@@ -778,6 +777,52 @@ router.post('/test-connection', (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erro ao testar conexão',
+            error: error.message
+        });
+    }
+});
+
+// Add new route for updating tratativa status and document
+router.put('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const data = req.body;
+        console.log(`[Tratativa] Atualizando tratativa com ID: ${id}`);
+        
+        // Prepare update data
+        const updateData = {};
+        
+        // If status is being changed to DEVOLVIDA, set data_devolvida
+        if (data.status === 'DEVOLVIDA') {
+            updateData.status = 'DEVOLVIDA';
+            updateData.data_devolvida = new Date().toISOString();
+        }
+        
+        // If there's a new document uploaded for devolution
+        if (data.documento_devolvido_url) {
+            updateData.documento_devolvido_url = data.documento_devolvido_url;
+        }
+        
+        // Update other fields if provided
+        if (data.observacoes) updateData.observacoes = data.observacoes;
+        
+        const { error: updateError } = await supabase
+            .from('tratativas')
+            .update(updateData)
+            .eq('id', id);
+
+        if (updateError) throw updateError;
+
+        res.json({
+            success: true,
+            message: 'Tratativa atualizada com sucesso'
+        });
+        
+    } catch (error) {
+        console.error(`Erro ao atualizar tratativa: ${error}`);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao atualizar tratativa',
             error: error.message
         });
     }
