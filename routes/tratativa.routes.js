@@ -183,6 +183,8 @@ router.post('/create', async (req, res) => {
                     nome_lider: data.nome_lider,
                     texto_excesso: data.texto_excesso,
                     texto_limite: data.texto_limite,
+                    valor_praticado: data.valor_praticado,
+                    valor_limite: data.valor_limite,
                     metrica: data.metrica,
                     status: 'pendente',
                     created_at: new Date().toISOString()
