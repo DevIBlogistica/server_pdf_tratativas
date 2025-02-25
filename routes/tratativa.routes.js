@@ -106,6 +106,9 @@ router.post('/create', async (req, res) => {
             console.log('[Tratativa] 📊 Valores processados:');
             if (data.texto_limite) console.log(`[Tratativa] ⬇️ ${data.texto_limite}`);
             if (data.texto_excesso) console.log(`[Tratativa] ⬆️ ${data.texto_excesso}`);
+        } else {
+            // Se não houver valores, definir métrica padrão
+            data.metrica = 'unidade';
         }
 
         // Processar data da ocorrência (se fornecida)
@@ -180,6 +183,7 @@ router.post('/create', async (req, res) => {
                     nome_lider: data.nome_lider,
                     texto_excesso: data.texto_excesso,
                     texto_limite: data.texto_limite,
+                    metrica: data.metrica,
                     status: 'pendente',
                     created_at: new Date().toISOString()
                 }
