@@ -6,11 +6,11 @@ Estamos desenvolvendo um sistema de tratativas disciplinares com backend em Node
 ## Backend Existente (Já Implementado)
 
 ### URL Base
-- Desenvolvimento: `http://localhost:3000` (redirecionará para HTTPS)
-- Produção: `http://iblogistica.ddns.net:3000` (redirecionará para HTTPS)
+- Desenvolvimento: `https://localhost:3000`
+- Produção: `https://iblogistica.ddns.net:3000`
 
 ### Observações Importantes sobre HTTPS
-1. O servidor está configurado para redirecionar automaticamente de HTTP para HTTPS
+1. O servidor está configurado para usar HTTPS
 2. Em produção, estamos usando certificado autoassinado
 3. Para desenvolvimento local, será necessário desabilitar a verificação de certificado
 
@@ -83,10 +83,10 @@ Content-Type: application/json
 2. **Configuração do Ambiente**
 ```javascript
 // .env.development
-VITE_API_URL=http://localhost:3000
+VITE_API_URL=https://localhost:3000
 
 // .env.production
-VITE_API_URL=http://iblogistica.ddns.net:3000
+VITE_API_URL=https://iblogistica.ddns.net:3000
 ```
 
 3. **Exemplo de Configuração do Axios**
@@ -139,7 +139,6 @@ export const testConnection = async () => {
 
 5. **Observações Importantes**
    - O servidor usa certificado autoassinado
-   - As requisições HTTP serão automaticamente redirecionadas para HTTPS
    - Configure o Axios para aceitar certificados autoassinados
    - As imagens devem ser convertidas para URL ou base64 antes do envio
    - O sistema é de uso interno da empresa
@@ -184,7 +183,7 @@ Antes de começar o desenvolvimento, teste a conexão com o backend:
 // Exemplo de teste no console do navegador
 const testAPI = async () => {
     try {
-        const response = await fetch('http://iblogistica.ddns.net:3000/api/tratativa/test-connection', {
+        const response = await fetch('https://iblogistica.ddns.net:3000/api/tratativa/test-connection', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

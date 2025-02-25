@@ -66,6 +66,57 @@
 					"raw": "{\n    \"numero_documento\": \"MD-2024-001\",\n    \"nome_funcionario\": \"João Silva\",\n    \"funcao\": \"Desenvolvedor\",\n    \"setor\": \"TI\",\n    \"data_formatada_extenso\": \"24 de fevereiro de 2024\",\n    \"codigo_infracao\": \"ATR-001\",\n    \"infracao_cometida\": \"Atraso no horário de trabalho\",\n    \"data_infracao\": \"24/02/2024\",\n    \"hora_infracao\": \"09:15\",\n    \"penalidade\": \"Advertência\",\n    \"penalidade_aplicada\": \"Advertência verbal por atraso injustificado\",\n    \"nome_lider\": \"Maria Gestora\",\n    \"evidencias\": [\n        {\n            \"url\": \"https://via.placeholder.com/320x400/2196F3/FFFFFF?text=Evidencia+1\"\n        },\n        {\n            \"url\": \"https://via.placeholder.com/320x400/4CAF50/FFFFFF?text=Evidencia+2\"\n        }\n    ],\n    \"texto_excesso\": \"Tempo em excesso: 00:45:32\",\n    \"texto_limite\": \"Limite permitido: 00:15:00\"\n}"
 				}
 			}
+		},
+		{
+			"name": "4. Create Tratativa (DB + PDF)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{BASE_URL}}/api/tratativa/create",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "tratativa", "create"]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"numero_documento\": \"MD-2024-002\",\n    \"nome_funcionario\": \"José Santos\",\n    \"funcao\": \"Analista\",\n    \"setor\": \"Contabilidade\",\n    \"data_formatada_extenso\": \"28 de fevereiro de 2024\",\n    \"codigo_infracao\": \"ATR-002\",\n    \"infracao_cometida\": \"Uso inadequado de recursos\",\n    \"data_infracao\": \"28/02/2024\",\n    \"hora_infracao\": \"14:30\",\n    \"penalidade\": \"Advertência\",\n    \"penalidade_aplicada\": \"Advertência formal por uso inadequado\",\n    \"nome_lider\": \"Pedro Gestor\",\n    \"evidencias\": [\n        {\n            \"url\": \"https://via.placeholder.com/320x400/FF5722/FFFFFF?text=Evidencia+1\"\n        },\n        {\n            \"url\": \"https://via.placeholder.com/320x400/9C27B0/FFFFFF?text=Evidencia+2\"\n        }\n    ],\n    \"texto_excesso\": \"Utilização: 5 horas\",\n    \"texto_limite\": \"Limite autorizado: 2 horas\"\n}"
+				}
+			}
+		},
+		{
+			"name": "5. List All Tratativas",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/api/tratativa/list",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "tratativa", "list"]
+				}
+			}
+		},
+		{
+			"name": "6. Get Tratativa by ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{BASE_URL}}/api/tratativa/1",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "tratativa", "1"]
+				}
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "BASE_URL",
+			"value": "https://iblogistica.ddns.net:3000"
 		}
 	]
 } 
