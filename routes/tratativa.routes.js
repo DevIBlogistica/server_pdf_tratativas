@@ -112,11 +112,14 @@ router.post('/create', async (req, res) => {
         if (data.data_ocorrencia) {
             const dataObj = new Date(data.data_ocorrencia);
             if (!isNaN(dataObj.getTime())) {
-                // Extrair data no formato DD/MM/YYYY
+                // Extrair data no formato DD/MM/YYYY para exibição
                 const dia = String(dataObj.getDate()).padStart(2, '0');
                 const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
                 const ano = dataObj.getFullYear();
-                data.data_infracao = `${dia}/${mes}/${ano}`;
+                data.data_formatada = `${dia}/${mes}/${ano}`;
+                
+                // Manter data no formato ISO para o banco
+                data.data_infracao = `${ano}-${mes}-${dia}`;
                 
                 // Extrair hora no formato HH:MM
                 const hora = String(dataObj.getHours()).padStart(2, '0');
@@ -130,11 +133,30 @@ router.post('/create', async (req, res) => {
                 ];
                 data.data_formatada_extenso = `${dia} de ${mesesPorExtenso[dataObj.getMonth()]} de ${ano}`;
                 
-                console.log('[Tratativa] 📅 Data formatada:', data.data_infracao);
+                console.log('[Tratativa] 📅 Data ISO:', data.data_infracao);
+                console.log('[Tratativa] 📅 Data formatada:', data.data_formatada);
                 console.log('[Tratativa] 🕒 Hora formatada:', data.hora_infracao);
                 console.log('[Tratativa] 📝 Data por extenso:', data.data_formatada_extenso);
             } else {
                 console.warn('[Alerta] Data de ocorrência inválida:', data.data_ocorrencia);
+            }
+        } else if (data.data_infracao) {
+            // Se receber a data diretamente, converter para ISO
+            const [dia, mes, ano] = data.data_infracao.split('/');
+            if (dia && mes && ano) {
+                data.data_infracao = `${ano}-${mes}-${dia}`;
+                data.data_formatada = `${dia}/${mes}/${ano}`;
+                
+                // Criar data por extenso
+                const mesesPorExtenso = [
+                    'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+                    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+                ];
+                data.data_formatada_extenso = `${dia} de ${mesesPorExtenso[parseInt(mes) - 1]} de ${ano}`;
+                
+                console.log('[Tratativa] 📅 Data ISO:', data.data_infracao);
+                console.log('[Tratativa] 📅 Data formatada:', data.data_formatada);
+                console.log('[Tratativa] 📝 Data por extenso:', data.data_formatada_extenso);
             }
         }
 
@@ -387,11 +409,14 @@ router.post('/generate', async (req, res) => {
         if (data.data_ocorrencia) {
             const dataObj = new Date(data.data_ocorrencia);
             if (!isNaN(dataObj.getTime())) {
-                // Extrair data no formato DD/MM/YYYY
+                // Extrair data no formato DD/MM/YYYY para exibição
                 const dia = String(dataObj.getDate()).padStart(2, '0');
                 const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
                 const ano = dataObj.getFullYear();
-                data.data_infracao = `${dia}/${mes}/${ano}`;
+                data.data_formatada = `${dia}/${mes}/${ano}`;
+                
+                // Manter data no formato ISO para o banco
+                data.data_infracao = `${ano}-${mes}-${dia}`;
                 
                 // Extrair hora no formato HH:MM
                 const hora = String(dataObj.getHours()).padStart(2, '0');
@@ -405,11 +430,30 @@ router.post('/generate', async (req, res) => {
                 ];
                 data.data_formatada_extenso = `${dia} de ${mesesPorExtenso[dataObj.getMonth()]} de ${ano}`;
                 
-                console.log('[Geração de PDF] 📅 Data formatada:', data.data_infracao);
+                console.log('[Geração de PDF] 📅 Data ISO:', data.data_infracao);
+                console.log('[Geração de PDF] 📅 Data formatada:', data.data_formatada);
                 console.log('[Geração de PDF] 🕒 Hora formatada:', data.hora_infracao);
                 console.log('[Geração de PDF] 📝 Data por extenso:', data.data_formatada_extenso);
             } else {
                 console.warn('[Alerta] Data de ocorrência inválida:', data.data_ocorrencia);
+            }
+        } else if (data.data_infracao) {
+            // Se receber a data diretamente, converter para ISO
+            const [dia, mes, ano] = data.data_infracao.split('/');
+            if (dia && mes && ano) {
+                data.data_infracao = `${ano}-${mes}-${dia}`;
+                data.data_formatada = `${dia}/${mes}/${ano}`;
+                
+                // Criar data por extenso
+                const mesesPorExtenso = [
+                    'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+                    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+                ];
+                data.data_formatada_extenso = `${dia} de ${mesesPorExtenso[parseInt(mes) - 1]} de ${ano}`;
+                
+                console.log('[Geração de PDF] 📅 Data ISO:', data.data_infracao);
+                console.log('[Geração de PDF] 📅 Data formatada:', data.data_formatada);
+                console.log('[Geração de PDF] 📝 Data por extenso:', data.data_formatada_extenso);
             }
         }
 
@@ -558,11 +602,14 @@ router.post('/test', async (req, res) => {
         if (data.data_ocorrencia) {
             const dataObj = new Date(data.data_ocorrencia);
             if (!isNaN(dataObj.getTime())) {
-                // Extrair data no formato DD/MM/YYYY
+                // Extrair data no formato DD/MM/YYYY para exibição
                 const dia = String(dataObj.getDate()).padStart(2, '0');
                 const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
                 const ano = dataObj.getFullYear();
-                data.data_infracao = `${dia}/${mes}/${ano}`;
+                data.data_formatada = `${dia}/${mes}/${ano}`;
+                
+                // Manter data no formato ISO para o banco
+                data.data_infracao = `${ano}-${mes}-${dia}`;
                 
                 // Extrair hora no formato HH:MM
                 const hora = String(dataObj.getHours()).padStart(2, '0');
@@ -576,11 +623,28 @@ router.post('/test', async (req, res) => {
                 ];
                 data.data_formatada_extenso = `${dia} de ${mesesPorExtenso[dataObj.getMonth()]} de ${ano}`;
                 
-                console.log('[Teste de PDF] 📅 Data formatada:', data.data_infracao);
+                console.log('[Teste de PDF] 📅 Data formatada:', data.data_formatada);
                 console.log('[Teste de PDF] 🕒 Hora formatada:', data.hora_infracao);
                 console.log('[Teste de PDF] 📝 Data por extenso:', data.data_formatada_extenso);
             } else {
                 console.warn('[Alerta] Data de ocorrência inválida:', data.data_ocorrencia);
+            }
+        } else if (data.data_infracao) {
+            // Se receber a data diretamente, converter para ISO
+            const [dia, mes, ano] = data.data_infracao.split('/');
+            if (dia && mes && ano) {
+                data.data_infracao = `${ano}-${mes}-${dia}`;
+                data.data_formatada = `${dia}/${mes}/${ano}`;
+                
+                // Criar data por extenso
+                const mesesPorExtenso = [
+                    'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+                    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+                ];
+                data.data_formatada_extenso = `${dia} de ${mesesPorExtenso[parseInt(mes) - 1]} de ${ano}`;
+                
+                console.log('[Teste de PDF] 📅 Data formatada:', data.data_formatada);
+                console.log('[Teste de PDF] 📝 Data por extenso:', data.data_formatada_extenso);
             }
         }
 
