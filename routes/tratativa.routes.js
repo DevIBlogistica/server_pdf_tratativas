@@ -83,8 +83,7 @@ router.post('/create', async (req, res) => {
 
         // Processar penalidade
         const penalidade = processarPenalidade(data.penalidade_aplicada || data.penalidade);
-        data.penalidade = penalidade.codigo;
-        data.penalidade_aplicada = penalidade.descricao;
+        data.penalidade_aplicada = `${penalidade.codigo} - ${penalidade.descricao}`;
 
         // Processar valores de limite e excesso
         if (data.valor_limite || data.valor_praticado) {
@@ -154,7 +153,6 @@ router.post('/create', async (req, res) => {
                     infracao_cometida: data.infracao_cometida,
                     data_infracao: data.data_infracao,
                     hora_infracao: data.hora_infracao,
-                    penalidade: data.penalidade,
                     penalidade_aplicada: data.penalidade_aplicada,
                     nome_lider: data.nome_lider,
                     texto_excesso: data.texto_excesso,
@@ -360,8 +358,7 @@ router.post('/generate', async (req, res) => {
 
         // Processar penalidade
         const penalidade = processarPenalidade(data.penalidade_aplicada || data.penalidade);
-        data.penalidade = penalidade.codigo;
-        data.penalidade_aplicada = penalidade.descricao;
+        data.penalidade_aplicada = `${penalidade.codigo} - ${penalidade.descricao}`;
 
         // Processar valores de limite e excesso
         if (data.valor_limite || data.valor_praticado) {
@@ -533,8 +530,7 @@ router.post('/test', async (req, res) => {
 
         // Processar penalidade
         const penalidade = processarPenalidade(data.penalidade_aplicada || data.penalidade);
-        data.penalidade = penalidade.codigo;
-        data.penalidade_aplicada = penalidade.descricao;
+        data.penalidade_aplicada = `${penalidade.codigo} - ${penalidade.descricao}`;
 
         // Processar valores de limite e excesso
         if (data.valor_limite || data.valor_praticado) {
