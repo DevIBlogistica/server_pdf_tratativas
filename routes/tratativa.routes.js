@@ -7,6 +7,26 @@ const supabase = require('../config/supabase');
 const fs = require('fs');
 const handlebars = require('handlebars');
 
+// Função para processar o campo de penalidade
+function processarPenalidade(penalidade) {
+    if (!penalidade) return { codigo: '', descricao: '' };
+    
+    // Verifica se a penalidade está no formato "P2 - Advertência Escrita"
+    const match = penalidade.match(/^(P\d+)\s*-\s*(.+)$/);
+    if (match) {
+        return {
+            codigo: match[1],        // P2
+            descricao: match[2]      // Advertência Escrita
+        };
+    }
+    
+    // Caso não esteja no formato esperado, retorna a string original em ambos os campos
+    return {
+        codigo: penalidade,
+        descricao: penalidade
+    };
+}
+
 // Logo local path
 const LOGO_PATH = path.join(__dirname, '../public/images/logo.png');
 // Converte a imagem para base64
@@ -38,6 +58,11 @@ router.post('/create', async (req, res) => {
         if (!data || !data.numero_documento || !data.nome_funcionario) {
             throw new Error('Dados incompletos. É necessário fornecer pelo menos número do documento e nome do funcionário.');
         }
+
+        // Processar penalidade
+        const penalidade = processarPenalidade(data.penalidade);
+        data.penalidade = penalidade.codigo;
+        data.penalidade_aplicada = penalidade.descricao;
 
         // Formatar texto_limite e texto_excesso
         if (data.valor_limite && data.medida) {
@@ -91,7 +116,7 @@ router.post('/create', async (req, res) => {
                     codigo_infracao: data.codigo_infracao,
                     infracao_cometida: data.infracao_cometida,
                     data_infracao: data.data_infracao,
-                    hora_infracao: data.hora_infracao, // Agora salvando apenas HH:MM
+                    hora_infracao: data.hora_infracao,
                     penalidade: data.penalidade,
                     penalidade_aplicada: data.penalidade_aplicada,
                     nome_lider: data.nome_lider,
@@ -290,6 +315,11 @@ router.post('/generate', async (req, res) => {
         console.log(`[Geração de PDF] 🔗 Origem: ${origin}`);
         console.log('[Geração de PDF] 📄 Documento:', data.numero_documento);
 
+        // Processar penalidade
+        const penalidade = processarPenalidade(data.penalidade);
+        data.penalidade = penalidade.codigo;
+        data.penalidade_aplicada = penalidade.descricao;
+
         // Formatar texto_limite e texto_excesso
         if (data.valor_limite && data.medida) {
             data.texto_limite = `Limite estabelecido: ${data.valor_limite}${data.medida}`;
@@ -436,6 +466,11 @@ router.post('/test', async (req, res) => {
 
         // Processar data da ocorrência (se fornecida)
         const data = req.body;
+
+        // Processar penalidade
+        const penalidade = processarPenalidade(data.penalidade);
+        data.penalidade = penalidade.codigo;
+        data.penalidade_aplicada = penalidade.descricao;
 
         // Formatar texto_limite e texto_excesso
         if (data.valor_limite && data.medida) {
