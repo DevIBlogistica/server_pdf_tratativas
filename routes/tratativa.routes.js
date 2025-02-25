@@ -8,22 +8,38 @@ const fs = require('fs');
 const handlebars = require('handlebars');
 
 // Função para processar o campo de penalidade
-function processarPenalidade(penalidade) {
-    if (!penalidade) return { codigo: '', descricao: '' };
+function processarPenalidade(codigo) {
+    if (!codigo) return { codigo: '', descricao: '' };
     
-    // Verifica se a penalidade está no formato "P2 - Advertência Escrita"
-    const match = penalidade.match(/^(P\d+)\s*-\s*(.+)$/);
+    // Mapeamento de códigos para descrições
+    const descricoes = {
+        'P1': 'Advertência Verbal',
+        'P2': 'Advertência Escrita',
+        'P3': 'Suspensão',
+        'P4': 'Demissão'
+    };
+    
+    // Se o código já vier no formato "P2 - Descrição"
+    const match = codigo.match(/^(P\d+)\s*-\s*(.+)$/);
     if (match) {
         return {
-            codigo: match[1],        // P2
-            descricao: match[2]      // Advertência Escrita
+            codigo: match[1],
+            descricao: match[2]
         };
     }
     
-    // Caso não esteja no formato esperado, retorna a string original em ambos os campos
+    // Se for apenas o código, busca a descrição no mapeamento
+    if (descricoes[codigo]) {
+        return {
+            codigo: codigo,
+            descricao: descricoes[codigo]
+        };
+    }
+    
+    // Caso não encontre, retorna o código como está
     return {
-        codigo: penalidade,
-        descricao: penalidade
+        codigo: codigo,
+        descricao: codigo
     };
 }
 
@@ -59,8 +75,14 @@ router.post('/create', async (req, res) => {
             throw new Error('Dados incompletos. É necessário fornecer pelo menos número do documento e nome do funcionário.');
         }
 
+        // Processar data e hora
+        if (data.data_infracao && data.hora_infracao) {
+            // Combinar data e hora em um único timestamp
+            data.data_ocorrencia = `${data.data_infracao}T${data.hora_infracao}:00`;
+        }
+
         // Processar penalidade
-        const penalidade = processarPenalidade(data.penalidade);
+        const penalidade = processarPenalidade(data.penalidade_aplicada || data.penalidade);
         data.penalidade = penalidade.codigo;
         data.penalidade_aplicada = penalidade.descricao;
 
@@ -315,8 +337,14 @@ router.post('/generate', async (req, res) => {
         console.log(`[Geração de PDF] 🔗 Origem: ${origin}`);
         console.log('[Geração de PDF] 📄 Documento:', data.numero_documento);
 
+        // Processar data e hora
+        if (data.data_infracao && data.hora_infracao) {
+            // Combinar data e hora em um único timestamp
+            data.data_ocorrencia = `${data.data_infracao}T${data.hora_infracao}:00`;
+        }
+
         // Processar penalidade
-        const penalidade = processarPenalidade(data.penalidade);
+        const penalidade = processarPenalidade(data.penalidade_aplicada || data.penalidade);
         data.penalidade = penalidade.codigo;
         data.penalidade_aplicada = penalidade.descricao;
 
@@ -467,8 +495,14 @@ router.post('/test', async (req, res) => {
         // Processar data da ocorrência (se fornecida)
         const data = req.body;
 
+        // Processar data e hora
+        if (data.data_infracao && data.hora_infracao) {
+            // Combinar data e hora em um único timestamp
+            data.data_ocorrencia = `${data.data_infracao}T${data.hora_infracao}:00`;
+        }
+
         // Processar penalidade
-        const penalidade = processarPenalidade(data.penalidade);
+        const penalidade = processarPenalidade(data.penalidade_aplicada || data.penalidade);
         data.penalidade = penalidade.codigo;
         data.penalidade_aplicada = penalidade.descricao;
 
