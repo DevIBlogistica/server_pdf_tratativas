@@ -7,6 +7,10 @@ const supabase = require('../config/supabase');
 const fs = require('fs');
 const handlebars = require('handlebars');
 const { v4: uuidv4 } = require('uuid');
+const multer = require('multer');
+
+// Configure multer for memory storage
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Create temp directory structure
 const TEMP_DIR = path.join(__dirname, '../temp');
@@ -187,7 +191,7 @@ const corsOptions = {
 router.use(cors(corsOptions));
 
 // NOVA ROTA: Para criar um registro de tratativa no Supabase e gerar o PDF
-router.post('/create', async (req, res) => {
+router.post('/create', upload.single('imagem'), async (req, res) => {
     let tempFileName = null;
     
     try {
@@ -196,16 +200,17 @@ router.post('/create', async (req, res) => {
         const origin = req.headers['origin'] || req.headers['referer'] || 'Origem desconhecida';
         
         // Recebe os dados do frontend
-        const data = req.body;
+        const data = JSON.parse(req.body.data); // Parse the JSON string from FormData
         console.log('\n[Tratativa] ✅ Iniciando criação de tratativa:', data.numero_documento);
         console.log(`[Tratativa] 🌐 IP de Origem: ${ip}`);
         console.log(`[Tratativa] 🔗 Origem: ${origin}`);
 
-        // Process attached image if present in request.files
-        if (req.files && req.files.imagem) {
-            const { fileName, publicUrl } = await uploadTempImage(req.files.imagem);
+        // Process attached image if present
+        if (req.file) {
+            const { fileName, publicUrl } = await uploadTempImage(req.file);
             tempFileName = fileName;
             data.imagem = publicUrl;
+            console.log('[Image] Image URL:', data.imagem);
         }
 
         // Validação do payload
@@ -437,6 +442,7 @@ router.post('/create', async (req, res) => {
         // After successful PDF generation and upload
         if (tempFileName) {
             await deleteTempFile(tempFileName);
+            console.log('[Cleanup] Removed temporary image');
         }
 
         res.json({
