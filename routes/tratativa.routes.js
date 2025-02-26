@@ -149,9 +149,10 @@ router.post('/create', async (req, res) => {
         console.log('[Tratativa] 🔗 Origem:', req.headers['origin'] || req.headers['referer'] || 'Origem desconhecida');
         console.log('[Tratativa] Dados recebidos:', data);
 
-        // Validação dos dados recebidos
-        if (!data.numero_documento || !data.nome_funcionario || !data.imagem) {
-            throw new Error('Dados incompletos. É necessário fornecer número do documento, nome do funcionário e imagem.');
+        // Validação dos dados recebidos - apenas campos obrigatórios
+        if (!data.numero_documento || !data.data_infracao || !data.hora_infracao || 
+            !data.codigo_infracao || !data.infracao_cometida || !data.penalidade || !data.nome_lider) {
+            throw new Error('Dados incompletos. É necessário fornecer: número da tratativa, data, hora, código da infração, descrição da infração, penalidade e líder.');
         }
 
         // Processar data se estiver no formato dd/mm/aaaa
@@ -178,21 +179,21 @@ router.post('/create', async (req, res) => {
             .from('tratativas')
             .insert([{
                 numero_tratativa: data.numero_documento,
-                funcionario: data.nome_funcionario,
-                funcao: data.funcao,
-                setor: data.setor,
+                funcionario: data.nome_funcionario || null,
                 data_infracao: data.data_infracao,
-                hora_infracao: data.hora_infracao,
+                hora_infracao: `${data.data_infracao}T${data.hora_infracao}:00.000Z`,
                 codigo_infracao: data.codigo_infracao,
                 descricao_infracao: data.infracao_cometida,
                 penalidade: data.penalidade,
                 lider: data.nome_lider,
-                texto_infracao: data.infracao_cometida,
-                texto_limite: data.valor_limite,
-                valor_praticado: data.valor_praticado,
-                medida: data.metrica,
-                mock: data.mock,
-                status: 'ENVIADA'
+                status: 'ENVIADA',
+                texto_infracao: data.infracao_cometida || null,
+                texto_limite: data.valor_limite || null,
+                funcao: data.funcao || null,
+                setor: data.setor || null,
+                medida: data.metrica || null,
+                valor_praticado: data.valor_praticado || null,
+                mock: data.mock || false
             }])
             .select()
             .single();
