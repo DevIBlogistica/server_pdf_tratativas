@@ -748,4 +748,25 @@ router.post('/test-connection', (req, res) => {
         const userAgent = req.headers['user-agent'] || 'User-Agent desconhecido';
         
         console.log('\n[Teste de Conexão] ✅ Requisição recebida');
-        console.log(`
+        console.log(`[Teste de Conexão] 🌐 IP de Origem: ${ip}`);
+        console.log(`[Teste de Conexão] 🔗 Origem: ${origin}`);
+        console.log(`[Teste de Conexão] 📱 User-Agent: ${userAgent}`);
+
+        res.json({
+            success: true,
+            message: 'Conexão estabelecida com sucesso',
+            ip,
+            origin,
+            userAgent
+        });
+    } catch (error) {
+        console.error('[Erro] Falha no teste de conexão:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao testar conexão',
+            error: error.message
+        });
+    }
+});
+
+module.exports = router;
