@@ -144,14 +144,14 @@ router.post('/create', async (req, res) => {
     
     try {
         const data = req.body;
-        console.log('[Tratativa] ✅ Iniciando criação de tratativa:', data.numero_tratativa);
+        console.log('[Tratativa] ✅ Iniciando criação de tratativa:', data.numero_documento);
         console.log('[Tratativa] 🌐 IP de Origem:', req.headers['x-forwarded-for'] || req.socket.remoteAddress);
         console.log('[Tratativa] 🔗 Origem:', req.headers['origin'] || req.headers['referer'] || 'Origem desconhecida');
         console.log('[Tratativa] Dados recebidos:', data);
 
         // Validação dos dados recebidos - apenas campos obrigatórios
-        if (!data.numero_tratativa || !data.data_infracao || !data.hora_infracao || 
-            !data.codigo_infracao || !data.descricao_infracao || !data.penalidade || !data.lider) {
+        if (!data.numero_documento || !data.data_infracao || !data.hora_infracao || 
+            !data.codigo_infracao || !data.infracao_cometida || !data.penalidade || !data.nome_lider) {
             throw new Error('Dados incompletos. É necessário fornecer: número da tratativa, data, hora, código da infração, descrição da infração, penalidade e líder.');
         }
 
@@ -178,20 +178,20 @@ router.post('/create', async (req, res) => {
         const { data: newTratativa, error: dbError } = await supabase
             .from('tratativas')
             .insert([{
-                numero_tratativa: data.numero_tratativa,
-                funcionario: data.funcionario || null,
+                numero_tratativa: data.numero_documento,
+                funcionario: data.nome_funcionario || null,
                 data_infracao: data.data_infracao,
                 hora_infracao: `${data.data_infracao}T${data.hora_infracao}:00.000Z`,
                 codigo_infracao: data.codigo_infracao,
-                descricao_infracao: data.descricao_infracao,
+                descricao_infracao: data.infracao_cometida,
                 penalidade: data.penalidade,
-                lider: data.lider,
+                lider: data.nome_lider,
                 status: 'ENVIADA',
-                texto_infracao: data.texto_infracao || null,
-                texto_limite: data.texto_limite || null,
+                texto_infracao: data.infracao_cometida || null,
+                texto_limite: data.valor_limite || null,
                 funcao: data.funcao || null,
                 setor: data.setor || null,
-                medida: data.medida || null,
+                medida: data.metrica || null,
                 valor_praticado: data.valor_praticado || null,
                 mock: data.mock || false
             }])
@@ -246,9 +246,9 @@ router.post('/create', async (req, res) => {
 
         // Gera nome do arquivo incluindo o ID do registro
         const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
-        const nomeFormatado = normalizarTexto(data.funcionario).replace(/\s+/g, '_').toUpperCase();
+        const nomeFormatado = normalizarTexto(data.nome_funcionario).replace(/\s+/g, '_').toUpperCase();
         const setorFormatado = normalizarTexto(data.setor).replace(/\s+/g, '_').toUpperCase();
-        const fileName = `enviadas/${data.numero_tratativa}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
+        const fileName = `enviadas/${data.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
 
         console.log('[5/5] Fazendo upload do PDF para Supabase');
         const { error: uploadError } = await supabase.storage
@@ -363,7 +363,7 @@ router.post('/generate', async (req, res) => {
         console.log('\n[Geração de PDF] ✅ Solicitação recebida');
         console.log(`[Geração de PDF] 🌐 IP de Origem: ${ip}`);
         console.log(`[Geração de PDF] 🔗 Origem: ${origin}`);
-        console.log('[Geração de PDF] 📄 Documento:', data.numero_tratativa);
+        console.log('[Geração de PDF] 📄 Documento:', data.numero_documento);
 
         // Processar data e hora
         if (data.data_infracao && data.hora_infracao) {
@@ -511,9 +511,9 @@ router.post('/generate', async (req, res) => {
 
         // Gera nome do arquivo
         const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
-        const nomeFormatado = normalizarTexto(data.funcionario).replace(/\s+/g, '_').toUpperCase();
+        const nomeFormatado = normalizarTexto(data.nome_funcionario).replace(/\s+/g, '_').toUpperCase();
         const setorFormatado = normalizarTexto(data.setor).replace(/\s+/g, '_').toUpperCase();
-        const fileName = `enviadas/${data.numero_tratativa}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
+        const fileName = `enviadas/${data.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
 
         // Upload do PDF
         const { error: uploadError } = await supabase.storage
@@ -712,9 +712,9 @@ router.post('/test', async (req, res) => {
         console.log('[7/8] Navegador fechado');
 
         const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
-        const nomeFormatado = normalizarTexto(data.funcionario).replace(/\s+/g, '_').toUpperCase();
+        const nomeFormatado = normalizarTexto(data.nome_funcionario).replace(/\s+/g, '_').toUpperCase();
         const setorFormatado = normalizarTexto(data.setor).replace(/\s+/g, '_').toUpperCase();
-        const fileName = `mocks/${data.numero_tratativa}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
+        const fileName = `mocks/${data.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
         console.log('[8/8] Iniciando upload para Supabase:', fileName);
 
         console.log('Tentando upload com bucket:', process.env.SUPABASE_TRATATIVAS_BUCKET_NAME);
