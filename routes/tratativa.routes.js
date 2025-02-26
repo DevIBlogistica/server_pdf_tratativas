@@ -192,7 +192,7 @@ router.use(cors(corsOptions));
 
 // ROTA: Para criar um registro de tratativa no Supabase e gerar o PDF
 router.post('/create', async (req, res) => {
-    let pdfPath;
+    let tempPdfPath;
     
     try {
         // Obter informações da origem da requisição
@@ -375,8 +375,8 @@ router.post('/create', async (req, res) => {
         });
 
         // Generate PDF to temp directory
-        const { pdfPath: tempPdfPath } = await generatePDFToTemp(page, dadosComLogo);
-        pdfPath = tempPdfPath;
+        const { pdfPath } = await generatePDFToTemp(page, dadosComLogo);
+        tempPdfPath = pdfPath;
 
         await browser.close();
 
@@ -425,8 +425,8 @@ router.post('/create', async (req, res) => {
 
     } catch (error) {
         // Clean up temp files in case of error
-        if (pdfPath) {
-            cleanupTempFiles([pdfPath]);
+        if (tempPdfPath) {
+            cleanupTempFiles([tempPdfPath]);
         }
         
         console.error('Erro ao criar tratativa:', error);
