@@ -1,0 +1,13 @@
+const express = require('express');
+const cors = require('cors');
+const router = express.Router();
+const path = require('path');
+const puppeteer = require('puppeteer');
+const supabase = require('../config/supabase');
+const fs = require('fs');
+const handlebars = require('handlebars');
+const { v4: uuidv4 } = require('uuid');
+
+// Logo local path
+const LOGO_PATH = path.join(__dirname, '../public/images/logo.png');
+// ... existing code ... 

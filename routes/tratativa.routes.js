@@ -8,10 +8,45 @@ const fs = require('fs');
 const handlebars = require('handlebars');
 const { v4: uuidv4 } = require('uuid');
 
+// Função para remover acentos e caracteres especiais
+function normalizarTexto(texto) {
+    const caracteresEspeciais = {
+        'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a', 'ä': 'a',
+        'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
+        'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i',
+        'ó': 'o', 'ò': 'o', 'õ': 'o', 'ô': 'o', 'ö': 'o',
+        'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u',
+        'ý': 'y', 'ÿ': 'y',
+        'ñ': 'n',
+        'ç': 'c',
+        'Á': 'A', 'À': 'A', 'Ã': 'A', 'Â': 'A', 'Ä': 'A',
+        'É': 'E', 'È': 'E', 'Ê': 'E', 'Ë': 'E',
+        'Í': 'I', 'Ì': 'I', 'Î': 'I', 'Ï': 'I',
+        'Ó': 'O', 'Ò': 'O', 'Õ': 'O', 'Ô': 'O', 'Ö': 'O',
+        'Ú': 'U', 'Ù': 'U', 'Û': 'U', 'Ü': 'U',
+        'Ý': 'Y',
+        'Ñ': 'N',
+        'Ç': 'C'
+    };
+
+    return texto
+        .split('')
+        .map(char => caracteresEspeciais[char] || char)
+        .join('')
+        .replace(/[^a-zA-Z0-9\s_-]/g, '')
+        .trim();
+}
+
 // Logo local path
 const LOGO_PATH = path.join(__dirname, '../public/images/logo.png');
 // Converte a imagem para base64
 const LOGO_BASE64 = `data:image/png;base64,${fs.readFileSync(LOGO_PATH).toString('base64')}`;
+
+// Diretório temporário para PDFs
+const tempPdfDir = path.join(__dirname, '../temp/pdfs');
+if (!fs.existsSync(tempPdfDir)) {
+    fs.mkdirSync(tempPdfDir, { recursive: true });
+}
 
 // Function to generate PDF buffer
 const generatePDF = async (page) => {
@@ -39,6 +74,23 @@ const generatePDF = async (page) => {
         throw error;
     }
 };
+
+// Função para limpar arquivos temporários de PDF
+const cleanupTempDirs = () => {
+    try {
+        if (fs.existsSync(tempPdfDir)) {
+            const files = fs.readdirSync(tempPdfDir);
+            for (const file of files) {
+                fs.unlinkSync(path.join(tempPdfDir, file));
+            }
+        }
+    } catch (error) {
+        console.error('[Cleanup] Erro ao limpar diretório temporário de PDFs:', error);
+    }
+};
+
+// Limpa os diretórios temporários a cada 24 horas
+setInterval(cleanupTempDirs, 24 * 60 * 60 * 1000);
 
 // Função para processar o campo de penalidade
 function processarPenalidade(codigo) {
@@ -86,97 +138,23 @@ const corsOptions = {
 router.use(cors(corsOptions));
 
 // ROTA: Para criar um registro de tratativa no Supabase e gerar o PDF
-router.post('/create', async (req, res) => {
+router.post('/', async (req, res) => {
+    let browser;
+    const tempPdfPath = path.join(tempPdfDir, `${uuidv4()}.pdf`);
+    
     try {
-        // Obter informações da origem da requisição
-        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-        const origin = req.headers['origin'] || req.headers['referer'] || 'Origem desconhecida';
-        
-        // Recebe os dados do frontend
         const data = req.body;
-        console.log('\n[Tratativa] ✅ Iniciando criação de tratativa:', data.numero_documento);
-        console.log(`[Tratativa] 🌐 IP de Origem: ${ip}`);
-        console.log(`[Tratativa] 🔗 Origem: ${origin}`);
+        console.log('[Tratativa] Dados recebidos:', data);
 
-        // Validação do payload
-        if (!data || !data.numero_documento || !data.nome_funcionario || !data.imagem) {
-            throw new Error('Dados incompletos. É necessário fornecer número do documento, nome do funcionário e URL da imagem.');
+        // Validar dados necessários
+        if (!data.numero_documento || !data.nome_funcionario || !data.imagem) {
+            throw new Error('Dados incompletos. É necessário fornecer número do documento, nome do funcionário e imagem.');
         }
 
-        // Processar data e hora
-        if (data.data_infracao && data.hora_infracao) {
-            // Combinar data e hora em um único timestamp
-            data.data_ocorrencia = `${data.data_infracao}T${data.hora_infracao}:00`;
-        }
-
-        // Processar penalidade
-        const penalidade = processarPenalidade(data.penalidade_aplicada || data.penalidade);
-        data.penalidade_aplicada = `${penalidade.codigo} - ${penalidade.descricao}`;
-        // Split penalidade for template display
-        data.penalidade = penalidade.codigo;
-        data.penalidade_descricao = penalidade.descricao;
-
-        // Processar valores de limite e excesso
-        if (data.valor_limite || data.valor_praticado) {
-            // Garantir que a métrica esteja presente se houver valores
-            if (!data.metrica) {
-                data.metrica = 'unidade';
-                console.warn('[Alerta] Métrica não fornecida, usando "unidade" como padrão');
-            }
-
-            // Formatar texto_limite se valor_limite estiver presente
-            if (data.valor_limite) {
-                data.texto_limite = `Limite estabelecido: ${data.valor_limite}${data.metrica}`;
-            }
-
-            // Formatar texto_excesso se valor_praticado estiver presente
-            if (data.valor_praticado) {
-                data.texto_excesso = `Valor praticado: ${data.valor_praticado}${data.metrica}`;
-            }
-
-            console.log('[Tratativa] 📊 Valores processados:');
-            if (data.texto_limite) console.log(`[Tratativa] ⬇️ ${data.texto_limite}`);
-            if (data.texto_excesso) console.log(`[Tratativa] ⬆️ ${data.texto_excesso}`);
-        } else {
-            // Se não houver valores, definir métrica padrão
-            data.metrica = 'unidade';
-        }
-
-        // Processar data da ocorrência (se fornecida)
-        if (data.data_ocorrencia) {
-            const dataObj = new Date(data.data_ocorrencia);
-            if (!isNaN(dataObj.getTime())) {
-                // Extrair data no formato DD/MM/YYYY para exibição
-                const dia = String(dataObj.getDate()).padStart(2, '0');
-                const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
-                const ano = dataObj.getFullYear();
-                data.data_formatada = `${dia}/${mes}/${ano}`;
-                
-                // Manter data no formato ISO para o banco
-                data.data_infracao = `${ano}-${mes}-${dia}`;
-                
-                // Extrair hora no formato HH:MM
-                const hora = String(dataObj.getHours()).padStart(2, '0');
-                const minutos = String(dataObj.getMinutes()).padStart(2, '0');
-                data.hora_infracao = `${hora}:${minutos}`;
-                
-                // Criar data por extenso
-                const mesesPorExtenso = [
-                    'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-                    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-                ];
-                data.data_formatada_extenso = `${dia} de ${mesesPorExtenso[dataObj.getMonth()]} de ${ano}`;
-                
-                console.log('[Tratativa] 📅 Data ISO:', data.data_infracao);
-                console.log('[Tratativa] 📅 Data formatada:', data.data_formatada);
-                console.log('[Tratativa] 🕒 Hora formatada:', data.hora_infracao);
-                console.log('[Tratativa] 📝 Data por extenso:', data.data_formatada_extenso);
-            } else {
-                console.warn('[Alerta] Data de ocorrência inválida:', data.data_ocorrencia);
-            }
-        } else if (data.data_infracao) {
-            // Se receber a data diretamente, converter para ISO
+        // Processar data se estiver no formato dd/mm/aaaa
+        if (data.data_infracao && data.data_infracao.includes('/')) {
             const [dia, mes, ano] = data.data_infracao.split('/');
+            
             if (dia && mes && ano) {
                 data.data_infracao = `${ano}-${mes}-${dia}`;
                 data.data_formatada = `${dia}/${mes}/${ano}`;
@@ -187,46 +165,25 @@ router.post('/create', async (req, res) => {
                     'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
                 ];
                 data.data_formatada_extenso = `${dia} de ${mesesPorExtenso[parseInt(mes) - 1]} de ${ano}`;
-                
-                console.log('[Tratativa] 📅 Data ISO:', data.data_infracao);
-                console.log('[Tratativa] 📅 Data formatada:', data.data_formatada);
-                console.log('[Tratativa] 📝 Data por extenso:', data.data_formatada_extenso);
             }
         }
 
         // 1. Criar registro no Supabase
-        console.log('[1/7] Criando registro no Supabase');
+        console.log('[1/5] Criando registro no Supabase');
         const { data: newTratativa, error: dbError } = await supabase
             .from('tratativas')
-            .insert([
-                {
-                    numero_documento: data.numero_documento,
-                    nome_funcionario: data.nome_funcionario,
-                    funcao: data.funcao,
-                    setor: data.setor,
-                    data_formatada: data.data_formatada_extenso,
-                    codigo_infracao: data.codigo_infracao,
-                    infracao_cometida: data.infracao_cometida,
-                    data_infracao: data.data_infracao ? new Date(data.data_infracao).toISOString() : null,
-                    data_devolvida: null,
-                    hora_infracao: data.hora_infracao,
-                    penalidade_aplicada: data.penalidade_aplicada,
-                    nome_lider: data.nome_lider,
-                    texto_excesso: data.texto_excesso,
-                    texto_limite: data.texto_limite,
-                    valor_praticado: data.valor_praticado,
-                    valor_limite: data.valor_limite,
-                    metrica: data.metrica,
-                    status: 'ENVIADA',
-                    created_at: new Date().toISOString()
-                }
-            ])
-            .select();
+            .insert([{
+                ...data,
+                status: 'pendente',
+                data_criacao: new Date().toISOString()
+            }])
+            .select()
+            .single();
 
         if (dbError) throw dbError;
         
-        const tratativaId = newTratativa[0].id;
-        console.log(`[2/7] Registro criado com ID: ${tratativaId}`);
+        const tratativaId = newTratativa.id;
+        console.log(`[2/5] Registro criado com ID: ${tratativaId}`);
         
         // 2. Gerar PDF da tratativa
         // Adicionar logo aos dados
@@ -235,8 +192,8 @@ router.post('/create', async (req, res) => {
             logo_src: LOGO_BASE64
         };
 
-        console.log('[3/7] Iniciando navegador Puppeteer');
-        const browser = await puppeteer.launch({
+        console.log('[3/5] Iniciando navegador Puppeteer');
+        browser = await puppeteer.launch({
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
@@ -245,7 +202,7 @@ router.post('/create', async (req, res) => {
         // Permitir acesso a arquivos locais e URLs externas
         await page.setBypassCSP(true);
 
-        console.log('[4/7] Renderizando template com Handlebars');
+        console.log('[4/5] Renderizando template e gerando PDF');
         const html = await new Promise((resolve, reject) => {
             req.app.render('templateTratativa', dadosComLogo, (err, html) => {
                 if (err) reject(err);
@@ -253,7 +210,6 @@ router.post('/create', async (req, res) => {
             });
         });
 
-        console.log('[5/7] Carregando e injetando CSS');
         const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
         const css = fs.readFileSync(cssPath, 'utf8');
         const htmlWithStyles = html.replace('</head>', `
@@ -261,7 +217,6 @@ router.post('/create', async (req, res) => {
             <style>${css}</style>
         </head>`);
 
-        console.log('[6/7] Configurando conteúdo na página e gerando PDF');
         await page.setContent(htmlWithStyles, {
             waitUntil: 'networkidle0',
             timeout: 60000
@@ -269,17 +224,15 @@ router.post('/create', async (req, res) => {
 
         // Generate PDF buffer
         const pdfBuffer = await generatePDF(page);
-
         await browser.close();
 
         // Gera nome do arquivo incluindo o ID do registro
         const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
-        const nomeFormatado = data.nome_funcionario.trim().replace(/\s+/g, '_').toUpperCase();
-        const setorFormatado = data.setor.trim().replace(/\s+/g, '_').toUpperCase();
+        const nomeFormatado = normalizarTexto(data.nome_funcionario).replace(/\s+/g, '_').toUpperCase();
+        const setorFormatado = normalizarTexto(data.setor).replace(/\s+/g, '_').toUpperCase();
         const fileName = `enviadas/${data.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
 
-        console.log('[7/7] Fazendo upload do PDF para Supabase');
-        // Upload do PDF
+        console.log('[5/5] Fazendo upload do PDF para Supabase');
         const { error: uploadError } = await supabase.storage
             .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
             .upload(fileName, pdfBuffer, {
@@ -296,14 +249,10 @@ router.post('/create', async (req, res) => {
         // Atualizar o registro com a URL do PDF
         const { error: updateError } = await supabase
             .from('tratativas')
-            .update({ 
-                documento_url: publicUrl
-            })
+            .update({ documento_url: publicUrl })
             .eq('id', tratativaId);
 
         if (updateError) throw updateError;
-
-        console.log('\n[Link do documento] 🔗\n' + publicUrl + '\n');
 
         res.json({
             success: true,
@@ -544,8 +493,8 @@ router.post('/generate', async (req, res) => {
 
         // Gera nome do arquivo
         const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
-        const nomeFormatado = data.nome_funcionario.trim().replace(/\s+/g, '_').toUpperCase();
-        const setorFormatado = data.setor.trim().replace(/\s+/g, '_').toUpperCase();
+        const nomeFormatado = normalizarTexto(data.nome_funcionario).replace(/\s+/g, '_').toUpperCase();
+        const setorFormatado = normalizarTexto(data.setor).replace(/\s+/g, '_').toUpperCase();
         const fileName = `enviadas/${data.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
 
         // Upload do PDF
@@ -745,8 +694,8 @@ router.post('/test', async (req, res) => {
         console.log('[7/8] Navegador fechado');
 
         const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
-        const nomeFormatado = data.nome_funcionario.trim().replace(/\s+/g, '_').toUpperCase();
-        const setorFormatado = data.setor.trim().replace(/\s+/g, '_').toUpperCase();
+        const nomeFormatado = normalizarTexto(data.nome_funcionario).replace(/\s+/g, '_').toUpperCase();
+        const setorFormatado = normalizarTexto(data.setor).replace(/\s+/g, '_').toUpperCase();
         const fileName = `mocks/${data.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
         console.log('[8/8] Iniciando upload para Supabase:', fileName);
 
@@ -837,27 +786,9 @@ router.put('/:id', async (req, res) => {
             updateData.status = 'DEVOLVIDA';
             updateData.data_devolvida = new Date().toISOString();
             
-            // If there's a new document uploaded for devolution
+            // Se houver uma URL do documento devolvido
             if (data.documento_devolvido_url) {
-                // Save returned document in recebidas folder
-                const fileName = `recebidas/tratativa_${id}_${Date.now()}.pdf`;
-                
-                // Upload the document to recebidas folder
-                const { error: uploadError } = await supabase.storage
-                    .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-                    .upload(fileName, Buffer.from(data.documento_devolvido_url), {
-                        contentType: 'application/pdf',
-                        upsert: true
-                    });
-
-                if (uploadError) throw uploadError;
-
-                // Get the public URL
-                const { data: { publicUrl } } = supabase.storage
-                    .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-                    .getPublicUrl(fileName);
-
-                updateData.documento_devolvido_url = publicUrl;
+                updateData.documento_devolvido_url = data.documento_devolvido_url;
             }
         }
         
