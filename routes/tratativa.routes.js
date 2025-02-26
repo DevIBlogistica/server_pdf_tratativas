@@ -19,6 +19,11 @@ const TEMP_PDFS_DIR = path.join(TEMP_DIR, 'pdfs');
     }
 });
 
+// Logo local path
+const LOGO_PATH = path.join(__dirname, '../public/images/logo.png');
+// Converte a imagem para base64
+const LOGO_BASE64 = `data:image/png;base64,${fs.readFileSync(LOGO_PATH).toString('base64')}`;
+
 // Function to clean up temp files
 const cleanupTempFiles = (files) => {
     files.forEach(file => {
@@ -100,10 +105,10 @@ const deleteTempFile = async (fileName) => {
 const generatePDFToTemp = async (page, data) => {
     try {
         const pdfFileName = `${uuidv4()}.pdf`;
-        const pdfPath = path.join(TEMP_PDFS_DIR, pdfFileName);
+        const tempPdfPath = path.join(TEMP_PDFS_DIR, pdfFileName);
         
         // Generate PDF
-        const pdfBuffer = await page.pdf({
+        await page.pdf({
             format: 'A4',
             printBackground: true,
             margin: {
@@ -116,11 +121,11 @@ const generatePDFToTemp = async (page, data) => {
             scale: 1.0,
             displayHeaderFooter: false,
             landscape: false,
-            path: pdfPath // Save directly to file
+            path: tempPdfPath
         });
         
-        console.log(`[PDF] Generated temp PDF: ${pdfPath}`);
-        return { pdfPath, pdfFileName };
+        console.log(`[PDF] Generated temp PDF: ${tempPdfPath}`);
+        return { tempPdfPath, pdfFileName };
     } catch (error) {
         console.error('[PDF] Error generating PDF:', error);
         throw error;
@@ -162,11 +167,6 @@ function processarPenalidade(codigo) {
         descricao: codigo
     };
 }
-
-// Logo local path
-const LOGO_PATH = path.join(__dirname, '../public/images/logo.png');
-// Converte a imagem para base64
-const LOGO_BASE64 = `data:image/png;base64,${fs.readFileSync(LOGO_PATH).toString('base64')}`;
 
 // Configura o CORS
 const corsOptions = {
@@ -362,8 +362,8 @@ router.post('/create', async (req, res) => {
         });
 
         // Generate PDF to temp directory
-        const { pdfPath } = await generatePDFToTemp(page, dadosComLogo);
-        tempPdfPath = pdfPath;
+        const { tempPdfPath: generatedPdfPath } = await generatePDFToTemp(page, dadosComLogo);
+        tempPdfPath = generatedPdfPath;
 
         await browser.close();
 
@@ -377,7 +377,7 @@ router.post('/create', async (req, res) => {
         // Upload do PDF
         const { error: uploadError } = await supabase.storage
             .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-            .upload(fileName, fs.readFileSync(pdfPath), {
+            .upload(fileName, fs.readFileSync(tempPdfPath), {
                 contentType: 'application/pdf',
                 upsert: true
             });
@@ -398,8 +398,12 @@ router.post('/create', async (req, res) => {
 
         if (updateError) throw updateError;
 
-        // Clean up temp files
-        cleanupTempFiles([tempPdfPath]);
+        // Remover arquivo temporário após upload
+        try {
+            fs.unlinkSync(tempPdfPath);
+        } catch (error) {
+            console.error('Erro ao remover arquivo temporário:', error);
+        }
         
         console.log('\n[Link do documento] 🔗\n' + publicUrl + '\n');
 
@@ -411,9 +415,13 @@ router.post('/create', async (req, res) => {
         });
 
     } catch (error) {
-        // Clean up temp files in case of error
+        // Remover arquivo temporário em caso de erro
         if (tempPdfPath) {
-            cleanupTempFiles([tempPdfPath]);
+            try {
+                fs.unlinkSync(tempPdfPath);
+            } catch (unlinkError) {
+                console.error('Erro ao remover arquivo temporário:', unlinkError);
+            }
         }
         
         console.error('Erro ao criar tratativa:', error);
