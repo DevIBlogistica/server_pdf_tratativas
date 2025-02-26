@@ -190,9 +190,9 @@ const corsOptions = {
 
 router.use(cors(corsOptions));
 
-// NOVA ROTA: Para criar um registro de tratativa no Supabase e gerar o PDF
-router.post('/create', upload.single('imagem'), async (req, res) => {
-    let tempFileName = null;
+// ROTA: Para criar um registro de tratativa no Supabase e gerar o PDF
+router.post('/create', async (req, res) => {
+    let pdfPath;
     
     try {
         // Obter informações da origem da requisição
@@ -200,22 +200,14 @@ router.post('/create', upload.single('imagem'), async (req, res) => {
         const origin = req.headers['origin'] || req.headers['referer'] || 'Origem desconhecida';
         
         // Recebe os dados do frontend
-        const data = JSON.parse(req.body.data); // Parse the JSON string from FormData
+        const data = req.body;
         console.log('\n[Tratativa] ✅ Iniciando criação de tratativa:', data.numero_documento);
         console.log(`[Tratativa] 🌐 IP de Origem: ${ip}`);
         console.log(`[Tratativa] 🔗 Origem: ${origin}`);
 
-        // Process attached image if present
-        if (req.file) {
-            const { fileName, publicUrl } = await uploadTempImage(req.file);
-            tempFileName = fileName;
-            data.imagem = publicUrl;
-            console.log('[Image] Image URL:', data.imagem);
-        }
-
         // Validação do payload
-        if (!data || !data.numero_documento || !data.nome_funcionario) {
-            throw new Error('Dados incompletos. É necessário fornecer pelo menos número do documento e nome do funcionário.');
+        if (!data || !data.numero_documento || !data.nome_funcionario || !data.imagem) {
+            throw new Error('Dados incompletos. É necessário fornecer número do documento, nome do funcionário e URL da imagem.');
         }
 
         // Processar data e hora
@@ -310,7 +302,7 @@ router.post('/create', upload.single('imagem'), async (req, res) => {
         }
 
         // 1. Criar registro no Supabase
-        console.log('[1/9] Criando registro no Supabase');
+        console.log('[1/7] Criando registro no Supabase');
         const { data: newTratativa, error: dbError } = await supabase
             .from('tratativas')
             .insert([
@@ -323,7 +315,7 @@ router.post('/create', upload.single('imagem'), async (req, res) => {
                     codigo_infracao: data.codigo_infracao,
                     infracao_cometida: data.infracao_cometida,
                     data_infracao: data.data_infracao ? new Date(data.data_infracao).toISOString() : null,
-                    data_devolvida: null, // Will be set when status changes to DEVOLVIDA
+                    data_devolvida: null,
                     hora_infracao: data.hora_infracao,
                     penalidade_aplicada: data.penalidade_aplicada,
                     nome_lider: data.nome_lider,
@@ -341,7 +333,7 @@ router.post('/create', upload.single('imagem'), async (req, res) => {
         if (dbError) throw dbError;
         
         const tratativaId = newTratativa[0].id;
-        console.log(`[2/9] Registro criado com ID: ${tratativaId}`);
+        console.log(`[2/7] Registro criado com ID: ${tratativaId}`);
         
         // 2. Gerar PDF da tratativa
         // Adicionar logo aos dados
@@ -350,18 +342,17 @@ router.post('/create', upload.single('imagem'), async (req, res) => {
             logo_src: LOGO_BASE64
         };
 
-        console.log('[3/9] Iniciando navegador Puppeteer');
+        console.log('[3/7] Iniciando navegador Puppeteer');
         const browser = await puppeteer.launch({
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
         const page = await browser.newPage();
 
-        // Permitir acesso a arquivos locais
+        // Permitir acesso a arquivos locais e URLs externas
         await page.setBypassCSP(true);
 
-        console.log('[4/9] Renderizando template com Handlebars');
-        // Renderiza o template
+        console.log('[4/7] Renderizando template com Handlebars');
         const html = await new Promise((resolve, reject) => {
             req.app.render('templateTratativa', dadosComLogo, (err, html) => {
                 if (err) reject(err);
@@ -369,8 +360,7 @@ router.post('/create', upload.single('imagem'), async (req, res) => {
             });
         });
 
-        console.log('[5/9] Carregando e injetando CSS');
-        // Lê o CSS
+        console.log('[5/7] Carregando e injetando CSS');
         const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
         const css = fs.readFileSync(cssPath, 'utf8');
         const htmlWithStyles = html.replace('</head>', `
@@ -378,27 +368,15 @@ router.post('/create', upload.single('imagem'), async (req, res) => {
             <style>${css}</style>
         </head>`);
 
-        console.log('[6/9] Configurando conteúdo na página');
+        console.log('[6/7] Configurando conteúdo na página e gerando PDF');
         await page.setContent(htmlWithStyles, {
             waitUntil: 'networkidle0',
             timeout: 60000
         });
 
-        // Wait for images to load
-        await page.evaluate(() => {
-            return Promise.all(
-                Array.from(document.images)
-                    .filter(img => !img.complete)
-                    .map(img => new Promise(resolve => {
-                        img.onload = img.onerror = resolve;
-                    }))
-            );
-        });
-
-        console.log('[7/9] Gerando PDF');
         // Generate PDF to temp directory
-        const { pdfPath, pdfFileName } = await generatePDFToTemp(page, dadosComLogo);
-        tempFileName = pdfFileName;
+        const { pdfPath: tempPdfPath } = await generatePDFToTemp(page, dadosComLogo);
+        pdfPath = tempPdfPath;
 
         await browser.close();
 
@@ -408,7 +386,7 @@ router.post('/create', upload.single('imagem'), async (req, res) => {
         const setorFormatado = data.setor.trim().replace(/\s+/g, '_').toUpperCase();
         const fileName = `enviadas/${data.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
 
-        console.log('[8/9] Fazendo upload do PDF para Supabase');
+        console.log('[7/7] Fazendo upload do PDF para Supabase');
         // Upload do PDF
         const { error: uploadError } = await supabase.storage
             .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
@@ -423,7 +401,6 @@ router.post('/create', upload.single('imagem'), async (req, res) => {
             .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
             .getPublicUrl(fileName);
 
-        console.log('[9/9] Atualizando registro com URL do documento');
         // Atualizar o registro com a URL do PDF
         const { error: updateError } = await supabase
             .from('tratativas')
@@ -434,16 +411,10 @@ router.post('/create', upload.single('imagem'), async (req, res) => {
 
         if (updateError) throw updateError;
 
-        // Clean up all temp files
+        // Clean up temp files
         cleanupTempFiles([pdfPath]);
         
         console.log('\n[Link do documento] 🔗\n' + publicUrl + '\n');
-
-        // After successful PDF generation and upload
-        if (tempFileName) {
-            await deleteTempFile(tempFileName);
-            console.log('[Cleanup] Removed temporary image');
-        }
 
         res.json({
             success: true,
@@ -454,7 +425,9 @@ router.post('/create', upload.single('imagem'), async (req, res) => {
 
     } catch (error) {
         // Clean up temp files in case of error
-        cleanupTempFiles([pdfPath]);
+        if (pdfPath) {
+            cleanupTempFiles([pdfPath]);
+        }
         
         console.error('Erro ao criar tratativa:', error);
         res.status(500).json({

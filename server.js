@@ -37,14 +37,14 @@ app.use((req, res, next) => {
     next();
 });
 
-// Configuração para aceitar dados JSON e aumentar o limite
+// Configuração para aceitar dados JSON
 app.use(express.json({ 
-    limit: '50mb',
-    type: ['application/json', 'text/plain'] // Aceitar também text/plain
+    limit: '1mb',
+    type: ['application/json']
 }));
 app.use(express.urlencoded({ 
     extended: true, 
-    limit: '50mb' 
+    limit: '1mb' 
 }));
 
 // Configuração do Handlebars como template engine
