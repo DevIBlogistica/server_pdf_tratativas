@@ -362,8 +362,7 @@ router.post('/create', async (req, res) => {
         });
 
         // Generate PDF to temp directory
-        const { tempPdfPath: generatedPdfPath } = await generatePDFToTemp(page, dadosComLogo);
-        tempPdfPath = generatedPdfPath;
+        const { tempPdfPath } = await generatePDFToTemp(page, dadosComLogo);
 
         await browser.close();
 
