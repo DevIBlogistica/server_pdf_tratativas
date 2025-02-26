@@ -126,20 +126,3 @@ httpsServer.listen(port, '0.0.0.0', () => {
 }).on('error', (err) => {
     console.error('Erro ao iniciar servidor HTTPS:', err);
 });
-
-// Criar servidor HTTP apenas para redirecionamento HTTPS
-const httpApp = express();
-
-// Redirecionar todas as requisições HTTP para HTTPS
-httpApp.all('*', (req, res) => {
-    const httpsUrl = `https://${req.hostname}:${port}${req.url}`;
-    console.log(`Redirecionando para: ${httpsUrl}`);
-    res.redirect(301, httpsUrl);
-});
-
-// Iniciar servidor HTTP na porta 80
-httpApp.listen(80, () => {
-    console.log(`Servidor HTTP rodando na porta 80 (apenas para redirecionamento HTTPS)`);
-}).on('error', (err) => {
-    console.error('Erro ao iniciar servidor HTTP:', err);
-});
