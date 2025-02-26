@@ -150,8 +150,8 @@ router.post('/create', async (req, res) => {
         console.log('[Tratativa] Dados recebidos:', data);
 
         // Validação dos dados recebidos - apenas campos obrigatórios
-        if (!data.numero_documento || !data.data_infracao || !data.hora_infracao || 
-            !data.codigo_infracao || !data.infracao_cometida || !data.penalidade || !data.nome_lider) {
+        if (!data.numero_tratativa || !data.data_infracao || !data.hora_infracao || 
+            !data.codigo_infracao || !data.descricao_infracao || !data.penalidade || !data.lider) {
             throw new Error('Dados incompletos. É necessário fornecer: número da tratativa, data, hora, código da infração, descrição da infração, penalidade e líder.');
         }
 
@@ -178,20 +178,20 @@ router.post('/create', async (req, res) => {
         const { data: newTratativa, error: dbError } = await supabase
             .from('tratativas')
             .insert([{
-                numero_tratativa: data.numero_documento,
-                funcionario: data.nome_funcionario || null,
+                numero_tratativa: data.numero_tratativa,
+                funcionario: data.funcionario || null,
                 data_infracao: data.data_infracao,
                 hora_infracao: `${data.data_infracao}T${data.hora_infracao}:00.000Z`,
                 codigo_infracao: data.codigo_infracao,
-                descricao_infracao: data.infracao_cometida,
+                descricao_infracao: data.descricao_infracao,
                 penalidade: data.penalidade,
-                lider: data.nome_lider,
+                lider: data.lider,
                 status: 'ENVIADA',
-                texto_infracao: data.infracao_cometida || null,
-                texto_limite: data.valor_limite || null,
+                texto_infracao: data.texto_infracao || null,
+                texto_limite: data.texto_limite || null,
                 funcao: data.funcao || null,
                 setor: data.setor || null,
-                medida: data.metrica || null,
+                medida: data.medida || null,
                 valor_praticado: data.valor_praticado || null,
                 mock: data.mock || false
             }])
