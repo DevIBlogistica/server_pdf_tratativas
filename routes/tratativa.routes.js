@@ -177,8 +177,7 @@ router.post('/create', async (req, res) => {
             .from('tratativas')
             .insert([{
                 ...data,
-                status: 'pendente',
-                data_criacao: new Date().toISOString()
+                status: 'ENVIADA'
             }])
             .select()
             .single();
