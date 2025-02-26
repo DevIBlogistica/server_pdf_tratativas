@@ -176,10 +176,7 @@ router.post('/create', async (req, res) => {
         const { imagem, ...dadosParaSalvar } = data;
         const { data: newTratativa, error: dbError } = await supabase
             .from('tratativas')
-            .insert([{
-                ...dadosParaSalvar,
-                status: 'ENVIADA'
-            }])
+            .insert([dadosParaSalvar])
             .select()
             .single();
 
