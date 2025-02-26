@@ -8,107 +8,16 @@ const fs = require('fs');
 const handlebars = require('handlebars');
 const { v4: uuidv4 } = require('uuid');
 
-// Create temp directory structure
-const TEMP_DIR = path.join(__dirname, '../temp');
-const TEMP_PDFS_DIR = path.join(TEMP_DIR, 'pdfs');
-
-// Ensure temp directories exist
-[TEMP_DIR, TEMP_PDFS_DIR].forEach(dir => {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
-});
-
 // Logo local path
 const LOGO_PATH = path.join(__dirname, '../public/images/logo.png');
 // Converte a imagem para base64
 const LOGO_BASE64 = `data:image/png;base64,${fs.readFileSync(LOGO_PATH).toString('base64')}`;
 
-// Function to clean up temp files
-const cleanupTempFiles = (files) => {
-    files.forEach(file => {
-        try {
-            if (fs.existsSync(file)) {
-                fs.unlinkSync(file);
-                console.log(`[Cleanup] Removed temp file: ${file}`);
-            }
-        } catch (error) {
-            console.error(`[Cleanup] Error removing temp file ${file}:`, error);
-        }
-    });
-};
-
-// Function to clean up temp directories
-const cleanupTempDirs = () => {
+// Function to generate PDF buffer
+const generatePDF = async (page) => {
     try {
-        // Clean PDFs directory
-        if (fs.existsSync(TEMP_PDFS_DIR)) {
-            const pdfFiles = fs.readdirSync(TEMP_PDFS_DIR);
-            pdfFiles.forEach(file => {
-                fs.unlinkSync(path.join(TEMP_PDFS_DIR, file));
-            });
-        }
-        
-        console.log('[Cleanup] Temp directories cleaned successfully');
-    } catch (error) {
-        console.error('[Cleanup] Error cleaning temp directories:', error);
-    }
-};
-
-// Function to upload temp image to Supabase
-const uploadTempImage = async (imageFile) => {
-    try {
-        const fileName = `temp/${uuidv4()}-${imageFile.originalname}`;
-        
-        const { error: uploadError } = await supabase.storage
-            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-            .upload(fileName, imageFile.buffer, {
-                contentType: imageFile.mimetype,
-                upsert: false
-            });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-            .getPublicUrl(fileName);
-
-        console.log(`[Image] Uploaded temp image: ${fileName}`);
-        return { fileName, publicUrl };
-    } catch (error) {
-        console.error('[Image] Error uploading image:', error);
-        throw error;
-    }
-};
-
-// Function to delete temp file from Supabase
-const deleteTempFile = async (fileName) => {
-    try {
-        const { error } = await supabase.storage
-            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-            .remove([fileName]);
-
-        if (error) {
-            console.error(`[Cleanup] Error removing temp file ${fileName}:`, error);
-            return false;
-        }
-
-        console.log(`[Cleanup] Removed temp file: ${fileName}`);
-        return true;
-    } catch (error) {
-        console.error(`[Cleanup] Error removing temp file ${fileName}:`, error);
-        return false;
-    }
-};
-
-// Function to generate PDF and get temp path
-const generatePDFToTemp = async (page, data) => {
-    try {
-        const pdfFileName = `${uuidv4()}.pdf`;
-        const tempPdfPath = path.join(TEMP_PDFS_DIR, pdfFileName);
-        
-        // Generate PDF
-        await page.pdf({
+        // Generate PDF buffer directly
+        const pdfBuffer = await page.pdf({
             format: 'A4',
             printBackground: true,
             margin: {
@@ -120,12 +29,11 @@ const generatePDFToTemp = async (page, data) => {
             preferCSSPageSize: true,
             scale: 1.0,
             displayHeaderFooter: false,
-            landscape: false,
-            path: tempPdfPath
+            landscape: false
         });
         
-        console.log(`[PDF] Generated temp PDF: ${tempPdfPath}`);
-        return { tempPdfPath, pdfFileName };
+        console.log(`[PDF] Generated PDF buffer`);
+        return pdfBuffer;
     } catch (error) {
         console.error('[PDF] Error generating PDF:', error);
         throw error;
@@ -179,8 +87,6 @@ router.use(cors(corsOptions));
 
 // ROTA: Para criar um registro de tratativa no Supabase e gerar o PDF
 router.post('/create', async (req, res) => {
-    let tempPdfPath;
-    
     try {
         // Obter informações da origem da requisição
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
@@ -361,8 +267,8 @@ router.post('/create', async (req, res) => {
             timeout: 60000
         });
 
-        // Generate PDF to temp directory
-        const { tempPdfPath } = await generatePDFToTemp(page, dadosComLogo);
+        // Generate PDF buffer
+        const pdfBuffer = await generatePDF(page);
 
         await browser.close();
 
@@ -376,7 +282,7 @@ router.post('/create', async (req, res) => {
         // Upload do PDF
         const { error: uploadError } = await supabase.storage
             .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-            .upload(fileName, fs.readFileSync(tempPdfPath), {
+            .upload(fileName, pdfBuffer, {
                 contentType: 'application/pdf',
                 upsert: true
             });
@@ -397,13 +303,6 @@ router.post('/create', async (req, res) => {
 
         if (updateError) throw updateError;
 
-        // Remover arquivo temporário após upload
-        try {
-            fs.unlinkSync(tempPdfPath);
-        } catch (error) {
-            console.error('Erro ao remover arquivo temporário:', error);
-        }
-        
         console.log('\n[Link do documento] 🔗\n' + publicUrl + '\n');
 
         res.json({
@@ -414,15 +313,6 @@ router.post('/create', async (req, res) => {
         });
 
     } catch (error) {
-        // Remover arquivo temporário em caso de erro
-        if (tempPdfPath) {
-            try {
-                fs.unlinkSync(tempPdfPath);
-            } catch (unlinkError) {
-                console.error('Erro ao remover arquivo temporário:', unlinkError);
-            }
-        }
-        
         console.error('Erro ao criar tratativa:', error);
         res.status(500).json({
             success: false,
