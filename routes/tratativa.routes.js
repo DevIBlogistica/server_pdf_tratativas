@@ -173,10 +173,11 @@ router.post('/create', async (req, res) => {
 
         // 1. Criar registro no Supabase
         console.log('[1/5] Criando registro no Supabase');
+        const { imagem, ...dadosParaSalvar } = data;
         const { data: newTratativa, error: dbError } = await supabase
             .from('tratativas')
             .insert([{
-                ...data,
+                ...dadosParaSalvar,
                 status: 'ENVIADA'
             }])
             .select()
