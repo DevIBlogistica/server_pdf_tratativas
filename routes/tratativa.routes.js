@@ -7,18 +7,13 @@ const supabase = require('../config/supabase');
 const fs = require('fs');
 const handlebars = require('handlebars');
 const { v4: uuidv4 } = require('uuid');
-const multer = require('multer');
-
-// Configure multer for memory storage
-const upload = multer({ storage: multer.memoryStorage() });
 
 // Create temp directory structure
 const TEMP_DIR = path.join(__dirname, '../temp');
-const TEMP_IMAGES_DIR = path.join(TEMP_DIR, 'images');
 const TEMP_PDFS_DIR = path.join(TEMP_DIR, 'pdfs');
 
 // Ensure temp directories exist
-[TEMP_DIR, TEMP_IMAGES_DIR, TEMP_PDFS_DIR].forEach(dir => {
+[TEMP_DIR, TEMP_PDFS_DIR].forEach(dir => {
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
     }
@@ -41,14 +36,6 @@ const cleanupTempFiles = (files) => {
 // Function to clean up temp directories
 const cleanupTempDirs = () => {
     try {
-        // Clean images directory
-        if (fs.existsSync(TEMP_IMAGES_DIR)) {
-            const imageFiles = fs.readdirSync(TEMP_IMAGES_DIR);
-            imageFiles.forEach(file => {
-                fs.unlinkSync(path.join(TEMP_IMAGES_DIR, file));
-            });
-        }
-        
         // Clean PDFs directory
         if (fs.existsSync(TEMP_PDFS_DIR)) {
             const pdfFiles = fs.readdirSync(TEMP_PDFS_DIR);
@@ -412,7 +399,7 @@ router.post('/create', async (req, res) => {
         if (updateError) throw updateError;
 
         // Clean up temp files
-        cleanupTempFiles([pdfPath]);
+        cleanupTempFiles([tempPdfPath]);
         
         console.log('\n[Link do documento] 🔗\n' + publicUrl + '\n');
 
