@@ -178,24 +178,24 @@ router.post('/create', async (req, res) => {
         const { data: newTratativa, error: dbError } = await supabase
             .from('tratativas')
             .insert([{
-                numero_tratativa: data.numero_documento,
-                funcionario: data.nome_funcionario || null,
+                numero_tratativa: data.numero_tratativa,
+                funcionario: data.funcionario,
                 data_infracao: data.data_infracao,
                 hora_infracao: `${data.data_infracao}T${data.hora_infracao}:00.000Z`,
                 codigo_infracao: data.codigo_infracao,
-                descricao_infracao: data.infracao_cometida,
+                descricao_infracao: data.descricao_infracao,
                 penalidade: data.penalidade,
-                lider: data.nome_lider,
+                lider: data.lider,
                 status: 'ENVIADA',
-                texto_infracao: data.infracao_cometida || null,
-                texto_limite: data.valor_limite || null,
+                texto_infracao: data.texto_infracao,
+                texto_limite: data.texto_limite,
                 url_documento_enviado: null,
                 url_documento_devolvido: null,
                 data_devolvida: null,
-                funcao: data.funcao || null,
-                setor: data.setor || null,
-                medida: data.metrica || null,
-                valor_praticado: data.valor_praticado || null,
+                funcao: data.funcao,
+                setor: data.setor,
+                medida: data.medida,
+                valor_praticado: data.valor_praticado,
                 mock: data.mock || false
             }])
             .select()
