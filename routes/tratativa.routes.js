@@ -138,12 +138,15 @@ const corsOptions = {
 router.use(cors(corsOptions));
 
 // ROTA: Para criar um registro de tratativa no Supabase e gerar o PDF
-router.post('/', async (req, res) => {
+router.post('/create', async (req, res) => {
     let browser;
     const tempPdfPath = path.join(tempPdfDir, `${uuidv4()}.pdf`);
     
     try {
         const data = req.body;
+        console.log('[Tratativa] ✅ Iniciando criação de tratativa:', data.numero_documento);
+        console.log('[Tratativa] 🌐 IP de Origem:', req.headers['x-forwarded-for'] || req.socket.remoteAddress);
+        console.log('[Tratativa] 🔗 Origem:', req.headers['origin'] || req.headers['referer'] || 'Origem desconhecida');
         console.log('[Tratativa] Dados recebidos:', data);
 
         // Validar dados necessários
