@@ -39,9 +39,9 @@ function normalizarTexto(texto) {
 }
 
 // Logo local path
-const LOGO_PATH = path.join(__dirname, '../public/images/logo.ico');
-// Converte a imagem para base64
-const LOGO_BASE64 = `data:image/x-icon;base64,${fs.readFileSync(LOGO_PATH).toString('base64')}`;
+const LOGO_PATH = path.join(__dirname, '../public/images/logo.png');
+// Use direct file path for logo
+const LOGO_URL = '/images/logo.png';
 
 // Diretório temporário para PDFs
 const tempPdfDir = path.join(__dirname, '../temp/pdfs');
@@ -209,7 +209,7 @@ router.post('/create', async (req, res) => {
         // Adicionar logo aos dados
         const dadosComLogo = {
             ...data,
-            logo_src: LOGO_BASE64
+            logo_src: LOGO_URL
         };
 
         console.log('[3/5] Iniciando navegador Puppeteer');
@@ -472,7 +472,7 @@ router.post('/generate', async (req, res) => {
         // Adicionar logo aos dados
         const dadosComLogo = {
             ...data,
-            logo_src: LOGO_BASE64
+            logo_src: LOGO_URL
         };
 
         // Gera PDF usando a estrutura existente
@@ -678,7 +678,7 @@ router.post('/test', async (req, res) => {
 
         const dadosTeste = {
             ...data,
-            logo_src: LOGO_BASE64
+            logo_src: LOGO_URL
         };
 
         console.log('[Teste de PDF] 📋 Dados preparados');
@@ -856,7 +856,7 @@ router.post('/mock-pdf', async (req, res) => {
 
         // Garantir que a logo está sendo carregada corretamente
         console.log('[Mock PDF] 🖼️ Verificando logo...');
-        const logoPath = path.join(__dirname, '../public/images/logo.ico');
+        const logoPath = path.join(__dirname, '../public/images/logo.png');
         if (!fs.existsSync(logoPath)) {
             throw new Error('Arquivo da logo não encontrado em: ' + logoPath);
         }
@@ -1098,7 +1098,7 @@ router.post('/mock-test', async (req, res) => {
 
         const dadosTeste = {
             ...mockData,
-            logo_src: LOGO_BASE64
+            logo_src: LOGO_URL
         };
 
         console.log('[Mock Test] 📋 Dados preparados');
@@ -1250,7 +1250,7 @@ router.post('/mock-template', async (req, res) => {
         // Adicionar logo aos dados
         const dadosTeste = {
             ...mockData,
-            logo_src: LOGO_BASE64
+            logo_src: LOGO_URL
         };
 
         console.log('[Mock Template] 📋 Dados preparados');
