@@ -905,11 +905,11 @@ router.post('/mock-pdf', async (req, res) => {
         });
         const page = await browser.newPage();
 
-        // Configurar viewport para A4
+        // Configurar viewport para A4 com DPI correto
         await page.setViewport({
-            width: 794, // A4 width in pixels at 96 DPI
-            height: 1123, // A4 height in pixels at 96 DPI
-            deviceScaleFactor: 2
+            width: 794,  // A4 width at 96 DPI
+            height: 1123,  // A4 height at 96 DPI
+            deviceScaleFactor: 1
         });
 
         // Permitir acesso a arquivos locais e URLs externas
@@ -918,8 +918,8 @@ router.post('/mock-pdf', async (req, res) => {
         // Carregar o conteúdo HTML
         console.log('[Mock PDF] 📄 Carregando conteúdo');
         await page.setContent(html, {
-            waitUntil: 'networkidle0',
-            timeout: 60000
+            waitUntil: ['load', 'networkidle0'],
+            timeout: 30000
         });
 
         // Gerar PDF
@@ -928,13 +928,13 @@ router.post('/mock-pdf', async (req, res) => {
             format: 'A4',
             printBackground: true,
             margin: {
-                top: '0',
-                right: '0',
-                bottom: '0',
-                left: '0'
+                top: '25px',
+                right: '25px',
+                bottom: '25px',
+                left: '25px'
             },
-            preferCSSPageSize: true,
-            scale: 0.98
+            scale: 1,
+            preferCSSPageSize: true
         });
 
         await browser.close();
