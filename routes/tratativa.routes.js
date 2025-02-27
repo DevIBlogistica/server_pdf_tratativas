@@ -807,10 +807,10 @@ router.post('/test-connection', (req, res) => {
     }
 });
 
-// New route using html-pdf instead of Puppeteer
+// New route using Puppeteer with preview HTML
 router.post('/mock-pdf', async (req, res) => {
     try {
-        console.log('\n[Mock PDF] ✅ Iniciando geração de documento de teste com html-pdf');
+        console.log('\n[Mock PDF] ✅ Iniciando geração de documento de teste com Puppeteer');
         
         // Dados mockados para teste
         const mockData = {
@@ -875,7 +875,7 @@ router.post('/mock-pdf', async (req, res) => {
             html = html.replace(regex, dadosTeste[key] || '');
         });
 
-        // Adicionar CSS inline para garantir layout correto
+        // Adicionar CSS inline
         html = html.replace('</head>', `
             <style>
                 ${css}
@@ -897,46 +897,48 @@ router.post('/mock-pdf', async (req, res) => {
             </style>
         </head>`);
 
-        // Configurações do PDF
-        const options = {
+        // Iniciar Puppeteer
+        console.log('[Mock PDF] 🚀 Iniciando navegador Puppeteer');
+        const browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+        const page = await browser.newPage();
+
+        // Configurar viewport para A4
+        await page.setViewport({
+            width: 794, // A4 width in pixels at 96 DPI
+            height: 1123, // A4 height in pixels at 96 DPI
+            deviceScaleFactor: 2
+        });
+
+        // Permitir acesso a arquivos locais e URLs externas
+        await page.setBypassCSP(true);
+
+        // Carregar o conteúdo HTML
+        console.log('[Mock PDF] 📄 Carregando conteúdo');
+        await page.setContent(html, {
+            waitUntil: 'networkidle0',
+            timeout: 60000
+        });
+
+        // Gerar PDF
+        console.log('[Mock PDF] 📑 Gerando PDF');
+        const pdfBuffer = await page.pdf({
             format: 'A4',
-            orientation: 'portrait',
-            border: {
+            printBackground: true,
+            margin: {
                 top: '0',
                 right: '0',
                 bottom: '0',
                 left: '0'
             },
-            timeout: 120000,
-            type: 'pdf',
-            renderDelay: 2000,
-            height: '297mm',
-            width: '210mm',
-            base: `file://${path.join(__dirname, '../public').replace(/\\/g, '/')}/`,
-            phantomArgs: ['--web-security=false', '--local-to-remote-url-access=true'],
-            zoomFactor: '1.0',
-            footer: {
-                height: '0mm'
-            },
-            header: {
-                height: '0mm'
-            }
-        };
-
-        // Gerar PDF usando html-pdf
-        console.log('[Mock PDF] 📑 Gerando PDF com html-pdf');
-        const pdfBuffer = await new Promise((resolve, reject) => {
-            pdf.create(html, options).toBuffer((err, buffer) => {
-                if (err) {
-                    console.error('[Erro] Falha ao gerar PDF:', err);
-                    reject(err);
-                } else {
-                    resolve(buffer);
-                }
-            });
+            preferCSSPageSize: true,
+            scale: 0.98
         });
 
-        console.log('[Mock PDF] ✅ PDF gerado com sucesso');
+        await browser.close();
+        console.log('[Mock PDF] 🔒 Navegador fechado');
 
         // Preparar nome do arquivo
         const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
@@ -967,7 +969,7 @@ router.post('/mock-pdf', async (req, res) => {
 
         res.json({
             success: true,
-            message: 'Documento de teste gerado com sucesso usando html-pdf',
+            message: 'Documento de teste gerado com sucesso usando Puppeteer',
             url: publicUrl
         });
 
