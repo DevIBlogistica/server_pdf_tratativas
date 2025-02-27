@@ -190,7 +190,6 @@ router.post('/create', async (req, res) => {
                 texto_infracao: data.texto_infracao,
                 texto_limite: data.texto_limite,
                 url_documento_enviado: null,
-                url_documento_devolvido: null,
                 data_devolvida: null,
                 funcao: data.funcao,
                 setor: data.setor,
