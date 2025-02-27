@@ -875,14 +875,41 @@ router.post('/mock-pdf', async (req, res) => {
             html = html.replace(regex, dadosTeste[key] || '');
         });
 
+        // Adicionar CSS inline para garantir layout correto
+        html = html.replace('</head>', `
+            <style>
+                ${css}
+                @page {
+                    margin: 0;
+                    size: A4;
+                }
+                body {
+                    margin: 0;
+                    padding: 25px;
+                    width: 210mm;
+                    height: 297mm;
+                    box-sizing: border-box;
+                }
+                .container {
+                    max-width: 100%;
+                    margin: 0 auto;
+                }
+            </style>
+        </head>`);
+
         // Configurações do PDF
         const options = {
             format: 'A4',
             orientation: 'portrait',
-            border: '0',
+            border: {
+                top: '0',
+                right: '0',
+                bottom: '0',
+                left: '0'
+            },
             timeout: 120000,
             type: 'pdf',
-            renderDelay: 1000,
+            renderDelay: 2000,
             height: '297mm',
             width: '210mm',
             base: `file://${path.join(__dirname, '../public').replace(/\\/g, '/')}/`,
