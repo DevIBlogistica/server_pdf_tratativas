@@ -1,0 +1,153 @@
+[33mcf2dafd[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m chore: ensure template layout is maintained
+[33ma28199e[m fix: resolve SSL/TLS connection issues and CORS configuration
+[33mf812c7c[m fix: improve server stability with better resource management and timeouts
+[33mc2a31ae[m fix: remove unnecessary scale adjustments in PDF generation
+[33m89e3c8f[m restaurado
+[33mc3cce31[m fix: remove base64 logo conversion from mock-pdf route
+[33m73e2cfd[m refactor: update logo handling to use direct file path instead of base64
+[33mcc18969[m refactor: update logo to use ICO format instead of PNG
+[33m38d0d3a[m fix: improve logo loading with direct base64 injection and verification
+[33md956cb5[m fix: enhance Puppeteer configuration for image loading with detailed logging
+[33m484d026[m fix: improve Puppeteer configuration for loading external images
+[33m6ecfe52[m fix: update logo URL to use direct Supabase link
+[33m701e12a[m fix: logo loading in PDF template
+[33maeab390[m fix: remove unnecessary scale adjustments in PDF generation
+[33m3009115[m fix: adjust Puppeteer PDF generation settings for proper rendering
+[33mca5722e[m refactor: switch mock-pdf route to use Puppeteer for better layout control
+[33md5573db[m fix: layout issues in mock-pdf route to ensure single-page output
+[33mc594a48[m refactor: use tratativa-preview.html directly for PDF generation
+[33m320caf9[m fix: optimize PDF generation for single page output
+[33me041e0b[m refactor: update mock-pdf route to use standalone HTML/CSS files
+[33m5a18775[m refactor: update Handlebars template to match preview HTML structure
+[33m7394370[m fix: prevent multiple page generation in html-pdf
+[33m6fe836e[m fix: CSS injection and path handling in html-pdf template
+[33mfd87611[m feat: update mock-pdf route to use direct HTML template
+[33mb6ef149[m feat: add mock-pdf route using html-pdf library
+[33m3680a5d[m feat: add alternative PDF generation route using html-pdf
+[33mb24129c[m feat: add mock-template route as an alternative test endpoint
+[33ma9628f8[m feat: add mock-test route for PDF generation testing with specific image
+[33ma415a08[m fix: ajustar CSS para garantir PDF em página única - Reduzir margens e espaçamentos - Limitar altura máxima da seção de evidências - Ajustar dimensões da imagem - Garantir posicionamento correto dos elementos
+[33mc9b0c7a[m fix: corrigir geração de PDF com múltiplas páginas ajustando CSS e estrutura HTML
+[33m2b8c924[m fix: PDF generation with fixed document structure
+[33mcdb9fe6[m fix: corrigir geração de PDF com múltiplas páginas - Manter estrutura fixa do documento para impressão - Ajustar renderização condicional apenas da imagem de evidência - Manter campos de valores e limites sempre visíveis - Garantir layout consistente do documento
+[33m26535df[m fix: corrigir nome do campo de URL do documento
+[33m5cc14ba[m feat: adicionar logs descritivos para URL do documento
+[33m6f1ff9a[m fix: remover url_imagem_temporaria do insert no Supabase
+[33mdc0305c[m removendo arquivos desnecessários
+[33m1833378[m fix: corrigir fluxo de criação de tratativa e nomes dos campos
+[33md9886b1[m fix wrong field
+[33maf78a23[m fix wrong field
+[33mcc4055a[m refactor: simplificar geração do texto de infração
+[33mabfa565[m fix: corrigir nomes dos campos na inserção do Supabase
+[33m6d250cd[m fix: corrigir validação de campos obrigatórios
+[33m4abc918[m fix: improve PDF generation and template data handling
+[33m31dbab5[m fix: correct hora_infracao format for Supabase time field
+[33m7ade37d[m fix: align field names between frontend, validation and Supabase
+[33m63ce007[m fix: usa exatamente os mesmos nomes dos campos do banco
+[33m0ecbe1e[m fix: ajusta campos para corresponder exatamente ao esquema do banco
+[33m6855331[m fix: reverte para os nomes de campos originais que estavam funcionando
+[33m3734d6e[m fix: corrige campos para usar exatamente os nomes do banco
+[33m8070d05[m fix: ajusta campos e validações conforme esquema do banco
+[33m6a56f51[m fix: ajusta validação e nomes dos campos para corresponder ao frontend
+[33mc04485b[m fix: ajusta nomes dos campos para corresponder exatamente à tabela tratativas
+[33m6389e58[m refactor: simplifica envio de dados ao Supabase removendo mapeamentos desnecessários
+[33mbb74bff[m fix: remove campo imagem do objeto enviado ao Supabase
+[33md7d8c6f[m fix: corrige erro de template literal não terminado na rota test-connection
+[33mbb83775[m outro erro
+[33mfe369be[m pequena correção
+[33m720b3cc[m corrigindo problema de rotas
+[33mb517040[m função para normalizar o texto acentuado
+[33m2701eb0[m tentando resolver problema de pdfPath
+[33m46f3b67[m refactor: remove servidor HTTP desnecessario
+[33mb555c81[m fix: corrige referencia a tempPdfPath na rota create
+[33mb7496cb[m corrigindo problema de pdfPath
+[33md2eb5b7[m fix: corrige referências a variáveis de arquivo temporário
+[33m39f086b[m refactor: simplifica processamento de imagens
+[33ma5c9ba0[m refactor: simplifica processo de upload de imagens
+[33md3964b7[m saving progress
+[33m8fdff7b[m Otimizado manipulação de imagens: - Usando multer para upload - Armazenamento temporário no Supabase - Limpeza automática após geração do PDF - Removido processamento base64
+[33md1cd67c[m Alterado fluxo de upload de imagens: usando Supabase Storage para arquivos temporários ao invés de base64
+[33mb4517bd[m Melhorado sistema de geração de PDF: - Adicionado gerenciamento de arquivos temporários - Otimizado processamento de imagens - Corrigido problema de múltiplas páginas - Implementado limpeza automática de arquivos temporários - Separado penalidade em código e descrição no template
+[33m409b0c8[m Atualizado formato do nome dos arquivos para usar numero_documento-nome_funcionario-setor-data.pdf
+[33mbe52191[m Reorganizado estrutura de armazenamento de arquivos: /enviadas para API produção, /recebidas para documentos devolvidos, /mocks para API teste
+[33mcdccb3b[m Modificado sistema de status: ENVIADA por padrão, DEVOLVIDA com documento_devolvido_url
+[33m9de11b5[m Adicionado campos valor_praticado e valor_limite ao insert do Supabase
+[33m3965d1e[m Corrigido erro de not-null constraint para o campo metrica
+[33md34254b[m Ajustado campos de data para corresponder ao schema do Supabase (data_infracao, data_devolvida, data_formatada)
+[33m4edf56a[m Ajustado formato de data para ISO no banco de dados mantendo exibição em DD/MM/YYYY
+[33m40a196c[m Ajustado processamento de penalidade para usar apenas penalidade_aplicada no formato 'P2 - Advertência Escrita'
+[33mcad9caf[m Adicionado processamento dos campos valor_limite, valor_praticado e metrica
+[33mc931f0a[m Ajustado backend para aceitar data_infracao e hora_infracao separadamente e melhorado processamento de penalidades
+[33m9f3cae0[m Adicionado processamento automático do campo penalidade para separar código e descrição
+[33m3620e48[m Adicionada formatação automática dos campos texto_limite e texto_excesso
+[33m6aa96f9[m Modificado formato da hora_infracao para salvar apenas HH:MM
+[33mf8bffdf[m Simplificado processamento de datas para aceitar um único campo de data/hora
+[33mce897a4[m Corrigido formato de data/hora para compatibilidade com Supabase
+[33mc11336d[m Melhoria nos logs do servidor para mostrar origem das requisições
+[33m62ca577[m Atualização das URLs para HTTPS em todos os documentos
+[33mfbae228[m corrigido css do template
+[33md2fb495[m erros
+[33me517d1b[m atualizando https novamente
+[33mb7f47d3[m Atualização https
+[33m8c15e7a[m Atualizações no servidor
+[33mc50ee9d[m Criado arquivo de indicações para o front end
+[33mfa2cc81[m Ajustes para produção
+[33ma049c0a[m Atualizações de acesso do servidor
+[33m0675c56[m Atualizado script de deploy
+[33mdb25cc5[m initial commit
+[33m16fa943[m aksdhjlaksjd
+[33mc7fd770[m feat: adiciona script de atualização do servidor
+[33m59a0241[m outro teste
+[33m7993e09[m adicionado rota de teste
+[33m0779186[m solucionando problema com a logo
+[33ma2f6ad8[m enviando atualizaoes
+[33md72c343[m correcao para o servidor
+[33mb2add80[m adicionando geracao automatica de certificado
+[33m989789d[m Salvando ajustes do servidor de geração da tratativa
+[33m5d437b2[m Salvando ajustes do servidor de geração da tratativa
+[33mcdac198[m Ponto onde o template da tratativa tem o formato ideal
+[33m437132e[m corrigindo erros no template de tratativas
+[33m60d94a0[m correção server
+[33m9b8517c[m mais erros
+[33me3b01a2[m corrigindo chaves
+[33m4e9afab[m mais ajustes
+[33mcee217d[m ajustes
+[33ma5829a3[m ajuste nas rotas de tratativa
+[33md7fd833[m feat: implementação das rotas e serviços para geração de tratativas disciplinares
+[33m9ad1a48[m enviado template inicial para advertências
+[33m921bc2f[m fix: Resolve conflito de merge na rota generate-unified
+[33me764154[m fix: Corrige upload de arquivos no Supabase usando bucket 'asos' e remove lógica duplicada de bookings
+[33m08a21a7[m fix: Corrige tratamento de arquivos duplicados no upload do Supabase e ajusta CORS
+[33maca67c0[m ajustando codigos
+[33me82fd0a[m ajustando cors servidor
+[33m3e30884[m alterado forma da api
+[33md198207[m changing the route api to create the unified aso name
+[33mc907a58[m changing the route api to create the unified aso name
+[33m0641e6d[m outro ajuste
+[33ma8cc566[m grande correção
+[33me7af498[m mais ajustes
+[33m743cfa1[m nova correção
+[33m04b8283[m fix: Corrige erros de renderização e download de PDFs
+[33m1900da6[m fix: Corrige erro de app não definido na geração de ASO unificado
+[33m61d755b[m feat: Implementa geração de ASO unificado
+[33me960bfb[m novo server
+[33mfbf67ba[m algumas alterações para corrigir o servidor
+[33m7d4c33e[m Add logging for templateData to verify ASO generation for ASSISTENTE DE RECURSOS HUMANOS
+[33m7e03aa7[m some fixes
+[33meaf9b6e[m mudanças de geração
+[33mb3e1289[m mudanças de acentuação nova
+[33m4c5cfce[m puppeter fix
+[33m4cfbd43[m alterações para evitar problemas com o puppeteer
+[33m1cf776b[m alterações para certificado ssl
+[33m2f1bd66[m teste de solução para o cors
+[33m643ac9b[m adicionado log para manter o server ativo
+[33m73301ee[m adicionado mensagem para manter o servidor ativo
+[33mb109628[m alterado forma de renomeação do arquivo final
+[33m62762ad[m fixado alguns erros
+[33m8a9fc15[m corrigido forma de nomear o arquivo gerado
+[33mfd85e60[m corrigido forma de nomear o arquivo gerado
+[33mc20caf4[m removed node folder
+[33m8727868[m enviando alteração de registro e salvamento com nome customizado
+[33m3c08cd8[m corrigido layout do template
+[33m47956a2[m Funcionando geração do pdf com layout customizado, faltando pequenos ajustes de css
+[33mc5049dc[m Initial commit
