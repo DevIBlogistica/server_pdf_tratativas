@@ -49,6 +49,6 @@ pm2 start server.js --name "server_tratativas"
 echo "Salvando configuração do PM2..."
 pm2 save
 
-# Mostra os logs
-echo "Logs do servidor:"
-pm2 logs server_tratativas 
+# Mostra os logs desde o início do servidor
+echo "Logs do servidor desde o início:"
+pm2 log server_tratativas --lines 0
