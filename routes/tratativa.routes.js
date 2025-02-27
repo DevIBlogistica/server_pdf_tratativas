@@ -844,7 +844,7 @@ router.post('/mock-pdf', async (req, res) => {
         // Processar data por extenso
         const [dia, mes, ano] = mockData.data_infracao.split('/');
         if (dia && mes && ano) {
-            mockData.data_infracao = `${dia}/${mes}/${ano}`;
+            mockData.data_infracao = `${ano}-${mes}-${dia}`;
             mockData.data_formatada = `${dia}/${mes}/${ano}`;
             
             const mesesPorExtenso = [
@@ -909,7 +909,7 @@ router.post('/mock-pdf', async (req, res) => {
         await page.setViewport({
             width: 794,  // A4 width at 96 DPI
             height: 1123,  // A4 height at 96 DPI
-            deviceScaleFactor: 1
+            deviceScaleFactor: 1  // Mantendo escala 1:1
         });
 
         // Permitir acesso a arquivos locais e URLs externas
@@ -918,9 +918,15 @@ router.post('/mock-pdf', async (req, res) => {
         // Carregar o conteúdo HTML
         console.log('[Mock PDF] 📄 Carregando conteúdo');
         await page.setContent(html, {
-            waitUntil: ['load', 'networkidle0'],
+            waitUntil: ['load', 'networkidle0', 'domcontentloaded'],
             timeout: 30000
         });
+
+        // Aguardar carregamento da imagem
+        if (mockData.url_imagem_temporaria) {
+            await page.waitForSelector('.evidence-img', { timeout: 5000 })
+                .catch(() => console.log('[Mock PDF] ⚠️ Imagem não encontrada ou timeout'));
+        }
 
         // Gerar PDF
         console.log('[Mock PDF] 📑 Gerando PDF');
@@ -928,13 +934,13 @@ router.post('/mock-pdf', async (req, res) => {
             format: 'A4',
             printBackground: true,
             margin: {
-                top: '25px',
-                right: '25px',
-                bottom: '25px',
-                left: '25px'
+                top: '0',
+                right: '0',
+                bottom: '0',
+                left: '0'
             },
-            scale: 1,
-            preferCSSPageSize: true
+            preferCSSPageSize: true,
+            scale: 1  // Mantendo escala 1:1
         });
 
         await browser.close();
