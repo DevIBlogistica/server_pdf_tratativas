@@ -189,8 +189,6 @@ router.post('/create', async (req, res) => {
                 status: 'ENVIADA',
                 texto_infracao: data.texto_infracao,
                 texto_limite: data.texto_limite,
-                url_documento_enviado: null,
-                data_devolvida: null,
                 funcao: data.funcao,
                 setor: data.setor,
                 metrica: data.metrica,
@@ -271,7 +269,7 @@ router.post('/create', async (req, res) => {
         // Atualizar o registro com a URL do PDF
         const { error: updateError } = await supabase
             .from('tratativas')
-            .update({ documento_url: publicUrl })
+            .update({ documento_enviado_url: publicUrl })
             .eq('id', tratativaId);
 
         if (updateError) throw updateError;
