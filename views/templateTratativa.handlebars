@@ -84,7 +84,7 @@
       margin-bottom: 5mm;
       border-bottom: 1px solid black;
     }
-    .occurrence-box > p:first-child {
+    .occurrence-header {
       font-weight: bold;
       margin-bottom: 2mm;
     }
@@ -104,19 +104,14 @@
       margin-bottom: 5mm;
       border-bottom: 1px solid black;
     }
-    .disciplinary-box > p:first-child {
+    .disciplinary-header {
       font-weight: bold;
       margin-bottom: 2mm;
     }
     .measure-row {
-      display: grid;
-      grid-template-columns: 15% 85%;
+      display: flex;
       gap: 2mm;
       align-items: center;
-    }
-    .measure-row p {
-      margin: 0;
-      font-size: 10pt;
     }
     /* Texto Legal */
     .legal-text {
@@ -138,6 +133,14 @@
       border-top: 1px solid black;
       border-bottom: 1px solid black;
       padding: 5mm 0;
+    }
+    .evidence-container {
+      width: 100%;
+    }
+    .evidence-images {
+      display: flex;
+      justify-content: center;
+      gap: 2mm;
     }
     .evidence-image-box {
       height: 60mm;
@@ -161,7 +164,7 @@
       margin-top: auto;
       padding-top: 5mm;
     }
-    .signature-box > p {
+    .signature-header {
       font-weight: bold;
       margin-bottom: 2mm;
     }
@@ -176,10 +179,25 @@
       text-align: center;
       font-size: 9pt;
     }
-    /* Ajuste especial para as bordas da tabela de assinaturas */
-    .signature-table tr:first-child td {
+    .table-header td {
       background-color: #dadada;
       font-weight: bold;
+    }
+    .first-col {
+      width: 10%;
+    }
+    .name-col {
+      width: 40%;
+    }
+    .date-col {
+      width: 15%;
+    }
+    .signature-col {
+      width: 35%;
+    }
+    .bordered-col {
+      border-left: 1px solid black;
+      border-right: 1px solid black;
     }
   </style>
 </head>
@@ -190,11 +208,11 @@
       <div class="header">
         <table class="header-table">
           <tr>
-            <td style="width: 50%">Título: ACR-003_Medida_Disciplinar</td>
-            <td style="width: 20%">Anexo</td>
-            <td style="width: 20%">Nº Documento</td>
+            <td class="title" style="width: 50%">Título: ACR-003_Medida_Disciplinar</td>
+            <td class="anexo" style="width: 20%">Anexo</td>
+            <td class="doc-number" style="width: 20%">Nº Documento</td>
             <td class="logo" style="width: 10%" rowspan="2">
-              <img src="{{logo_src}}" alt="Logo IB">
+              <img src="{{logo_src}}" alt="Logo IB" class="logo-img">
             </td>
           </tr>
           <tr>
@@ -208,89 +226,121 @@
       <!-- Grid de identificação -->
       <div class="identification-section">
         <div class="name-date-row">
-          <p>Sr.(a) {{nome_funcionario}}</p>
-          <p>{{data_formatada_extenso}}</p>
+          <div class="employee-name">
+            <p>Sr.(a) {{nome_funcionario}}</p>
+          </div>
+          <div class="date-section">
+            <p>{{data_formatada_extenso}}</p>
+          </div>
         </div>
         <div class="function-sector-row">
-          <p>Função: {{funcao}}</p>
-          <p>Setor: {{setor}}</p>
+          <div class="function-info">
+            <p>Função: {{funcao}}</p>
+          </div>
+          <div class="sector-info">
+            <p>Setor: {{setor}}</p>
+          </div>
         </div>
-        <p style="margin-top: 3mm">
-          Pelo presente o notificamos que nesta data está recebendo uma medida disciplinar, em razão da não conformidade abaixo discriminada.
-        </p>
+        <div class="notification-text">
+          <p>Pelo presente o notificamos que nesta data está recebendo uma medida disciplinar, em razão da não conformidade abaixo discriminada.</p>
+        </div>
       </div>
 
       <!-- Ocorrência -->
       <div class="occurrence-box">
-        <p>Ocorrência</p>
-        <div class="occurrence-row">
-          <p><strong>Código Infração</strong></p>
-          <p>{{codigo_infracao}}</p>
-          <p>{{infracao_cometida}}</p>
-          <p><strong>Em:</strong></p>
-          <p>{{data_infracao}}</p>
-          <p><strong>às:</strong></p>
-          <p>{{hora_infracao}}</p>
+        <div class="occurrence-header">Ocorrência</div>
+        <div class="occurrence-content">
+          <div class="occurrence-row">
+            <div><strong>Código Infração</strong></div>
+            <div>{{codigo_infracao}}</div>
+            <div>{{infracao_cometida}}</div>
+            <div><strong>Em:</strong></div>
+            <div>{{data_infracao}}</div>
+            <div><strong>às:</strong></div>
+            <div>{{hora_infracao}}</div>
+          </div>
         </div>
       </div>
 
       <!-- Medida Disciplinar -->
       <div class="disciplinary-box">
-        <p>Medida Disciplinar</p>
-        <div class="measure-row">
-          <p>{{penalidade}}</p>
-          <p>{{penalidade_descricao}}</p>
+        <div class="disciplinary-header">Medida Disciplinar</div>
+        <div class="disciplinary-content">
+          <div class="measure-row">
+            <div style="flex: 15%;">{{penalidade}}</div>
+            <div style="flex: 85%;">{{penalidade_descricao}}</div>
+          </div>
         </div>
       </div>
 
       <!-- Texto Legal -->
       <div class="legal-text">
         <p>Lembramos que caso haja incidência na mesma falta, será penalizado(a), conforme a CONSOLIDAÇÃO DAS LEIS TRABALHISTAS e o procedimento disciplinar da empresa.</p>
-        <p>
-          Esclarecemos que, a reiteração no cometimento de irregularidades autoriza a rescisão do contrato de trabalho por justa causa, razão pela qual esperamos que evite a reincidência da não conformidade, para que não tenhamos no futuro de tomar medidas que são facultadas por lei à empresa.
-        </p>
+        <p>Esclarecemos que, a reiteração no cometimento de irregularidades autoriza a rescisão do contrato de trabalho por justa causa, razão pela qual esperamos que evite a reincidência da não conformidade, para que não tenhamos no futuro de tomar medidas que são facultadas por lei à empresa.</p>
       </div>
 
       <!-- Evidências -->
       <div class="evidence-section">
-        <div class="evidence-image-box">
-          {{#if url_imagem_temporaria}}
-            <img src="{{url_imagem_temporaria}}" alt="Evidência" class="evidence-img">
+        <div class="evidence-container">
+          <div class="evidence-images">
+            {{#if evidence1_url}}
+            <div class="evidence-image-box">
+              <img src="{{evidence1_url}}" alt="Evidência 1" class="evidence-img">
+            </div>
+            {{/if}}
+            
+            {{#if evidence2_url}}
+            <div class="evidence-image-box">
+              <img src="{{evidence2_url}}" alt="Evidência 2" class="evidence-img">
+            </div>
+            {{/if}}
+            
+            {{#if evidence3_url}}
+            <div class="evidence-image-box">
+              <img src="{{evidence3_url}}" alt="Evidência 3" class="evidence-img">
+            </div>
+            {{/if}}
+          </div>
+          {{#if valor_praticado}}
+          <div class="evidence-info">
+            {{#if texto_infracao}}
+            <p>{{texto_infracao}}</p>
+            {{/if}}
+            {{#if texto_limite}}
+            <p>{{texto_limite}}</p>
+            {{/if}}
+          </div>
           {{/if}}
-        </div>
-        <div class="evidence-info">
-          <p>Valor praticado: {{valor_praticado}}{{metrica}}</p>
-          <p>Limite permitido: {{valor_limite}}{{metrica}}</p>
         </div>
       </div>
 
       <!-- Assinaturas -->
       <div class="signature-box">
-        <p>Assinaturas</p>
+        <div class="signature-header">Assinaturas</div>
         <table class="signature-table">
-          <tr>
-            <td style="width:20%"></td>
-            <td style="width:40%"><strong>Nome</strong></td>
-            <td style="width:20%"><strong>Data</strong></td>
-            <td style="width:20%"><strong>Assinatura</strong></td>
+          <tr class="table-header">
+            <td class="first-col"></td>
+            <td class="name-col bordered-col"><strong>Nome</strong></td>
+            <td class="date-col bordered-col"><strong>Data</strong></td>
+            <td class="signature-col"><strong>Assinatura</strong></td>
           </tr>
           <tr>
-            <td>Funcionário</td>
-            <td>{{nome_funcionario}}</td>
-            <td></td>
-            <td></td>
+            <td class="first-col">Funcionário</td>
+            <td class="name-col bordered-col">{{nome_funcionario}}</td>
+            <td class="date-col bordered-col"></td>
+            <td class="signature-col"></td>
           </tr>
           <tr>
-            <td>Líder</td>
-            <td>{{nome_lider}}</td>
-            <td></td>
-            <td></td>
+            <td class="first-col">Líder</td>
+            <td class="name-col bordered-col">{{nome_lider}}</td>
+            <td class="date-col bordered-col"></td>
+            <td class="signature-col"></td>
           </tr>
           <tr>
-            <td>Testemunha</td>
-            <td></td>
-            <td></td>
-            <td></td>
+            <td class="first-col">Testemunha</td>
+            <td class="name-col bordered-col"></td>
+            <td class="date-col bordered-col"></td>
+            <td class="signature-col"></td>
           </tr>
         </table>
       </div>
