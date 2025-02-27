@@ -151,8 +151,8 @@ router.post('/create', async (req, res) => {
 
         // Validação dos dados recebidos - apenas campos obrigatórios
         if (!data.numero_documento || !data.data_infracao || !data.hora_infracao || 
-            !data.codigo_infracao || !data.infracao_cometida || !data.penalidade || !data.nome_lider) {
-            throw new Error('Dados incompletos. É necessário fornecer: número da tratativa, data, hora, código da infração, descrição da infração, penalidade e líder.');
+            !data.codigo_infracao || !data.infracao_cometida || !data.penalidade_aplicada || !data.nome_lider) {
+            throw new Error('Dados incompletos. É necessário fornecer: número do documento, data, hora, código da infração, descrição da infração, penalidade e líder.');
         }
 
         // Processar data se estiver no formato dd/mm/aaaa
