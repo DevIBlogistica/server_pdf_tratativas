@@ -854,24 +854,13 @@ router.post('/mock-pdf', async (req, res) => {
             mockData.data_formatada_extenso = `${dia} de ${mesesPorExtenso[parseInt(mes) - 1]} de ${ano}`;
         }
 
-        // Garantir que a logo está sendo carregada corretamente
-        console.log('[Mock PDF] 🖼️ Verificando logo...');
-        const logoPath = path.join(__dirname, '../public/images/logo.png');
-        if (!fs.existsSync(logoPath)) {
-            throw new Error('Arquivo da logo não encontrado em: ' + logoPath);
-        }
-
-        // Converter logo para base64 diretamente
-        const logoBase64 = fs.readFileSync(logoPath).toString('base64');
-        const logoSrc = `data:image/x-icon;base64,${logoBase64}`;
-
-        // Adicionar logo aos dados
+        // Adicionar logo aos dados usando URL direta
         const dadosTeste = {
             ...mockData,
-            logo_src: logoSrc
+            logo_src: LOGO_URL
         };
 
-        console.log('[Mock PDF] 📋 Dados preparados com logo em base64');
+        console.log('[Mock PDF] 📋 Dados preparados');
 
         // Iniciar Puppeteer com configurações específicas
         console.log('[Mock PDF] 🚀 Iniciando navegador Puppeteer');
@@ -927,29 +916,8 @@ router.post('/mock-pdf', async (req, res) => {
         const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
         const css = fs.readFileSync(cssPath, 'utf8');
         const htmlWithStyles = html.replace('</head>', `
-            <style>
-                ${css}
-                @page {
-                    margin: 0;
-                    size: A4;
-                }
-                body {
-                    margin: 0;
-                    padding: 25px;
-                    width: 210mm;
-                    height: 297mm;
-                    box-sizing: border-box;
-                }
-                .container {
-                    max-width: 100%;
-                    margin: 0 auto;
-                }
-                img.logo-img {
-                    max-width: 100%;
-                    height: auto;
-                    display: block;
-                }
-            </style>
+            <base href="file://${path.join(__dirname, '../public')}/">
+            <style>${css}</style>
         </head>`);
 
         // Carregar o conteúdo e aguardar
