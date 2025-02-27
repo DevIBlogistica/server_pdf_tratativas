@@ -194,8 +194,7 @@ router.post('/create', async (req, res) => {
                 metrica: data.metrica,
                 valor_praticado: data.valor_praticado,
                 valor_limite: data.valor_limite,
-                mock: data.mock || false,
-                url_imagem_temporaria: data.url_imagem_temporaria
+                mock: data.mock || false
             }])
             .select()
             .single();
