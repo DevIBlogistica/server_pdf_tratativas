@@ -97,6 +97,24 @@ app.use((err, req, res, next) => {
 });
 
 // Iniciar servidor
-app.listen(port, () => {
+const server = app.listen(port, '0.0.0.0', () => {
     console.log(`Servidor rodando em http://localhost:${port}`);
+    console.log('Endereço IP:', server.address());
+}).on('error', (error) => {
+    console.error('Erro ao iniciar o servidor:', error);
+    process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('Recebido sinal SIGTERM. Encerrando servidor...');
+    server.close(() => {
+        console.log('Servidor encerrado.');
+        process.exit(0);
+    });
+});
+
+process.on('uncaughtException', (error) => {
+    console.error('Erro não tratado:', error);
+    process.exit(1);
 });
