@@ -909,7 +909,7 @@ router.post('/mock-pdf', async (req, res) => {
         await page.setViewport({
             width: 794, // A4 width in pixels at 96 DPI
             height: 1123, // A4 height in pixels at 96 DPI
-            deviceScaleFactor: 2
+            deviceScaleFactor: 1
         });
 
         // Permitir acesso a arquivos locais e URLs externas
@@ -933,8 +933,7 @@ router.post('/mock-pdf', async (req, res) => {
                 bottom: '0',
                 left: '0'
             },
-            preferCSSPageSize: true,
-            scale: 0.98
+            preferCSSPageSize: true
         });
 
         await browser.close();
