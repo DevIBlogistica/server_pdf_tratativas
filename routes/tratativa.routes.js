@@ -39,9 +39,9 @@ function normalizarTexto(texto) {
 }
 
 // Logo local path
-const LOGO_PATH = path.join(__dirname, '../public/images/logo.png');
+const LOGO_PATH = path.join(__dirname, '../public/images/logo.ico');
 // Converte a imagem para base64
-const LOGO_BASE64 = `data:image/png;base64,${fs.readFileSync(LOGO_PATH).toString('base64')}`;
+const LOGO_BASE64 = `data:image/x-icon;base64,${fs.readFileSync(LOGO_PATH).toString('base64')}`;
 
 // Diretório temporário para PDFs
 const tempPdfDir = path.join(__dirname, '../temp/pdfs');
@@ -63,7 +63,7 @@ const generatePDF = async (page) => {
                 left: '25px'
             },
             preferCSSPageSize: true,
-            scale: 1.0,
+            scale: 0.98, // Slightly reduce scale to ensure content fits properly
             displayHeaderFooter: false,
             landscape: false
         });
@@ -856,14 +856,14 @@ router.post('/mock-pdf', async (req, res) => {
 
         // Garantir que a logo está sendo carregada corretamente
         console.log('[Mock PDF] 🖼️ Verificando logo...');
-        const logoPath = path.join(__dirname, '../public/images/logo.png');
+        const logoPath = path.join(__dirname, '../public/images/logo.ico');
         if (!fs.existsSync(logoPath)) {
             throw new Error('Arquivo da logo não encontrado em: ' + logoPath);
         }
 
         // Converter logo para base64 diretamente
         const logoBase64 = fs.readFileSync(logoPath).toString('base64');
-        const logoSrc = `data:image/png;base64,${logoBase64}`;
+        const logoSrc = `data:image/x-icon;base64,${logoBase64}`;
 
         // Adicionar logo aos dados
         const dadosTeste = {
