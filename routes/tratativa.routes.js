@@ -901,7 +901,12 @@ router.post('/mock-pdf', async (req, res) => {
         console.log('[Mock PDF] 🚀 Iniciando navegador Puppeteer');
         const browser = await puppeteer.launch({
             headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-web-security',
+                '--allow-running-insecure-content'
+            ]
         });
         const page = await browser.newPage();
 
@@ -909,11 +914,14 @@ router.post('/mock-pdf', async (req, res) => {
         await page.setViewport({
             width: 794,  // A4 width at 96 DPI
             height: 1123,  // A4 height at 96 DPI
-            deviceScaleFactor: 1  // Mantendo escala 1:1
+            deviceScaleFactor: 1
         });
 
-        // Permitir acesso a arquivos locais e URLs externas
+        // Permitir acesso a recursos externos
         await page.setBypassCSP(true);
+        await page.setExtraHTTPHeaders({
+            'Accept-Language': 'pt-BR,pt;q=0.9',
+        });
 
         // Carregar o conteúdo HTML
         console.log('[Mock PDF] 📄 Carregando conteúdo');
@@ -922,11 +930,9 @@ router.post('/mock-pdf', async (req, res) => {
             timeout: 30000
         });
 
-        // Aguardar carregamento da imagem
-        if (mockData.url_imagem_temporaria) {
-            await page.waitForSelector('.evidence-img', { timeout: 5000 })
-                .catch(() => console.log('[Mock PDF] ⚠️ Imagem não encontrada ou timeout'));
-        }
+        // Aguardar especificamente pela logo
+        await page.waitForSelector('img.logo-img', { timeout: 5000 })
+            .catch(() => console.log('[Mock PDF] ⚠️ Logo não encontrada ou timeout'));
 
         // Gerar PDF
         console.log('[Mock PDF] 📑 Gerando PDF');
@@ -940,7 +946,7 @@ router.post('/mock-pdf', async (req, res) => {
                 left: '0'
             },
             preferCSSPageSize: true,
-            scale: 1  // Mantendo escala 1:1
+            scale: 1
         });
 
         await browser.close();
