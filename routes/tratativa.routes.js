@@ -625,14 +625,14 @@ router.post('/mock-pdf', async (req, res) => {
         let html = fs.readFileSync(templatePath, 'utf8');
         const css = fs.readFileSync(cssPath, 'utf8');
 
-        // Substituir placeholders no template
+        // Primeiro substituir o CSS para evitar conflitos com outros placeholders
+        html = html.replace('{{css}}', css.replace(/\$/g, '$$$$'));
+
+        // Depois substituir os outros placeholders
         Object.keys(dadosTeste).forEach(key => {
             const regex = new RegExp(`{{${key}}}`, 'g');
-            html = html.replace(regex, dadosTeste[key]);
+            html = html.replace(regex, String(dadosTeste[key]).replace(/\$/g, '$$$$'));
         });
-
-        // Substituir o placeholder do CSS
-        html = html.replace('{{css}}', css);
 
         // Configurações do PDF
         const options = {
@@ -649,7 +649,7 @@ router.post('/mock-pdf', async (req, res) => {
             renderDelay: 2000,
             height: '297mm',
             width: '210mm',
-            base: `file://${path.join(__dirname, '../public')}/`
+            base: `file://${path.join(__dirname, '../public').replace(/\\/g, '/')}/`
         };
 
         // Gerar PDF usando html-pdf
