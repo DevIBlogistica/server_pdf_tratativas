@@ -265,7 +265,15 @@ router.post('/create', async (req, res) => {
             .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
             .getPublicUrl(fileName);
 
+        console.log('\n[Upload do PDF] ✅ Upload concluído com sucesso');
+        console.log(`[Upload do PDF] 📂 Arquivo: ${fileName}`);
+        console.log(`[Upload do PDF] 🔗 URL pública gerada: ${publicUrl}\n`);
+
         // Atualizar o registro com a URL do PDF
+        console.log('[Atualização] 🔄 Tentando atualizar registro com URL do documento');
+        console.log(`[Atualização] 📝 ID do registro: ${tratativaId}`);
+        console.log(`[Atualização] 🔗 URL a ser salva: ${publicUrl}`);
+        
         const { error: updateError } = await supabase
             .from('tratativas')
             .update({ documento_enviado_url: publicUrl })
