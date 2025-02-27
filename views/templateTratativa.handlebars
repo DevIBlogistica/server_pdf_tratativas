@@ -7,29 +7,34 @@
     <style>
         @page {
             size: A4;
-            margin: 25px;
+            margin: 20px;
         }
         body {
             margin: 0;
             padding: 0;
             font-family: 'Century Gothic', Arial, sans-serif;
             background-color: white;
-        }
-        .page-container {
             width: 210mm;
             min-height: 297mm;
-            padding: 20px;
+        }
+        .page-container {
+            width: 100%;
+            min-height: 100%;
+            padding: 15px;
             box-sizing: border-box;
             background-color: white;
+            position: relative;
         }
         .content-container {
             width: 100%;
             margin: 0 auto;
         }
         .evidence-section {
-            margin: 20px 0;
+            margin: 15px 0;
             page-break-inside: avoid;
             display: block;
+            max-height: 400px;
+            overflow: hidden;
         }
         .evidence-container {
             margin: 0 auto;
@@ -37,14 +42,18 @@
         }
         .evidence-images {
             margin-bottom: 10px;
+            max-height: 300px;
+            overflow: hidden;
         }
         .evidence-image-box {
             text-align: center;
+            max-height: 280px;
+            overflow: hidden;
         }
         .evidence-img {
-            max-width: 80%;
-            height: auto;
-            max-height: 300px;
+            max-width: 70%;
+            max-height: 250px;
+            object-fit: contain;
             display: inline-block;
         }
         .evidence-info {
@@ -104,7 +113,7 @@
             margin-bottom: 20px;
         }
         .occurrence-box {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         .occurrence-header {
             font-weight: bold;
@@ -124,7 +133,7 @@
             width: 25%;
         }
         .disciplinary-box {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         .disciplinary-header {
             font-weight: bold;
