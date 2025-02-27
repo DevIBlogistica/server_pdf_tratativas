@@ -56,10 +56,10 @@ const generatePDF = async (page) => {
             format: 'A4',
             printBackground: true,
             margin: {
-                top: '25px',
-                right: '25px',
-                bottom: '25px',
-                left: '25px'
+                top: '0',
+                right: '0',
+                bottom: '0',
+                left: '0'
             },
             preferCSSPageSize: true,
             scale: 1.0,
@@ -132,10 +132,38 @@ function processarPenalidade(codigo) {
 const corsOptions = {
     origin: '*',
     methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    exposedHeaders: ['Content-Length', 'Content-Type']
 };
 
+// Aplica CORS para todas as rotas
 router.use(cors(corsOptions));
+
+// Middleware para validar Content-Type
+router.use((req, res, next) => {
+    if (req.method === 'POST') {
+        const contentType = req.get('Content-Type');
+        if (!contentType || !contentType.includes('application/json')) {
+            return res.status(415).json({
+                success: false,
+                message: 'Content-Type deve ser application/json',
+                received: contentType
+            });
+        }
+    }
+    next();
+});
+
+// Middleware para log de requisições da API
+router.use((req, res, next) => {
+    console.log(`\n📡 [Requisição] ${req.method} ${req.path}`);
+    console.log(`🌐 [IP] ${req.ip}`);
+    console.log(`🔗 [Origem] ${req.get('origin') || 'N/A'}`);
+    if (req.method === 'POST' && Object.keys(req.body).length > 0) {
+        console.log(`📦 [Corpo]`, JSON.stringify(req.body, null, 2));
+    }
+    next();
+});
 
 // ROTA: Para criar um registro de tratativa no Supabase e gerar o PDF
 router.post('/create', async (req, res) => {
@@ -144,15 +172,16 @@ router.post('/create', async (req, res) => {
     
     try {
         const data = req.body;
-        console.log('[Tratativa] ✅ Iniciando criação de tratativa:', data.numero_documento);
-        console.log('[Tratativa] 🌐 IP de Origem:', req.headers['x-forwarded-for'] || req.socket.remoteAddress);
-        console.log('[Tratativa] 🔗 Origem:', req.headers['origin'] || req.headers['referer'] || 'Origem desconhecida');
-        console.log('[Tratativa] Dados recebidos:', data);
+        console.log('✅ [Início] Iniciando criação de tratativa:', data.numero_documento);
+        console.log('🌐 [IP de Origem]', req.headers['x-forwarded-for'] || req.socket.remoteAddress);
+        console.log('🔗 [Origem]', req.headers['origin'] || req.headers['referer'] || 'Origem desconhecida');
+        console.log('📄 [Dados Recebidos]', data);
 
         // Validação dos dados recebidos - apenas campos obrigatórios
         if (!data.numero_documento || !data.data_infracao || !data.hora_infracao || 
-            !data.codigo_infracao || !data.infracao_cometida || !data.penalidade_aplicada || !data.nome_lider) {
-            throw new Error('Dados incompletos. É necessário fornecer: número do documento, data, hora, código da infração, descrição da infração, penalidade e líder.');
+            !data.codigo_infracao || !data.infracao_cometida || !data.penalidade_aplicada || 
+            !data.nome_lider || !data.evidence1_url) {
+            throw new Error('Dados incompletos. É necessário fornecer: número do documento, data, hora, código da infração, descrição da infração, penalidade, líder e evidência principal.');
         }
 
         // Processar data se estiver no formato dd/mm/aaaa
@@ -173,7 +202,7 @@ router.post('/create', async (req, res) => {
         }
 
         // 1. Criar registro no Supabase
-        console.log('[1/5] Criando registro no Supabase');
+        console.log('📝 [1/5] Criando registro no Supabase');
         const { imagem, ...dadosParaSalvar } = data;
         const { data: newTratativa, error: dbError } = await supabase
             .from('tratativas')
@@ -194,6 +223,9 @@ router.post('/create', async (req, res) => {
                 metrica: data.metrica,
                 valor_praticado: data.valor_praticado,
                 valor_limite: data.valor_limite,
+                evidence1_url: data.evidence1_url,
+                evidence2_url: data.evidence2_url || null,
+                evidence3_url: data.evidence3_url || null,
                 mock: data.mock || false
             }])
             .select()
@@ -202,7 +234,7 @@ router.post('/create', async (req, res) => {
         if (dbError) throw dbError;
         
         const tratativaId = newTratativa.id;
-        console.log(`[2/5] Registro criado com ID: ${tratativaId}`);
+        console.log(`📝 [2/5] Registro criado com ID: ${tratativaId}`);
         
         // 2. Gerar PDF da tratativa
         // Adicionar logo aos dados
@@ -211,7 +243,7 @@ router.post('/create', async (req, res) => {
             logo_src: LOGO_BASE64
         };
 
-        console.log('[3/5] Iniciando navegador Puppeteer');
+        console.log('🖥️ [3/5] Iniciando navegador Puppeteer');
         browser = await puppeteer.launch({
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -221,7 +253,7 @@ router.post('/create', async (req, res) => {
         // Permitir acesso a arquivos locais e URLs externas
         await page.setBypassCSP(true);
 
-        console.log('[4/5] Renderizando template e gerando PDF');
+        console.log('🖨️ [4/5] Renderizando template e gerando PDF');
         const html = await new Promise((resolve, reject) => {
             req.app.render('templateTratativa', dadosComLogo, (err, html) => {
                 if (err) reject(err);
@@ -251,7 +283,7 @@ router.post('/create', async (req, res) => {
         const setorFormatado = normalizarTexto(data.setor).replace(/\s+/g, '_').toUpperCase();
         const fileName = `enviadas/${data.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
 
-        console.log('[5/5] Fazendo upload do PDF para Supabase');
+        console.log('📤 [5/5] Fazendo upload do PDF para Supabase');
         const { error: uploadError } = await supabase.storage
             .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
             .upload(fileName, pdfBuffer, {
@@ -265,21 +297,7 @@ router.post('/create', async (req, res) => {
             .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
             .getPublicUrl(fileName);
 
-        console.log('\n[Upload do PDF] ✅ Upload concluído com sucesso');
-        console.log(`[Upload do PDF] 📂 Arquivo: ${fileName}`);
-        console.log(`[Upload do PDF] 🔗 URL pública gerada: ${publicUrl}\n`);
-
-        // Atualizar o registro com a URL do PDF
-        console.log('[Atualização] 🔄 Tentando atualizar registro com URL do documento');
-        console.log(`[Atualização] 📝 ID do registro: ${tratativaId}`);
-        console.log(`[Atualização] 🔗 URL a ser salva: ${publicUrl}`);
-        
-        const { error: updateError } = await supabase
-            .from('tratativas')
-            .update({ documento_url: publicUrl })
-            .eq('id', tratativaId);
-
-        if (updateError) throw updateError;
+        console.log('🔗 [Link do Documento]\n' + publicUrl + '\n');
 
         res.json({
             success: true,
@@ -289,7 +307,7 @@ router.post('/create', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Erro ao criar tratativa:', error);
+        console.error('🚨 [Erro] Erro ao criar tratativa:', error);
         res.status(500).json({
             success: false,
             message: 'Erro ao criar tratativa e gerar documento',
@@ -562,717 +580,313 @@ router.post('/generate', async (req, res) => {
     }
 });
 
-// Rota de teste com dados mockados
-router.post('/test', async (req, res) => {
-    try {
-        // Obter informações da origem da requisição
-        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-        const origin = req.headers['origin'] || req.headers['referer'] || 'Origem desconhecida';
-        const userAgent = req.headers['user-agent'] || 'User-Agent desconhecido';
-        
-        console.log('\n[Teste de PDF] ✅ Iniciando geração de documento de teste');
-        console.log(`[Teste de PDF] 🌐 IP de Origem: ${ip}`);
-        console.log(`[Teste de PDF] 🔗 Origem: ${origin}`);
-        console.log(`[Teste de PDF] 📱 User-Agent: ${userAgent}`);
-        console.log('[Teste de PDF] 📄 Content-Type:', req.headers['content-type']);
-        
-        // Validação mais detalhada do body
-        if (!req.body || Object.keys(req.body).length === 0) {
-            throw new Error('Body vazio. Certifique-se de enviar os dados no formato JSON correto e com Content-Type: application/json');
-        }
-
-        // Processar data da ocorrência (se fornecida)
-        const data = req.body;
-
-        // Processar data e hora
-        if (data.data_infracao && data.hora_infracao) {
-            // Combinar data e hora em um único timestamp
-            data.data_ocorrencia = `${data.data_infracao}T${data.hora_infracao}:00`;
-        }
-
-        // Processar penalidade
-        const penalidade = processarPenalidade(data.penalidade_aplicada || data.penalidade);
-        data.penalidade_aplicada = `${penalidade.codigo} - ${penalidade.descricao}`;
-        // Split penalidade for template display
-        data.penalidade = penalidade.codigo;
-        data.penalidade_descricao = penalidade.descricao;
-
-        // Processar valores de limite e excesso
-        if (data.valor_limite || data.valor_praticado) {
-            // Garantir que a métrica esteja presente se houver valores
-            if (!data.metrica) {
-                data.metrica = 'unidade';
-                console.warn('[Alerta] Métrica não fornecida, usando "unidade" como padrão');
-            }
-
-            // Formatar texto_limite se valor_limite estiver presente
-            if (data.valor_limite) {
-                data.texto_limite = `Limite estabelecido: ${data.valor_limite}${data.metrica}`;
-            }
-
-            // Gerar texto_infracao baseado nos valores
-            if (data.valor_limite && data.valor_praticado) {
-                // Se não houver texto_infracao do frontend, criar um texto padrão
-                if (!data.texto_infracao) {
-                    data.texto_infracao = `Excedeu o limite estabelecido`;
-                }
-                
-                // Adicionar os valores ao texto_infracao
-                data.texto_infracao = `${data.texto_infracao}. Valor praticado de ${data.valor_praticado}${data.metrica}, excedendo o limite estabelecido de ${data.valor_limite}${data.metrica}.`;
-            }
-
-            console.log('[Teste de PDF] 📊 Valores processados:');
-            if (data.texto_limite) console.log(`[Teste de PDF] ⬇️ ${data.texto_limite}`);
-            if (data.texto_infracao) console.log(`[Teste de PDF] 📝 ${data.texto_infracao}`);
-        }
-
-        if (data.data_ocorrencia) {
-            const dataObj = new Date(data.data_ocorrencia);
-            if (!isNaN(dataObj.getTime())) {
-                // Extrair data no formato DD/MM/YYYY para exibição
-                const dia = String(dataObj.getDate()).padStart(2, '0');
-                const mes = String(dataObj.getMonth() + 1).padStart(2, '0');
-                const ano = dataObj.getFullYear();
-                data.data_formatada = `${dia}/${mes}/${ano}`;
-                
-                // Manter data no formato ISO para o banco
-                data.data_infracao = `${ano}-${mes}-${dia}`;
-                
-                // Extrair hora no formato HH:MM
-                const hora = String(dataObj.getHours()).padStart(2, '0');
-                const minutos = String(dataObj.getMinutes()).padStart(2, '0');
-                data.hora_infracao = `${hora}:${minutos}`;
-                
-                // Criar data por extenso
-                const mesesPorExtenso = [
-                    'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-                    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-                ];
-                data.data_formatada_extenso = `${dia} de ${mesesPorExtenso[dataObj.getMonth()]} de ${ano}`;
-                
-                console.log('[Teste de PDF] 📅 Data formatada:', data.data_formatada);
-                console.log('[Teste de PDF] 🕒 Hora formatada:', data.hora_infracao);
-                console.log('[Teste de PDF] 📝 Data por extenso:', data.data_formatada_extenso);
-            } else {
-                console.warn('[Alerta] Data de ocorrência inválida:', data.data_ocorrencia);
-            }
-        } else if (data.data_infracao) {
-            // Se receber a data diretamente, converter para ISO
-            const [dia, mes, ano] = data.data_infracao.split('/');
-            if (dia && mes && ano) {
-                data.data_infracao = `${ano}-${mes}-${dia}`;
-                data.data_formatada = `${dia}/${mes}/${ano}`;
-                
-                // Criar data por extenso
-                const mesesPorExtenso = [
-                    'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-                    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-                ];
-                data.data_formatada_extenso = `${dia} de ${mesesPorExtenso[parseInt(mes) - 1]} de ${ano}`;
-                
-                console.log('[Teste de PDF] 📅 Data formatada:', data.data_formatada);
-                console.log('[Teste de PDF] 📝 Data por extenso:', data.data_formatada_extenso);
-            }
-        }
-
-        const dadosTeste = {
-            ...data,
-            logo_src: LOGO_BASE64
-        };
-
-        console.log('[Teste de PDF] 📋 Dados preparados');
-
-        console.log('[2/8] Iniciando navegador Puppeteer');
-        const browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
-        const page = await browser.newPage();
-
-        console.log('[3/8] Renderizando template com Handlebars');
-        const html = await new Promise((resolve, reject) => {
-            req.app.render('templateTratativa', dadosTeste, (err, html) => {
-                if (err) {
-                    console.error('[Erro] Falha na renderização do template:', err);
-                    reject(err);
-                } else resolve(html);
-            });
-        });
-
-        console.log('[4/8] Carregando e injetando CSS');
-        const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
-        const css = fs.readFileSync(cssPath, 'utf8');
-        const htmlWithStyles = html.replace('</head>', `
-            <base href="file://${path.join(__dirname, '../public')}/">
-            <style>${css}</style>
-        </head>`);
-
-        console.log('[5/8] Configurando conteúdo na página');
-        await page.setContent(htmlWithStyles, {
-            waitUntil: 'networkidle0',
-            timeout: 60000
-        });
-
-        console.log('[6/8] Gerando PDF');
-        const pdfBuffer = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: {
-                top: '25px',
-                right: '25px',
-                bottom: '25px',
-                left: '25px'
-            },
-            preferCSSPageSize: true,
-            scale: 1.0,
-            displayHeaderFooter: false,
-            landscape: false
-        });
-
-        await browser.close();
-        console.log('[7/8] Navegador fechado');
-
-        const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
-        const nomeFormatado = normalizarTexto(data.nome_funcionario).replace(/\s+/g, '_').toUpperCase();
-        const setorFormatado = normalizarTexto(data.setor).replace(/\s+/g, '_').toUpperCase();
-        const fileName = `mocks/${data.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
-        console.log('[8/8] Iniciando upload para Supabase:', fileName);
-
-        console.log('Tentando upload com bucket:', process.env.SUPABASE_TRATATIVAS_BUCKET_NAME);
-        const { error: uploadError } = await supabase.storage
-            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-            .upload(fileName, pdfBuffer, {
-                contentType: 'application/pdf',
-                upsert: true
-            });
-
-        if (uploadError) {
-            console.error('[Erro] Upload falhou:', uploadError);
-            throw uploadError;
-        }
-
-        console.log('Upload concluído, gerando URL pública');
-        const { data: { publicUrl } } = supabase.storage
-            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-            .getPublicUrl(fileName);
-
-        console.log('Processo concluído com sucesso');
-        console.log('\n[Link do documento] 🔗\n' + publicUrl + '\n');
-
-        res.json({
-            success: true,
-            message: 'Documento de tratativa de teste gerado com sucesso',
-            url: publicUrl
-        });
-
-    } catch (error) {
-        console.error('\n[Erro] Detalhes completos:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erro ao gerar documento de tratativa de teste',
-            error: error.message,
-            details: error
-        });
-    }
-});
-
 // Rota de teste de conexão
 router.get('/test-connection', async (req, res) => {
     try {
+        // Log detalhado da requisição
+        console.log('\n[Test Connection] ✅ Requisição recebida');
+        console.log('[Test Connection] 🌐 IP:', req.ip);
+        console.log('[Test Connection] 📡 Método:', req.method);
+        console.log('[Test Connection] 🔗 Path:', req.path);
+        console.log('[Test Connection] 🌍 Origin:', req.get('origin') || 'N/A');
+        console.log('[Test Connection] 📱 User-Agent:', req.get('user-agent'));
+
+        // Resposta com informações detalhadas
         res.json({
             success: true,
             message: 'Conexão estabelecida com sucesso',
-            serverTime: new Date().toISOString(),
-            baseUrl: `http://localhost:${process.env.PORT || 3000}`
+            serverInfo: {
+                time: new Date().toISOString(),
+                baseUrl: `${req.protocol}://${req.get('host')}`,
+                nodeEnv: process.env.NODE_ENV || 'development',
+                apiVersion: '1.0.0'
+            },
+            requestInfo: {
+                method: req.method,
+                path: req.path,
+                ip: req.ip,
+                userAgent: req.get('user-agent'),
+                origin: req.get('origin') || 'N/A'
+            }
         });
     } catch (error) {
-        console.error('Erro na rota de teste:', error);
+        console.error('[Test Connection] ❌ Erro:', error);
         res.status(500).json({
             success: false,
             message: 'Erro ao testar conexão',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Erro interno do servidor'
         });
     }
 });
 
-// New route using Puppeteer with preview HTML
+// Também suportar POST para compatibilidade
+router.post('/test-connection', async (req, res) => {
+    try {
+        // Log detalhado da requisição
+        console.log('\n[Test Connection] ✅ Requisição POST recebida');
+        console.log('[Test Connection] 🌐 IP:', req.ip);
+        console.log('[Test Connection] 📡 Método:', req.method);
+        console.log('[Test Connection] 🔗 Path:', req.path);
+        console.log('[Test Connection] 🌍 Origin:', req.get('origin') || 'N/A');
+        console.log('[Test Connection] 📱 User-Agent:', req.get('user-agent'));
+
+        // Resposta com informações detalhadas
+        res.json({
+            success: true,
+            message: 'Conexão POST estabelecida com sucesso',
+            serverInfo: {
+                time: new Date().toISOString(),
+                baseUrl: `${req.protocol}://${req.get('host')}`,
+                nodeEnv: process.env.NODE_ENV || 'development',
+                apiVersion: '1.0.0'
+            },
+            requestInfo: {
+                method: req.method,
+                path: req.path,
+                ip: req.ip,
+                userAgent: req.get('user-agent'),
+                origin: req.get('origin') || 'N/A'
+            }
+        });
+    } catch (error) {
+        console.error('[Test Connection] ❌ Erro:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao testar conexão POST',
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Erro interno do servidor'
+        });
+    }
+});
+
+// Adicionar uma nova rota para gerar PDF com dados mockados
 router.post('/mock-pdf', async (req, res) => {
     try {
-        console.log('\n[Mock PDF] ✅ Iniciando geração de documento de teste com Puppeteer');
-        
-        // Dados mockados para teste
-        const mockData = {
-            numero_documento: '2024001',
-            nome_funcionario: 'JOÃO DA SILVA',
-            funcao: 'OPERADOR DE PRODUÇÃO',
-            setor: 'PRODUÇÃO',
-            data_infracao: '23/02/2024',
-            hora_infracao: '09:40',
-            codigo_infracao: 'A001',
-            infracao_cometida: 'EXCESSO DE VELOCIDADE NA EMPILHADEIRA',
-            penalidade_aplicada: 'ADV',
-            nome_lider: 'MARIA OLIVEIRA',
-            url_imagem_temporaria: 'https://kjlwqezxzqjfhacmjhbh.supabase.co/storage/v1/object/public/tratativas/temp/f87643c3-cbc0-4135-8322-13b317a98120-Captura%20de%20tela%202025-02-23%20094045.png',
-            valor_praticado: '15',
-            valor_limite: '10',
-            metrica: 'km/h',
-            mock: true
-        };
+        // Gerar dados aleatórios para o mock
+        const mockData = generateRandomMockData();
 
-        // Processar data e hora
-        if (mockData.data_infracao && mockData.hora_infracao) {
-            mockData.data_ocorrencia = `${mockData.data_infracao}T${mockData.hora_infracao}:00`;
-        }
-
-        // Processar penalidade
-        const penalidade = processarPenalidade(mockData.penalidade_aplicada);
-        mockData.penalidade = penalidade.codigo;
-        mockData.penalidade_descricao = penalidade.descricao;
-
-        // Processar data por extenso
-        const [dia, mes, ano] = mockData.data_infracao.split('/');
-        if (dia && mes && ano) {
-            mockData.data_infracao = `${dia}/${mes}/${ano}`;
-            mockData.data_formatada = `${dia}/${mes}/${ano}`;
-            
-            const mesesPorExtenso = [
-                'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-                'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-            ];
-            mockData.data_formatada_extenso = `${dia} de ${mesesPorExtenso[parseInt(mes) - 1]} de ${ano}`;
-        }
-
-        // Adicionar logo aos dados
-        const dadosTeste = {
-            ...mockData,
-            logo_src: LOGO_BASE64
-        };
-
-        console.log('[Mock PDF] 📋 Dados preparados');
-
-        // Ler o template HTML e CSS
-        const htmlPath = path.join(__dirname, '../public/tratativa-preview.html');
-        const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
-        
-        let html = fs.readFileSync(htmlPath, 'utf8');
-        const css = fs.readFileSync(cssPath, 'utf8');
-
-        // Substituir placeholders no template
-        Object.keys(dadosTeste).forEach(key => {
-            const regex = new RegExp(`{{${key}}}`, 'g');
-            html = html.replace(regex, dadosTeste[key] || '');
-        });
-
-        // Adicionar CSS inline
-        html = html.replace('</head>', `
-            <style>
-                ${css}
-                @page {
-                    margin: 0;
-                    size: A4;
-                }
-                body {
-                    margin: 0;
-                    padding: 25px;
-                    width: 210mm;
-                    height: 297mm;
-                    box-sizing: border-box;
-                }
-                .container {
-                    max-width: 100%;
-                    margin: 0 auto;
-                }
-            </style>
-        </head>`);
-
-        // Iniciar Puppeteer
-        console.log('[Mock PDF] 🚀 Iniciando navegador Puppeteer');
+        // Gerar o PDF usando os dados mockados
         const browser = await puppeteer.launch({
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
         const page = await browser.newPage();
 
-        // Configurar viewport para A4 com DPI correto
-        await page.setViewport({
-            width: 794,  // A4 width at 96 DPI
-            height: 1123,  // A4 height at 96 DPI
-            deviceScaleFactor: 1
-        });
-
-        // Permitir acesso a arquivos locais e URLs externas
+        // Permitir acesso a arquivos locais
         await page.setBypassCSP(true);
 
-        // Carregar o conteúdo HTML
-        console.log('[Mock PDF] 📄 Carregando conteúdo');
-        await page.setContent(html, {
-            waitUntil: ['load', 'networkidle0'],
-            timeout: 30000
-        });
-
-        // Gerar PDF
-        console.log('[Mock PDF] 📑 Gerando PDF');
-        const pdfBuffer = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: {
-                top: '25px',
-                right: '25px',
-                bottom: '25px',
-                left: '25px'
-            },
-            scale: 1,
-            preferCSSPageSize: true
-        });
-
-        await browser.close();
-        console.log('[Mock PDF] 🔒 Navegador fechado');
-
-        // Preparar nome do arquivo
-        const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
-        const nomeFormatado = normalizarTexto(mockData.nome_funcionario).replace(/\s+/g, '_').toUpperCase();
-        const setorFormatado = normalizarTexto(mockData.setor).replace(/\s+/g, '_').toUpperCase();
-        const fileName = `mockpdf/${mockData.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
-        
-        console.log('[Mock PDF] 📤 Iniciando upload para Supabase:', fileName);
-        const { error: uploadError } = await supabase.storage
-            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-            .upload(fileName, pdfBuffer, {
-                contentType: 'application/pdf',
-                upsert: true
-            });
-
-        if (uploadError) {
-            console.error('[Erro] Upload falhou:', uploadError);
-            throw uploadError;
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-            .getPublicUrl(fileName);
-
-        console.log('\n[Mock PDF] ✅ Processo concluído com sucesso');
-        console.log(`[Mock PDF] 📂 Arquivo: ${fileName}`);
-        console.log(`[Mock PDF] 🔗 URL pública gerada: ${publicUrl}\n`);
-
-        res.json({
-            success: true,
-            message: 'Documento de teste gerado com sucesso usando Puppeteer',
-            url: publicUrl
-        });
-
-    } catch (error) {
-        console.error('[Mock PDF] ❌ Erro:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erro ao gerar documento de teste',
-            error: error.message
-        });
-    }
-});
-
-// Keep only this implementation of the mock-test route
-router.post('/mock-test', async (req, res) => {
-    try {
-        console.log('\n[Mock Test] ✅ Iniciando geração de documento de teste');
-        
-        // Dados mockados para teste
-        const mockData = {
-            numero_documento: '2024001',
-            nome_funcionario: 'JOÃO DA SILVA',
-            funcao: 'OPERADOR DE PRODUÇÃO',
-            setor: 'PRODUÇÃO',
-            data_infracao: '23/02/2024',
-            hora_infracao: '09:40',
-            codigo_infracao: 'A001',
-            infracao_cometida: 'EXCESSO DE VELOCIDADE NA EMPILHADEIRA',
-            penalidade_aplicada: 'ADV',
-            nome_lider: 'MARIA OLIVEIRA',
-            url_imagem_temporaria: 'https://kjlwqezxzqjfhacmjhbh.supabase.co/storage/v1/object/public/tratativas/temp/f87643c3-cbc0-4135-8322-13b317a98120-Captura%20de%20tela%202025-02-23%20094045.png',
-            valor_praticado: '15',
-            valor_limite: '10',
-            metrica: 'km/h',
-            mock: true
-        };
-
-        // Processar data e hora
-        if (mockData.data_infracao && mockData.hora_infracao) {
-            // Combinar data e hora em um único timestamp
-            mockData.data_ocorrencia = `${mockData.data_infracao}T${mockData.hora_infracao}:00`;
-        }
-
-        // Processar penalidade
-        const penalidade = processarPenalidade(mockData.penalidade_aplicada);
-        mockData.penalidade = penalidade.codigo;
-        mockData.penalidade_descricao = penalidade.descricao;
-
-        // Processar data por extenso
-        const [dia, mes, ano] = mockData.data_infracao.split('/');
-        if (dia && mes && ano) {
-            mockData.data_infracao = `${ano}-${mes}-${dia}`;
-            mockData.data_formatada = `${dia}/${mes}/${ano}`;
-            
-            const mesesPorExtenso = [
-                'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-                'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-            ];
-            mockData.data_formatada_extenso = `${dia} de ${mesesPorExtenso[parseInt(mes) - 1]} de ${ano}`;
-            
-            console.log('[Mock Test] 📅 Data formatada:', mockData.data_formatada);
-            console.log('[Mock Test] 🕒 Hora formatada:', mockData.hora_infracao);
-            console.log('[Mock Test] 📝 Data por extenso:', mockData.data_formatada_extenso);
-        }
-
-        const dadosTeste = {
-            ...mockData,
-            logo_src: LOGO_BASE64
-        };
-
-        console.log('[Mock Test] 📋 Dados preparados');
-        console.log('[Mock Test] 🖼️ URL da imagem:', dadosTeste.url_imagem_temporaria);
-
-        console.log('[Mock Test] 🚀 Iniciando navegador Puppeteer');
-        const browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
-        const page = await browser.newPage();
-
-        // Permitir acesso a arquivos locais e URLs externas
-        await page.setBypassCSP(true);
-
-        console.log('[Mock Test] 📄 Renderizando template');
+        // Renderiza o template usando tratativa-template.handlebars
         const html = await new Promise((resolve, reject) => {
-            req.app.render('templateTratativa', dadosTeste, (err, html) => {
-                if (err) {
-                    console.error('[Erro] Falha na renderização do template:', err);
-                    reject(err);
-                } else resolve(html);
+            req.app.render('tratativa-template', mockData, (err, html) => {
+                if (err) reject(err);
+                else resolve(html);
             });
         });
 
-        console.log('[Mock Test] 🎨 Injetando CSS');
-        const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
+        // Lê o CSS
+        const cssPath = path.join(__dirname, '../public/tratativa-template-styles.css');
         const css = fs.readFileSync(cssPath, 'utf8');
         const htmlWithStyles = html.replace('</head>', `
             <base href="file://${path.join(__dirname, '../public')}/">
             <style>${css}</style>
         </head>`);
 
-        console.log('[Mock Test] 🔄 Configurando conteúdo na página');
+        // Configura o conteúdo
         await page.setContent(htmlWithStyles, {
             waitUntil: 'networkidle0',
             timeout: 60000
         });
 
-        console.log('[Mock Test] 📑 Gerando PDF');
-        const pdfBuffer = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: {
-                top: '0',
-                right: '0',
-                bottom: '0',
-                left: '0'
-            },
-            preferCSSPageSize: true
-        });
+        // Gera PDF
+        const pdfBuffer = await generatePDF(page);
 
         await browser.close();
-        console.log('[Mock Test] 🔒 Navegador fechado');
 
-        const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
-        const nomeFormatado = normalizarTexto(mockData.nome_funcionario).replace(/\s+/g, '_').toUpperCase();
-        const setorFormatado = normalizarTexto(mockData.setor).replace(/\s+/g, '_').toUpperCase();
-        const fileName = `mocktest/${mockData.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
-        
-        console.log('[Mock Test] 📤 Iniciando upload para Supabase:', fileName);
+        // Garantir que o diretório temporário exista
+        if (!fs.existsSync(tempPdfDir)) {
+            fs.mkdirSync(tempPdfDir, { recursive: true });
+        }
+
+        // Salvar o PDF em um arquivo temporário
+        const tempPdfPath = path.join(tempPdfDir, `${uuidv4()}.pdf`);
+        fs.writeFileSync(tempPdfPath, pdfBuffer);
+
+        // Gera nome do arquivo para o Supabase
+        const fileName = `mockpdf/${uuidv4()}.pdf`;
+
+        // Upload do PDF para o Supabase
         const { error: uploadError } = await supabase.storage
-            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
+            .from('tratativas')
             .upload(fileName, pdfBuffer, {
                 contentType: 'application/pdf',
                 upsert: true
             });
 
         if (uploadError) {
-            console.error('[Erro] Upload falhou:', uploadError);
+            console.error('🚨 [Erro] Erro ao fazer upload do PDF para o Supabase:', uploadError);
             throw uploadError;
         }
 
+        // Gera URL pública
         const { data: { publicUrl } } = supabase.storage
-            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
+            .from('tratativas')
             .getPublicUrl(fileName);
 
-        console.log('\n[Mock Test] ✅ Processo concluído com sucesso');
-        console.log(`[Mock Test] 📂 Arquivo: ${fileName}`);
-        console.log(`[Mock Test] 🔗 URL pública gerada: ${publicUrl}\n`);
+        console.log('✅ [Sucesso] PDF mockado gerado e salvo no Supabase com sucesso');
+        console.log('🔗 [Link] URL pública do arquivo:', publicUrl);
 
+        // Enviar a URL pública como resposta
         res.json({
             success: true,
-            message: 'Documento de teste gerado com sucesso',
+            message: 'PDF mockado gerado e salvo no Supabase com sucesso',
             url: publicUrl
         });
 
+        // Limpar o arquivo temporário
+        fs.unlinkSync(tempPdfPath);
     } catch (error) {
-        console.error('[Mock Test] ❌ Erro:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erro ao gerar documento de teste',
-            error: error.message
-        });
+        console.error('🚨 [Erro] Erro ao gerar PDF mockado:', error.message);
+        res.status(500).json({ error: 'Erro ao gerar PDF mockado' });
     }
 });
 
-// New route for mock template testing
-router.post('/mock-template', async (req, res) => {
-    try {
-        console.log('\n[Mock Template] ✅ Iniciando geração de documento de teste');
-        
-        // Dados mockados para teste
-        const mockData = {
-            numero_documento: '2024001',
-            nome_funcionario: 'JOÃO DA SILVA',
-            funcao: 'OPERADOR DE PRODUÇÃO',
-            setor: 'PRODUÇÃO',
-            data_infracao: '23/02/2024',
-            hora_infracao: '09:40',
-            codigo_infracao: 'A001',
-            infracao_cometida: 'EXCESSO DE VELOCIDADE NA EMPILHADEIRA',
-            penalidade_aplicada: 'ADV',
-            nome_lider: 'MARIA OLIVEIRA',
-            url_imagem_temporaria: 'https://kjlwqezxzqjfhacmjhbh.supabase.co/storage/v1/object/public/tratativas/temp/f87643c3-cbc0-4135-8322-13b317a98120-Captura%20de%20tela%202025-02-23%20094045.png',
-            valor_praticado: '15',
-            valor_limite: '10',
-            metrica: 'km/h',
-            mock: true
-        };
+// Função para gerar dados aleatórios para o mock
+function generateRandomMockData() {
+    const randomNames = ['João Silva', 'Maria Oliveira', 'Pedro Santos', 'Ana Souza'];
+    const randomFunctions = ['Desenvolvedor', 'Analista', 'Gerente', 'Engenheiro'];
+    const randomSectors = ['TI', 'RH', 'Financeiro', 'Produção'];
+    const randomInfractions = ['Atraso no horário de trabalho', 'Uso inadequado de equipamentos', 'Descumprimento de normas de segurança'];
 
-        // Processar data e hora
-        if (mockData.data_infracao && mockData.hora_infracao) {
-            // Combinar data e hora em um único timestamp
-            mockData.data_ocorrencia = `${mockData.data_infracao}T${mockData.hora_infracao}:00`;
-        }
+    return {
+        nome_colaborador: randomNames[Math.floor(Math.random() * randomNames.length)],
+        matricula: Math.floor(Math.random() * 100000).toString().padStart(5, '0'),
+        cargo: randomFunctions[Math.floor(Math.random() * randomFunctions.length)],
+        setor: randomSectors[Math.floor(Math.random() * randomSectors.length)],
+        data_ocorrencia: new Date().toISOString().split('T')[0],
+        horario_ocorrencia: `${Math.floor(Math.random() * 24).toString().padStart(2, '0')}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`,
+        descricao_ocorrencia: randomInfractions[Math.floor(Math.random() * randomInfractions.length)],
+        justificativa: 'Problemas com o transporte público',
+        data_atual: new Date().toLocaleDateString('pt-BR'),
+        nome_gestor: 'Maria Gestora',
+        cargo_gestor: 'Gerente de TI'
+    };
+}
 
-        // Processar penalidade
-        const penalidade = processarPenalidade(mockData.penalidade_aplicada);
-        mockData.penalidade = penalidade.codigo;
-        mockData.penalidade_descricao = penalidade.descricao;
-
-        // Processar data por extenso
-        const [dia, mes, ano] = mockData.data_infracao.split('/');
-        if (dia && mes && ano) {
-            mockData.data_infracao = `${ano}-${mes}-${dia}`;
-            mockData.data_formatada = `${dia}/${mes}/${ano}`;
-            
-            const mesesPorExtenso = [
-                'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
-                'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
-            ];
-            mockData.data_formatada_extenso = `${dia} de ${mesesPorExtenso[parseInt(mes) - 1]} de ${ano}`;
-            
-            console.log('[Mock Template] 📅 Data formatada:', mockData.data_formatada);
-            console.log('[Mock Template] 📝 Data por extenso:', mockData.data_formatada_extenso);
-        }
-
-        // Adicionar logo aos dados
-        const dadosTeste = {
-            ...mockData,
-            logo_src: LOGO_BASE64
-        };
-
-        console.log('[Mock Template] 📋 Dados preparados');
-        console.log('[Mock Template] 🖼️ URL da imagem:', dadosTeste.url_imagem_temporaria);
-
-        console.log('[Mock Template] 🚀 Iniciando navegador Puppeteer');
-        const browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
-        const page = await browser.newPage();
-
-        // Permitir acesso a arquivos locais e URLs externas
-        await page.setBypassCSP(true);
-
-        console.log('[Mock Template] 📄 Renderizando template');
-        const html = await new Promise((resolve, reject) => {
-            req.app.render('templateTratativa', dadosTeste, (err, html) => {
-                if (err) {
-                    console.error('[Erro] Falha na renderização do template:', err);
-                    reject(err);
-                } else resolve(html);
-            });
-        });
-
-        console.log('[Mock Template] 🎨 Injetando CSS');
-        const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
-        const css = fs.readFileSync(cssPath, 'utf8');
-        const htmlWithStyles = html.replace('</head>', `
-            <base href="file://${path.join(__dirname, '../public')}/">
-            <style>${css}</style>
-        </head>`);
-
-        console.log('[Mock Template] 🔄 Configurando conteúdo na página');
-        await page.setContent(htmlWithStyles, {
-            waitUntil: 'networkidle0',
-            timeout: 60000
-        });
-
-        console.log('[Mock Template] 📑 Gerando PDF');
-        const pdfBuffer = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: {
-                top: '0',
-                right: '0',
-                bottom: '0',
-                left: '0'
+// Rota de documentação da API
+router.get('/docs', (req, res) => {
+    res.json({
+        api_version: '1.0.0',
+        description: 'API de Tratativas - Documentação',
+        base_url: `${req.protocol}://${req.get('host')}/api/tratativa`,
+        endpoints: {
+            test_connection: {
+                path: '/test-connection',
+                methods: ['GET', 'POST'],
+                description: 'Testa a conexão com o servidor',
+                response: {
+                    success: true,
+                    message: 'String',
+                    serverInfo: 'Object',
+                    requestInfo: 'Object'
+                }
             },
-            preferCSSPageSize: true
-        });
-
-        await browser.close();
-        console.log('[Mock Template] 🔒 Navegador fechado');
-
-        const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
-        const nomeFormatado = normalizarTexto(mockData.nome_funcionario).replace(/\s+/g, '_').toUpperCase();
-        const setorFormatado = normalizarTexto(mockData.setor).replace(/\s+/g, '_').toUpperCase();
-        const fileName = `mocktemplate/${mockData.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
-        
-        console.log('[Mock Template] 📤 Iniciando upload para Supabase:', fileName);
-        const { error: uploadError } = await supabase.storage
-            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-            .upload(fileName, pdfBuffer, {
-                contentType: 'application/pdf',
-                upsert: true
-            });
-
-        if (uploadError) {
-            console.error('[Erro] Upload falhou:', uploadError);
-            throw uploadError;
+            create: {
+                path: '/create',
+                method: 'POST',
+                description: 'Cria uma nova tratativa e gera o PDF',
+                required_fields: [
+                    'numero_documento',
+                    'data_infracao',
+                    'hora_infracao',
+                    'codigo_infracao',
+                    'infracao_cometida',
+                    'penalidade_aplicada',
+                    'nome_lider',
+                    'evidence1_url'
+                ],
+                optional_fields: [
+                    'evidence2_url',
+                    'evidence3_url',
+                    'funcao',
+                    'setor',
+                    'metrica',
+                    'valor_praticado',
+                    'valor_limite',
+                    'texto_infracao',
+                    'texto_limite'
+                ],
+                response: {
+                    success: true,
+                    message: 'String',
+                    tratativa_id: 'Number',
+                    url: 'String'
+                }
+            },
+            generate: {
+                path: '/generate',
+                method: 'POST',
+                description: 'Gera um PDF de tratativa sem salvar no banco',
+                required_fields: [
+                    'numero_documento',
+                    'data_infracao',
+                    'hora_infracao',
+                    'codigo_infracao',
+                    'infracao_cometida',
+                    'penalidade_aplicada',
+                    'nome_lider',
+                    'evidence1_url'
+                ],
+                optional_fields: [
+                    'evidence2_url',
+                    'evidence3_url',
+                    'funcao',
+                    'setor',
+                    'metrica',
+                    'valor_praticado',
+                    'valor_limite',
+                    'texto_infracao',
+                    'texto_limite'
+                ],
+                response: {
+                    success: true,
+                    message: 'String',
+                    url: 'String'
+                }
+            },
+            list: {
+                path: '/list',
+                method: 'GET',
+                description: 'Lista todas as tratativas',
+                response: {
+                    success: true,
+                    message: 'String',
+                    tratativas: 'Array'
+                }
+            },
+            get_by_id: {
+                path: '/:id',
+                method: 'GET',
+                description: 'Obtém detalhes de uma tratativa específica',
+                params: {
+                    id: 'Number - ID da tratativa'
+                },
+                response: {
+                    success: true,
+                    message: 'String',
+                    tratativa: 'Object'
+                }
+            },
+            mock_pdf: {
+                path: '/mock-pdf',
+                method: 'POST',
+                description: 'Gera um PDF de exemplo para testes',
+                response: {
+                    success: true,
+                    message: 'String',
+                    url: 'String'
+                }
+            }
         }
-
-        const { data: { publicUrl } } = supabase.storage
-            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-            .getPublicUrl(fileName);
-
-        console.log('\n[Mock Template] ✅ Processo concluído com sucesso');
-        console.log(`[Mock Template] 📂 Arquivo: ${fileName}`);
-        console.log(`[Mock Template] 🔗 URL pública gerada: ${publicUrl}\n`);
-
-        res.json({
-            success: true,
-            message: 'Documento de teste gerado com sucesso',
-            url: publicUrl
-        });
-
-    } catch (error) {
-        console.error('[Mock Template] ❌ Erro:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Erro ao gerar documento de teste',
-            error: error.message
-        });
-    }
+    });
 });
 
 module.exports = router;

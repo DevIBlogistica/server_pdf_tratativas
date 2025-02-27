@@ -14,7 +14,7 @@ const port = process.env.PORT || 3000;
 
 // Configuração do CORS para permitir requisições de todas as origens
 const corsOptions = {
-    origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:3001'],
+    origin: '*', // Permitir todas as origens em desenvolvimento
     credentials: true,
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -24,8 +24,11 @@ const corsOptions = {
 // Aplica CORS globalmente
 app.use(cors(corsOptions));
 
-// Adiciona headers de segurança
+// Adiciona headers de segurança e CORS
 app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -38,7 +41,7 @@ app.enable('trust proxy');
 // Configuração para aceitar dados JSON
 app.use(express.json({ 
     limit: '1mb',
-    type: ['application/json']
+    type: ['application/json', 'text/plain']
 }));
 app.use(express.urlencoded({ 
     extended: true, 
@@ -66,25 +69,60 @@ app.set('views', './views');
 // Servir arquivos estáticos da pasta public
 app.use(express.static('public'));
 
-// Middleware para log de requisições
+// Middleware para log detalhado de requisições
 app.use((req, res, next) => {
-    console.log(`${req.method} ${req.path}`);
-    next();
-});
-
-// Log middleware para debug
-app.use((req, res, next) => {
-    console.log('Request recebida:');
-    console.log('Method:', req.method);
-    console.log('Path:', req.path);
-    console.log('Protocol:', req.protocol);
-    console.log('Content-Type:', req.headers['content-type']);
-    console.log('Body:', req.body);
+    console.log('\n[Request] ✨ Nova requisição recebida');
+    console.log('[Request] 📡 Método:', req.method);
+    console.log('[Request] 🔗 Path:', req.path);
+    console.log('[Request] 🌐 IP:', req.ip);
+    console.log('[Request] 🌍 Origin:', req.get('origin') || 'N/A');
+    console.log('[Request] 📱 User-Agent:', req.get('user-agent'));
+    console.log('[Request] 📄 Content-Type:', req.get('content-type'));
+    if (Object.keys(req.body).length > 0) {
+        console.log('[Request] 📦 Body:', JSON.stringify(req.body, null, 2));
+    }
     next();
 });
 
 // Configuração das rotas
+app.get('/', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Servidor de Tratativas - API',
+        version: '1.0.0',
+        endpoints: {
+            test: '/api/tratativa/test-connection',
+            create: '/api/tratativa/create',
+            generate: '/api/tratativa/generate',
+            list: '/api/tratativa/list',
+            mockPdf: '/api/tratativa/mock-pdf',
+            mockTest: '/api/tratativa/mock-test',
+            mockTemplate: '/api/tratativa/mock-template'
+        }
+    });
+});
+
+// Configuração das rotas da API
 app.use('/api/tratativa', tratativaRoutes);
+
+// Middleware para rotas não encontradas
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Rota não encontrada',
+        path: req.path,
+        method: req.method,
+        availableEndpoints: {
+            test: '/api/tratativa/test-connection',
+            create: '/api/tratativa/create',
+            generate: '/api/tratativa/generate',
+            list: '/api/tratativa/list',
+            mockPdf: '/api/tratativa/mock-pdf',
+            mockTest: '/api/tratativa/mock-test',
+            mockTemplate: '/api/tratativa/mock-template'
+        }
+    });
+});
 
 // Middleware para tratamento de erros
 app.use((err, req, res, next) => {
