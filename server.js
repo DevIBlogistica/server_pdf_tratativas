@@ -3,8 +3,6 @@ const express = require('express');
 const { engine } = require('express-handlebars');
 const path = require('path');
 const cors = require('cors');
-const https = require('https'); // Import the https module
-const fs = require('fs'); // Import the fs module
 require('dotenv').config();
 
 // Importação das rotas
@@ -68,7 +66,7 @@ app.set('views', './views');
 // Servir arquivos estáticos da pasta public
 app.use(express.static('public'));
 
-// Middleware para log de requisições - manter apenas informações essenciais
+// Middleware para log de requisições
 app.use((req, res, next) => {
     console.log(`${req.method} ${req.path}`);
     next();
@@ -97,32 +95,7 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Configuração do servidor HTTPS com certificado do Let's Encrypt
-const httpsOptions = {
-    key: fs.readFileSync('certificates/privkey.pem'),
-    cert: fs.readFileSync('certificates/fullchain.pem'),
-    secureOptions: require('constants').SSL_OP_NO_TLSv1 | require('constants').SSL_OP_NO_TLSv1_1,
-    minVersion: 'TLSv1.2',
-    ciphers: [
-        'ECDHE-ECDSA-AES128-GCM-SHA256',
-        'ECDHE-RSA-AES128-GCM-SHA256',
-        'ECDHE-ECDSA-AES256-GCM-SHA384',
-        'ECDHE-RSA-AES256-GCM-SHA384',
-        'ECDHE-ECDSA-CHACHA20-POLY1305',
-        'ECDHE-RSA-CHACHA20-POLY1305',
-        'DHE-RSA-AES128-GCM-SHA256',
-        'DHE-RSA-AES256-GCM-SHA384'
-    ].join(':'),
-    honorCipherOrder: true
-};
-
-// Iniciar servidor HTTPS
-const httpsServer = https.createServer(httpsOptions, app);
-
-// Configurar para escutar em IPv4
-httpsServer.listen(port, '0.0.0.0', () => {
-    console.log(`Servidor HTTPS rodando na porta ${port}`);
-    console.log('Endereço:', httpsServer.address());
-}).on('error', (err) => {
-    console.error('Erro ao iniciar servidor HTTPS:', err);
+// Iniciar servidor HTTP para desenvolvimento local
+app.listen(port, () => {
+    console.log(`Servidor HTTP rodando em http://localhost:${port}`);
 });
