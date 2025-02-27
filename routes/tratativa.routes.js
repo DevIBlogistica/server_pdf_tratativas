@@ -897,42 +897,83 @@ router.post('/mock-pdf', async (req, res) => {
             </style>
         </head>`);
 
-        // Iniciar Puppeteer
-        console.log('[Mock PDF] 🚀 Iniciando navegador Puppeteer');
+        // Iniciar Puppeteer com configurações específicas
+        console.log('[Mock PDF] 🚀 Iniciando navegador Puppeteer com configurações específicas');
         const browser = await puppeteer.launch({
             headless: true,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-web-security',
+                '--disable-features=IsolateOrigins,site-per-process',
                 '--allow-running-insecure-content'
             ]
         });
         const page = await browser.newPage();
 
-        // Configurar viewport para A4 com DPI correto
+        // Configurar viewport para A4
         await page.setViewport({
-            width: 794,  // A4 width at 96 DPI
-            height: 1123,  // A4 height at 96 DPI
+            width: 794,
+            height: 1123,
             deviceScaleFactor: 1
         });
 
-        // Permitir acesso a recursos externos
-        await page.setBypassCSP(true);
-        await page.setExtraHTTPHeaders({
-            'Accept-Language': 'pt-BR,pt;q=0.9',
+        // Habilitar logs de requisição
+        page.on('console', msg => console.log('[Browser Console]', msg.text()));
+        page.on('pageerror', err => console.log('[Browser Error]', err));
+        page.on('requestfailed', request => 
+            console.log(`[Request Failed] ${request.url()}: ${request.failure().errorText}`)
+        );
+        page.on('response', response => {
+            const status = response.status();
+            const url = response.url();
+            if (status !== 200) {
+                console.log(`[Response Error] ${url}: ${status}`);
+            }
         });
+
+        // Configurar headers e permissões
+        await page.setExtraHTTPHeaders({
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+        });
+        await page.setBypassCSP(true);
 
         // Carregar o conteúdo HTML
         console.log('[Mock PDF] 📄 Carregando conteúdo');
         await page.setContent(html, {
-            waitUntil: ['load', 'networkidle0', 'domcontentloaded'],
+            waitUntil: ['load', 'domcontentloaded', 'networkidle0'],
             timeout: 30000
         });
 
-        // Aguardar especificamente pela logo
-        await page.waitForSelector('img.logo-img', { timeout: 5000 })
-            .catch(() => console.log('[Mock PDF] ⚠️ Logo não encontrada ou timeout'));
+        // Aguardar carregamento específico da logo
+        console.log('[Mock PDF] ⌛ Aguardando carregamento da logo...');
+        try {
+            await page.waitForSelector('img.logo-img', { 
+                visible: true,
+                timeout: 5000 
+            });
+            console.log('[Mock PDF] ✅ Logo encontrada e carregada');
+            
+            // Verificar se a imagem foi carregada corretamente
+            const logoLoaded = await page.evaluate(() => {
+                const img = document.querySelector('img.logo-img');
+                return img && img.complete && img.naturalHeight !== 0;
+            });
+            
+            if (!logoLoaded) {
+                console.log('[Mock PDF] ⚠️ Logo não carregou completamente');
+            } else {
+                console.log('[Mock PDF] ✅ Logo carregada com sucesso');
+            }
+        } catch (error) {
+            console.log('[Mock PDF] ⚠️ Erro ao aguardar logo:', error.message);
+        }
+
+        // Pequena pausa para garantir que tudo foi renderizado
+        await page.waitForTimeout(1000);
 
         // Gerar PDF
         console.log('[Mock PDF] 📑 Gerando PDF');
