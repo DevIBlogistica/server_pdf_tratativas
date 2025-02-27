@@ -3,6 +3,9 @@ const express = require('express');
 const { engine } = require('express-handlebars');
 const path = require('path');
 const cors = require('cors');
+const https = require('https');
+const http = require('http');
+const fs = require('fs');
 require('dotenv').config();
 
 // Importação das rotas
@@ -11,6 +14,7 @@ const tratativaRoutes = require('./routes/tratativa.routes');
 // Inicialização do Express
 const app = express();
 const port = process.env.PORT || 3000;
+const httpsPort = process.env.HTTPS_PORT || 3443;
 
 // Configuração do CORS para permitir requisições de todas as origens
 const corsOptions = {
@@ -95,7 +99,36 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Iniciar servidor HTTP para desenvolvimento local
-app.listen(port, () => {
+// Configuração HTTPS
+let httpsServer;
+try {
+    const privateKey = fs.readFileSync('ssl/private.key', 'utf8');
+    const certificate = fs.readFileSync('ssl/certificate.crt', 'utf8');
+    const credentials = { key: privateKey, cert: certificate };
+    
+    // Criar servidor HTTPS
+    httpsServer = https.createServer(credentials, app);
+    
+    // Iniciar servidor HTTPS
+    httpsServer.listen(httpsPort, () => {
+        console.log(`Servidor HTTPS rodando em https://localhost:${httpsPort}`);
+    });
+} catch (error) {
+    console.warn('Certificados SSL não encontrados. Apenas o servidor HTTP será iniciado.');
+}
+
+// Iniciar servidor HTTP
+const httpServer = http.createServer(app);
+httpServer.listen(port, () => {
     console.log(`Servidor HTTP rodando em http://localhost:${port}`);
 });
+
+// Redirecionar HTTP para HTTPS em produção
+if (process.env.NODE_ENV === 'production' && httpsServer) {
+    app.use((req, res, next) => {
+        if (!req.secure) {
+            return res.redirect(['https://', req.get('Host'), req.url].join(''));
+        }
+        next();
+    });
+}
