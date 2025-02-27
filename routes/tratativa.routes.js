@@ -53,7 +53,12 @@ if (!fs.existsSync(tempPdfDir)) {
 const PUPPETEER_TIMEOUT = 30000; // 30 segundos
 const PUPPETEER_OPTIONS = {
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--ignore-certificate-errors',
+        '--ignore-certificate-errors-spki-list'
+    ],
     timeout: PUPPETEER_TIMEOUT
 };
 
@@ -156,10 +161,21 @@ function processarPenalidade(codigo) {
 const corsOptions = {
     origin: '*',
     methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    optionsSuccessStatus: 200
 };
 
 router.use(cors(corsOptions));
+router.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
 
 // ROTA: Para criar um registro de tratativa no Supabase e gerar o PDF
 router.post('/create', async (req, res) => {
@@ -844,16 +860,11 @@ router.post('/test-connection', (req, res) => {
 
 // Modificar a rota /mock-pdf para usar o novo sistema
 router.post('/mock-pdf', async (req, res) => {
-    const timeout = setTimeout(() => {
-        res.status(408).json({
-            success: false,
-            message: 'Timeout na geração do PDF',
-            error: 'Request timeout'
-        });
-    }, PUPPETEER_TIMEOUT);
-
     try {
         console.log('\n[Mock PDF] ✅ Iniciando geração de documento de teste com Puppeteer');
+        
+        const browser = await puppeteer.launch(PUPPETEER_OPTIONS);
+        const page = await browser.newPage();
         
         // Dados mockados para teste
         const mockData = {
@@ -905,75 +916,60 @@ router.post('/mock-pdf', async (req, res) => {
 
         console.log('[Mock PDF] 📋 Dados preparados');
 
-        const result = await withBrowser(async (browser) => {
-            const page = await browser.newPage();
-            
-            // Configurar viewport para A4
-            await page.setViewport({
-                width: 794,
-                height: 1123,
-                deviceScaleFactor: 1
+        // Renderiza o template
+        const html = await new Promise((resolve, reject) => {
+            req.app.render('templateTratativa', dadosTeste, (err, html) => {
+                if (err) {
+                    console.error('[Erro] Falha na renderização do template:', err);
+                    reject(err);
+                } else resolve(html);
             });
-
-            await page.setBypassCSP(true);
-
-            // Renderiza o template
-            const html = await new Promise((resolve, reject) => {
-                req.app.render('templateTratativa', dadosTeste, (err, html) => {
-                    if (err) {
-                        console.error('[Erro] Falha na renderização do template:', err);
-                        reject(err);
-                    } else resolve(html);
-                });
-            });
-
-            // Lê o CSS
-            const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
-            const css = fs.readFileSync(cssPath, 'utf8');
-            const htmlWithStyles = html.replace('</head>', `
-                <style>
-                    ${css}
-                    @page {
-                        margin: 0;
-                        size: A4;
-                    }
-                    body {
-                        margin: 0;
-                        padding: 25px;
-                        width: 210mm;
-                        height: 297mm;
-                        box-sizing: border-box;
-                    }
-                    .container {
-                        max-width: 100%;
-                        margin: 0 auto;
-                    }
-                </style>
-            </head>`);
-
-            // Configura o conteúdo
-            await page.setContent(htmlWithStyles, {
-                waitUntil: 'networkidle0',
-                timeout: 60000
-            });
-
-            // Gerar PDF
-            const pdfBuffer = await page.pdf({
-                format: 'A4',
-                printBackground: true,
-                margin: {
-                    top: '0',
-                    right: '0',
-                    bottom: '0',
-                    left: '0'
-                },
-                preferCSSPageSize: true
-            });
-            
-            return pdfBuffer;
         });
 
-        clearTimeout(timeout);
+        // Lê o CSS
+        const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
+        const css = fs.readFileSync(cssPath, 'utf8');
+        const htmlWithStyles = html.replace('</head>', `
+            <style>
+                ${css}
+                @page {
+                    margin: 0;
+                    size: A4;
+                }
+                body {
+                    margin: 0;
+                    padding: 25px;
+                    width: 210mm;
+                    height: 297mm;
+                    box-sizing: border-box;
+                }
+                .container {
+                    max-width: 100%;
+                    margin: 0 auto;
+                }
+            </style>
+        </head>`);
+
+        // Configura o conteúdo
+        await page.setContent(htmlWithStyles, {
+            waitUntil: 'networkidle0',
+            timeout: 60000
+        });
+
+        // Gerar PDF
+        const pdfBuffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: {
+                top: '0',
+                right: '0',
+                bottom: '0',
+                left: '0'
+            },
+            preferCSSPageSize: true
+        });
+        
+        await browser.close();
 
         // Gera nome do arquivo
         const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
@@ -984,7 +980,7 @@ router.post('/mock-pdf', async (req, res) => {
         console.log('[Mock PDF] 📤 Iniciando upload para Supabase:', fileName);
         const { error: uploadError } = await supabase.storage
             .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-            .upload(fileName, result, {
+            .upload(fileName, pdfBuffer, {
                 contentType: 'application/pdf',
                 upsert: true
             });
@@ -1009,7 +1005,6 @@ router.post('/mock-pdf', async (req, res) => {
         });
 
     } catch (error) {
-        clearTimeout(timeout);
         console.error('[Mock PDF] ❌ Erro:', error);
         res.status(500).json({
             success: false,
