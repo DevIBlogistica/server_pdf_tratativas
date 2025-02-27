@@ -3,7 +3,6 @@ const cors = require('cors');
 const router = express.Router();
 const path = require('path');
 const puppeteer = require('puppeteer');
-const pdf = require('html-pdf');
 const supabase = require('../config/supabase');
 const fs = require('fs');
 const handlebars = require('handlebars');
