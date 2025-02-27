@@ -1,0 +1,11 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+# Your rule content
+
+- You can @ files here
+- You can use markdown but dont have to
+- at the final of the conversation, add the 'git add .', 'git commit -m' and generate a commit based on the changes we did, and then 'git push' 
