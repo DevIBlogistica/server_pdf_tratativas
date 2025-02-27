@@ -178,14 +178,14 @@ router.post('/create', async (req, res) => {
         const { data: newTratativa, error: dbError } = await supabase
             .from('tratativas')
             .insert([{
-                numero_tratativa: data.numero_tratativa,
-                funcionario: data.funcionario,
+                numero_documento: data.numero_documento,
+                nome_funcionario: data.nome_funcionario,
                 data_infracao: data.data_infracao,
                 hora_infracao: data.hora_infracao,
                 codigo_infracao: data.codigo_infracao,
                 infracao_cometida: data.infracao_cometida,
                 penalidade: data.penalidade_aplicada,
-                lider: data.nome_lider,
+                nome_lider: data.nome_lider,
                 status: 'ENVIADA',
                 texto_infracao: data.texto_infracao,
                 texto_limite: data.texto_limite,
@@ -194,9 +194,11 @@ router.post('/create', async (req, res) => {
                 data_devolvida: null,
                 funcao: data.funcao,
                 setor: data.setor,
-                medida: data.metrica,
+                metrica: data.metrica,
                 valor_praticado: data.valor_praticado,
-                mock: data.mock || false
+                valor_limite: data.valor_limite,
+                mock: data.mock || false,
+                url_imagem_temporaria: data.url_imagem_temporaria
             }])
             .select()
             .single();
@@ -394,14 +396,20 @@ router.post('/generate', async (req, res) => {
                 data.texto_limite = `Limite estabelecido: ${data.valor_limite}${data.metrica}`;
             }
 
-            // Formatar texto_excesso se valor_praticado estiver presente
-            if (data.valor_praticado) {
-                data.texto_excesso = `Valor praticado: ${data.valor_praticado}${data.metrica}`;
+            // Gerar texto_infracao baseado nos valores
+            if (data.valor_limite && data.valor_praticado) {
+                // Se não houver texto_infracao do frontend, criar um texto padrão
+                if (!data.texto_infracao) {
+                    data.texto_infracao = `Excedeu o limite estabelecido`;
+                }
+                
+                // Adicionar os valores ao texto_infracao
+                data.texto_infracao = `${data.texto_infracao}. Valor praticado de ${data.valor_praticado}${data.metrica}, excedendo o limite estabelecido de ${data.valor_limite}${data.metrica}.`;
             }
 
             console.log('[Geração de PDF] 📊 Valores processados:');
             if (data.texto_limite) console.log(`[Geração de PDF] ⬇️ ${data.texto_limite}`);
-            if (data.texto_excesso) console.log(`[Geração de PDF] ⬆️ ${data.texto_excesso}`);
+            if (data.texto_infracao) console.log(`[Geração de PDF] 📝 ${data.texto_infracao}`);
         }
 
         // Processar data da ocorrência (se fornecida)
@@ -598,14 +606,20 @@ router.post('/test', async (req, res) => {
                 data.texto_limite = `Limite estabelecido: ${data.valor_limite}${data.metrica}`;
             }
 
-            // Formatar texto_excesso se valor_praticado estiver presente
-            if (data.valor_praticado) {
-                data.texto_excesso = `Valor praticado: ${data.valor_praticado}${data.metrica}`;
+            // Gerar texto_infracao baseado nos valores
+            if (data.valor_limite && data.valor_praticado) {
+                // Se não houver texto_infracao do frontend, criar um texto padrão
+                if (!data.texto_infracao) {
+                    data.texto_infracao = `Excedeu o limite estabelecido`;
+                }
+                
+                // Adicionar os valores ao texto_infracao
+                data.texto_infracao = `${data.texto_infracao}. Valor praticado de ${data.valor_praticado}${data.metrica}, excedendo o limite estabelecido de ${data.valor_limite}${data.metrica}.`;
             }
 
             console.log('[Teste de PDF] 📊 Valores processados:');
             if (data.texto_limite) console.log(`[Teste de PDF] ⬇️ ${data.texto_limite}`);
-            if (data.texto_excesso) console.log(`[Teste de PDF] ⬆️ ${data.texto_excesso}`);
+            if (data.texto_infracao) console.log(`[Teste de PDF] 📝 ${data.texto_infracao}`);
         }
 
         if (data.data_ocorrencia) {
