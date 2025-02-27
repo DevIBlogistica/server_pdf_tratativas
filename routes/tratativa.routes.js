@@ -778,31 +778,20 @@ router.post('/test', async (req, res) => {
 });
 
 // Rota de teste de conexão
-router.post('/test-connection', (req, res) => {
+router.get('/test-connection', async (req, res) => {
     try {
-        // Obter informações da origem da requisição
-        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-        const origin = req.headers['origin'] || req.headers['referer'] || 'Origem desconhecida';
-        const userAgent = req.headers['user-agent'] || 'User-Agent desconhecido';
-        
-        console.log('\n[Teste de Conexão] ✅ Requisição recebida');
-        console.log(`[Teste de Conexão] 🌐 IP de Origem: ${ip}`);
-        console.log(`[Teste de Conexão] 🔗 Origem: ${origin}`);
-        console.log(`[Teste de Conexão] 📱 User-Agent: ${userAgent}`);
-
         res.json({
             success: true,
             message: 'Conexão estabelecida com sucesso',
-            ip,
-            origin,
-            userAgent
+            serverTime: new Date().toISOString(),
+            baseUrl: `http://localhost:${process.env.PORT || 3000}`
         });
     } catch (error) {
-        console.error('[Erro] Falha no teste de conexão:', error);
+        console.error('Erro na rota de teste:', error);
         res.status(500).json({
             success: false,
             message: 'Erro ao testar conexão',
-            error: error.message
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 });

@@ -14,7 +14,7 @@ const port = process.env.PORT || 3000;
 
 // Configuração do CORS para permitir requisições de todas as origens
 const corsOptions = {
-    origin: '*',
+    origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:3001'],
     credentials: true,
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -97,12 +97,11 @@ app.use((err, req, res, next) => {
 });
 
 // Iniciar servidor
-const server = app.listen(port, '0.0.0.0', () => {
+const server = app.listen(port, 'localhost', () => {
     console.log(`Servidor rodando em http://localhost:${port}`);
-    console.log('Endereço IP:', server.address());
-}).on('error', (error) => {
-    console.error('Erro ao iniciar o servidor:', error);
-    process.exit(1);
+    console.log('Acesse:');
+    console.log(`- API: http://localhost:${port}/api/tratativa/test-connection`);
+    console.log(`- Documentação: http://localhost:${port}/api-docs`);
 });
 
 // Graceful shutdown
