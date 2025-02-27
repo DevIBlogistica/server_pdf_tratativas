@@ -1,0 +1,309 @@
+@page {
+    size: A4;
+    margin: 0;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Century Gothic', 'Arial', 'Helvetica', sans-serif;
+    font-size: 10px;
+    margin: 0;
+    padding: 0;
+    width: 210mm;
+    height: 297mm;
+    overflow: hidden;
+}
+
+.page-container {
+    width: 210mm;
+    height: 297mm;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.content-container {
+    position: absolute;
+    top: 12.7mm;
+    right: 12.7mm;
+    bottom: 12.7mm;
+    left: 12.7mm;
+    border: 1px solid black;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Cabeçalho */
+.header-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.header-table td {
+    border: 1px solid black;
+    padding: 5px;
+}
+
+.header-table td:first-child {
+    border-left: none;
+}
+
+.header-table td:last-child {
+    border-right: none;
+}
+
+/* Logo */
+.logo {
+    width: 45px;
+    height: 35px;
+    text-align: center;
+}
+
+.logo-img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* Seção de Identificação */
+.identification-section {
+    padding: 5px;
+    border-bottom: 1px solid black;
+}
+
+.name-date-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.function-sector-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.notification-text {
+    text-align: justify;
+    font-size: 9px;
+}
+
+/* Ocorrência */
+.occurrence-box {
+    border-bottom: 1px solid black;
+}
+
+.occurrence-header {
+    background-color: #dadada;
+    padding: 5px;
+    text-align: center;
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+}
+
+.occurrence-content {
+    padding: 0;
+}
+
+.occurrence-row {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.occurrence-row > div {
+    display: table-cell;
+    padding: 5px;
+    vertical-align: middle;
+    border-top: 1px solid black;
+}
+
+/* Bordas específicas para cada coluna */
+.occurrence-row > div:nth-child(2),
+.occurrence-row > div:nth-child(3),
+.occurrence-row > div:nth-child(4),
+.occurrence-row > div:nth-child(5),
+.occurrence-row > div:nth-child(6) {
+    border-left: 1px solid black;
+}
+
+/* Medida Disciplinar */
+.disciplinary-box {
+    border-bottom: 1px solid black;
+}
+
+.disciplinary-header {
+    background-color: #dadada;
+    padding: 5px;
+    text-align: center;
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+}
+
+.disciplinary-content {
+    padding: 0;
+}
+
+.measure-row {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.measure-row > div {
+    display: table-cell;
+    padding: 5px;
+    vertical-align: middle;
+    border-top: 1px solid black;
+}
+
+.measure-row > div:last-child {
+    border-left: 1px solid black;
+}
+
+/* Texto Legal */
+.legal-text {
+    padding: 10px;
+    font-size: 9px;
+    text-align: justify;
+}
+
+.legal-text p {
+    margin: 5px 0;
+}
+
+/* Evidências */
+.evidence-section {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+    padding: 10px;
+    text-align: center;
+    max-height: 200px;
+    display: flex;
+    flex-direction: column;
+}
+
+.evidence-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    flex: 1;
+    justify-content: space-between;
+}
+
+.evidence-images {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    width: 100%;
+    padding: 10px 0;
+    flex: 1;
+}
+
+.evidence-image-box {
+    width: calc(50% - 5px);
+    height: auto;
+    max-height: 150px;
+    border: 1px solid black;
+    margin: 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    max-width: 320px;
+    padding: 10px;
+    overflow: hidden;
+}
+
+.evidence-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    width: auto;
+    height: auto;
+}
+
+.evidence-info {
+    width: 100%;
+    text-align: center;
+    font-size: 9px;
+    padding: 10px 0;
+    margin-top: auto;
+}
+
+.evidence-info p {
+    margin: 2px 0;
+}
+
+/* Assinaturas */
+.signature-box {
+    border-top: 1px solid black;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.signature-header {
+    background-color: #dadada;
+    padding: 5px;
+    text-align: center;
+    border-bottom: 1px solid black;
+}
+
+.signature-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.signature-table td {
+    padding: 5px;
+    height: 25px;
+}
+
+.first-col {
+    width: 20%;
+}
+
+.name-col {
+    width: 40%;
+}
+
+.date-col {
+    width: 20%;
+}
+
+.signature-col {
+    width: 20%;
+}
+
+.table-header td {
+    font-weight: bold;
+    text-align: center;
+}
+
+.name-col:not(.table-header td),
+.date-col:not(.table-header td) {
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+}
+
+.container {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+@media print {
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+} 

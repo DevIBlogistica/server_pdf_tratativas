@@ -4,28 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medida Disciplinar</title>
-    <style>
-        /* Reset CSS */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        /* Page setup for PDF */
-        @page {
-            size: A4;
-            margin: 0;
-        }
-
-        html, body {
-            width: 210mm;
-            height: 297mm;
-        }
-
-        /* Include existing CSS from tratativa-styles.css */
-        {{css}}
-    </style>
+    <link rel="stylesheet" href="tratativa-pdf-styles.css">
 </head>
 <body>
     <div class="page-container">
@@ -87,7 +66,7 @@
                             <div>{{codigo_infracao}}</div>
                             <div>{{infracao_cometida}}</div>
                             <div><strong>Em:</strong></div>
-                            <div>{{data_formatada}}</div>
+                            <div>{{data_infracao}}</div>
                             <div><strong>às:</strong></div>
                             <div>{{hora_infracao}}</div>
                         </div>
@@ -98,9 +77,9 @@
                 <div class="disciplinary-box">
                     <div class="disciplinary-header"><strong>Medida Disciplinar</strong></div>
                     <div class="disciplinary-content">
-                        <div class="measure-row" style="display: flex;">
-                            <div style="flex: 15%;">{{penalidade}}</div>
-                            <div style="flex: 85%;">{{penalidade_descricao}}</div>
+                        <div class="measure-row">
+                            <div>{{penalidade}}</div>
+                            <div>{{penalidade_descricao}}</div>
                         </div>
                     </div>
                 </div>
@@ -116,7 +95,9 @@
                     <div class="evidence-container">
                         <div class="evidence-images">
                             <div class="evidence-image-box">
+                                {{#if url_imagem_temporaria}}
                                 <img src="{{url_imagem_temporaria}}" alt="Evidência" class="evidence-img">
+                                {{/if}}
                             </div>
                         </div>
                         <div class="evidence-info">

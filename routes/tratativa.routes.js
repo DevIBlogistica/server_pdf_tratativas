@@ -600,7 +600,7 @@ router.post('/mock-pdf', async (req, res) => {
         // Processar data por extenso
         const [dia, mes, ano] = mockData.data_infracao.split('/');
         if (dia && mes && ano) {
-            mockData.data_infracao = `${ano}-${mes}-${dia}`;
+            mockData.data_infracao = `${dia}/${mes}/${ano}`;
             mockData.data_formatada = `${dia}/${mes}/${ano}`;
             
             const mesesPorExtenso = [
@@ -618,14 +618,17 @@ router.post('/mock-pdf', async (req, res) => {
 
         console.log('[Mock PDF] 📋 Dados preparados');
 
-        // Renderizar template
-        const html = await new Promise((resolve, reject) => {
-            req.app.render('templateTratativaPdf', dadosTeste, (err, html) => {
-                if (err) {
-                    console.error('[Erro] Falha na renderização do template:', err);
-                    reject(err);
-                } else resolve(html);
-            });
+        // Ler o template HTML e CSS
+        const htmlPath = path.join(__dirname, '../public/tratativa-pdf.html');
+        const cssPath = path.join(__dirname, '../public/tratativa-pdf-styles.css');
+        
+        let html = fs.readFileSync(htmlPath, 'utf8');
+        const css = fs.readFileSync(cssPath, 'utf8');
+
+        // Substituir placeholders no template
+        Object.keys(dadosTeste).forEach(key => {
+            const regex = new RegExp(`{{${key}}}`, 'g');
+            html = html.replace(regex, dadosTeste[key] || '');
         });
 
         // Configurações do PDF
