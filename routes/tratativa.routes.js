@@ -625,35 +625,33 @@ router.post('/mock-pdf', async (req, res) => {
         let html = fs.readFileSync(htmlPath, 'utf8');
         const css = fs.readFileSync(cssPath, 'utf8');
 
+        // Substituir o placeholder do CSS no HTML
+        html = html.replace('</head>', `<style>${css}</style></head>`);
+
         // Substituir placeholders no template
         Object.keys(dadosTeste).forEach(key => {
             const regex = new RegExp(`{{${key}}}`, 'g');
             html = html.replace(regex, dadosTeste[key] || '');
         });
 
-        // Configurações do PDF
+        // Configurações do PDF otimizadas para uma única página
         const options = {
             format: 'A4',
             orientation: 'portrait',
-            border: {
-                top: '0',
-                right: '0',
-                bottom: '0',
-                left: '0'
-            },
+            border: '0',
             timeout: 120000,
             type: 'pdf',
-            renderDelay: 2000,
+            renderDelay: 1000,
             height: '297mm',
             width: '210mm',
             base: `file://${path.join(__dirname, '../public').replace(/\\/g, '/')}/`,
             phantomArgs: ['--web-security=false', '--local-to-remote-url-access=true'],
             zoomFactor: '1.0',
             footer: {
-                height: '0'
+                height: '0mm'
             },
             header: {
-                height: '0'
+                height: '0mm'
             }
         };
 
