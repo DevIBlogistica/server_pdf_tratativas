@@ -182,7 +182,7 @@ router.post('/create', async (req, res) => {
                 numero_documento: data.numero_documento,
                 nome_funcionario: data.nome_funcionario,
                 data_infracao: data.data_infracao,
-                hora_infracao: `${data.data_infracao}T${data.hora_infracao}:00.000Z`,
+                hora_infracao: data.hora_infracao,
                 codigo_infracao: data.codigo_infracao,
                 infracao_cometida: data.infracao_cometida,
                 penalidade_aplicada: data.penalidade_aplicada,
