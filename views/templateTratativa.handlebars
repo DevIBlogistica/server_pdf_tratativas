@@ -287,23 +287,15 @@
                 <div class="evidence-section">
                     <div class="evidence-container">
                         <div class="evidence-images">
-                            {{#if evidencias.length}}
-                                {{#each evidencias}}
-                                <div class="evidence-image-box">
-                                    <img src="{{this.url}}" alt="Evidência {{add @index 1}}" class="evidence-img">
-                                </div>
-                                {{/each}}
-                            {{else}}
-                                {{#if imagem_evidencia}}
-                                <div class="evidence-image-box">
-                                    <img src="{{imagem_evidencia}}" alt="Evidência" class="evidence-img">
-                                </div>
+                            <div class="evidence-image-box">
+                                {{#if url_imagem_temporaria}}
+                                <img src="{{url_imagem_temporaria}}" alt="Evidência" class="evidence-img">
                                 {{/if}}
-                            {{/if}}
+                            </div>
                         </div>
                         <div class="evidence-info">
-                            <p>{{texto_excesso}}</p>
-                            <p>{{texto_limite}}</p>
+                            <p>Valor praticado: {{valor_praticado}}{{metrica}}</p>
+                            <p>Limite permitido: {{valor_limite}}{{metrica}}</p>
                         </div>
                     </div>
                 </div>
