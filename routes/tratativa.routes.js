@@ -49,6 +49,31 @@ if (!fs.existsSync(tempPdfDir)) {
     fs.mkdirSync(tempPdfDir, { recursive: true });
 }
 
+// Configuração global do Puppeteer
+const PUPPETEER_TIMEOUT = 30000; // 30 segundos
+const PUPPETEER_OPTIONS = {
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    timeout: PUPPETEER_TIMEOUT
+};
+
+// Função para garantir que o browser seja fechado
+async function withBrowser(callback) {
+    let browser = null;
+    try {
+        browser = await puppeteer.launch(PUPPETEER_OPTIONS);
+        return await callback(browser);
+    } finally {
+        if (browser) {
+            try {
+                await browser.close();
+            } catch (error) {
+                console.error('[Puppeteer] Erro ao fechar browser:', error);
+            }
+        }
+    }
+}
+
 // Function to generate PDF buffer
 const generatePDF = async (page) => {
     try {
@@ -57,15 +82,13 @@ const generatePDF = async (page) => {
             format: 'A4',
             printBackground: true,
             margin: {
-                top: '25px',
-                right: '25px',
-                bottom: '25px',
-                left: '25px'
+                top: '0',
+                right: '0',
+                bottom: '0',
+                left: '0'
             },
             preferCSSPageSize: true,
-            scale: 1.0,
-            displayHeaderFooter: false,
-            landscape: false
+            timeout: PUPPETEER_TIMEOUT
         });
         
         console.log(`[PDF] Generated PDF buffer`);
@@ -777,13 +800,23 @@ router.post('/test', async (req, res) => {
     }
 });
 
-// Rota de teste de conexão
+// Rota de teste de conexão com timeout
 router.post('/test-connection', (req, res) => {
+    const timeout = setTimeout(() => {
+        res.status(408).json({
+            success: false,
+            message: 'Timeout na conexão',
+            error: 'Request timeout'
+        });
+    }, 5000); // 5 segundos de timeout
+
     try {
         // Obter informações da origem da requisição
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
         const origin = req.headers['origin'] || req.headers['referer'] || 'Origem desconhecida';
         const userAgent = req.headers['user-agent'] || 'User-Agent desconhecido';
+        
+        clearTimeout(timeout);
         
         console.log('\n[Teste de Conexão] ✅ Requisição recebida');
         console.log(`[Teste de Conexão] 🌐 IP de Origem: ${ip}`);
@@ -795,9 +828,11 @@ router.post('/test-connection', (req, res) => {
             message: 'Conexão estabelecida com sucesso',
             ip,
             origin,
-            userAgent
+            userAgent,
+            timestamp: new Date().toISOString()
         });
     } catch (error) {
+        clearTimeout(timeout);
         console.error('[Erro] Falha no teste de conexão:', error);
         res.status(500).json({
             success: false,
@@ -807,8 +842,16 @@ router.post('/test-connection', (req, res) => {
     }
 });
 
-// New route using Puppeteer with preview HTML
+// Modificar a rota /mock-pdf para usar o novo sistema
 router.post('/mock-pdf', async (req, res) => {
+    const timeout = setTimeout(() => {
+        res.status(408).json({
+            success: false,
+            message: 'Timeout na geração do PDF',
+            error: 'Request timeout'
+        });
+    }, PUPPETEER_TIMEOUT);
+
     try {
         console.log('\n[Mock PDF] ✅ Iniciando geração de documento de teste com Puppeteer');
         
@@ -844,7 +887,7 @@ router.post('/mock-pdf', async (req, res) => {
         // Processar data por extenso
         const [dia, mes, ano] = mockData.data_infracao.split('/');
         if (dia && mes && ano) {
-            mockData.data_infracao = `${dia}/${mes}/${ano}`;
+            mockData.data_infracao = `${ano}-${mes}-${dia}`;
             mockData.data_formatada = `${dia}/${mes}/${ano}`;
             
             const mesesPorExtenso = [
@@ -862,84 +905,77 @@ router.post('/mock-pdf', async (req, res) => {
 
         console.log('[Mock PDF] 📋 Dados preparados');
 
-        // Ler o template HTML e CSS
-        const htmlPath = path.join(__dirname, '../public/tratativa-preview.html');
-        const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
-        
-        let html = fs.readFileSync(htmlPath, 'utf8');
-        const css = fs.readFileSync(cssPath, 'utf8');
+        const result = await withBrowser(async (browser) => {
+            const page = await browser.newPage();
+            
+            // Configurar viewport para A4
+            await page.setViewport({
+                width: 794,
+                height: 1123,
+                deviceScaleFactor: 1
+            });
 
-        // Substituir placeholders no template
-        Object.keys(dadosTeste).forEach(key => {
-            const regex = new RegExp(`{{${key}}}`, 'g');
-            html = html.replace(regex, dadosTeste[key] || '');
+            await page.setBypassCSP(true);
+
+            // Renderiza o template
+            const html = await new Promise((resolve, reject) => {
+                req.app.render('templateTratativa', dadosTeste, (err, html) => {
+                    if (err) {
+                        console.error('[Erro] Falha na renderização do template:', err);
+                        reject(err);
+                    } else resolve(html);
+                });
+            });
+
+            // Lê o CSS
+            const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
+            const css = fs.readFileSync(cssPath, 'utf8');
+            const htmlWithStyles = html.replace('</head>', `
+                <style>
+                    ${css}
+                    @page {
+                        margin: 0;
+                        size: A4;
+                    }
+                    body {
+                        margin: 0;
+                        padding: 25px;
+                        width: 210mm;
+                        height: 297mm;
+                        box-sizing: border-box;
+                    }
+                    .container {
+                        max-width: 100%;
+                        margin: 0 auto;
+                    }
+                </style>
+            </head>`);
+
+            // Configura o conteúdo
+            await page.setContent(htmlWithStyles, {
+                waitUntil: 'networkidle0',
+                timeout: 60000
+            });
+
+            // Gerar PDF
+            const pdfBuffer = await page.pdf({
+                format: 'A4',
+                printBackground: true,
+                margin: {
+                    top: '0',
+                    right: '0',
+                    bottom: '0',
+                    left: '0'
+                },
+                preferCSSPageSize: true
+            });
+            
+            return pdfBuffer;
         });
 
-        // Adicionar CSS inline
-        html = html.replace('</head>', `
-            <style>
-                ${css}
-                @page {
-                    margin: 0;
-                    size: A4;
-                }
-                body {
-                    margin: 0;
-                    padding: 25px;
-                    width: 210mm;
-                    height: 297mm;
-                    box-sizing: border-box;
-                }
-                .container {
-                    max-width: 100%;
-                    margin: 0 auto;
-                }
-            </style>
-        </head>`);
+        clearTimeout(timeout);
 
-        // Iniciar Puppeteer
-        console.log('[Mock PDF] 🚀 Iniciando navegador Puppeteer');
-        const browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
-        const page = await browser.newPage();
-
-        // Configurar viewport para A4
-        await page.setViewport({
-            width: 794, // A4 width in pixels at 96 DPI
-            height: 1123, // A4 height in pixels at 96 DPI
-            deviceScaleFactor: 1
-        });
-
-        // Permitir acesso a arquivos locais e URLs externas
-        await page.setBypassCSP(true);
-
-        // Carregar o conteúdo HTML
-        console.log('[Mock PDF] 📄 Carregando conteúdo');
-        await page.setContent(html, {
-            waitUntil: 'networkidle0',
-            timeout: 60000
-        });
-
-        // Gerar PDF
-        console.log('[Mock PDF] 📑 Gerando PDF');
-        const pdfBuffer = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: {
-                top: '0',
-                right: '0',
-                bottom: '0',
-                left: '0'
-            },
-            preferCSSPageSize: true
-        });
-
-        await browser.close();
-        console.log('[Mock PDF] 🔒 Navegador fechado');
-
-        // Preparar nome do arquivo
+        // Gera nome do arquivo
         const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
         const nomeFormatado = normalizarTexto(mockData.nome_funcionario).replace(/\s+/g, '_').toUpperCase();
         const setorFormatado = normalizarTexto(mockData.setor).replace(/\s+/g, '_').toUpperCase();
@@ -948,7 +984,7 @@ router.post('/mock-pdf', async (req, res) => {
         console.log('[Mock PDF] 📤 Iniciando upload para Supabase:', fileName);
         const { error: uploadError } = await supabase.storage
             .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-            .upload(fileName, pdfBuffer, {
+            .upload(fileName, result, {
                 contentType: 'application/pdf',
                 upsert: true
             });
@@ -973,6 +1009,7 @@ router.post('/mock-pdf', async (req, res) => {
         });
 
     } catch (error) {
+        clearTimeout(timeout);
         console.error('[Mock PDF] ❌ Erro:', error);
         res.status(500).json({
             success: false,
