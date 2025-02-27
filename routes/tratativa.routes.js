@@ -618,20 +618,14 @@ router.post('/mock-pdf', async (req, res) => {
 
         console.log('[Mock PDF] 📋 Dados preparados');
 
-        // Ler o template HTML e CSS
-        const templatePath = path.join(__dirname, '../public/tratativa-pdf.html');
-        const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
-        
-        let html = fs.readFileSync(templatePath, 'utf8');
-        const css = fs.readFileSync(cssPath, 'utf8');
-
-        // Primeiro substituir o CSS para evitar conflitos com outros placeholders
-        html = html.replace('{{css}}', css.replace(/\$/g, '$$$$'));
-
-        // Depois substituir os outros placeholders
-        Object.keys(dadosTeste).forEach(key => {
-            const regex = new RegExp(`{{${key}}}`, 'g');
-            html = html.replace(regex, String(dadosTeste[key]).replace(/\$/g, '$$$$'));
+        // Renderizar template
+        const html = await new Promise((resolve, reject) => {
+            req.app.render('templateTratativaPdf', dadosTeste, (err, html) => {
+                if (err) {
+                    console.error('[Erro] Falha na renderização do template:', err);
+                    reject(err);
+                } else resolve(html);
+            });
         });
 
         // Configurações do PDF
@@ -649,7 +643,15 @@ router.post('/mock-pdf', async (req, res) => {
             renderDelay: 2000,
             height: '297mm',
             width: '210mm',
-            base: `file://${path.join(__dirname, '../public').replace(/\\/g, '/')}/`
+            base: `file://${path.join(__dirname, '../public').replace(/\\/g, '/')}/`,
+            phantomArgs: ['--web-security=false', '--local-to-remote-url-access=true'],
+            zoomFactor: '1.0',
+            footer: {
+                height: '0'
+            },
+            header: {
+                height: '0'
+            }
         };
 
         // Gerar PDF usando html-pdf

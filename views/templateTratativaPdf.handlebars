@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medida Disciplinar</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        html, body {
+            width: 210mm;
+            height: 297mm;
+            margin: 0;
+            padding: 0;
+            font-family: 'Century Gothic', Arial, sans-serif;
+            background: white;
+            overflow: hidden; /* Prevent scrolling */
+        }
+        .page-container {
+            width: 210mm;
+            height: 297mm;
+            padding: 20mm;
+            position: relative;
+            overflow: hidden;
+            background: white;
+            page-break-after: avoid; /* Prevent page breaks */
+        }
+        .content-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Prevent scrolling */
+        }
+        .header {
+            flex: 0 0 auto;
+            margin-bottom: 10mm;
+        }
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 5mm;
+        }
+        .header-table td {
+            padding: 2mm;
+        }
+        .identification-section {
+            flex: 0 0 auto;
+            margin-bottom: 5mm;
+        }
+        .occurrence-box {
+            flex: 0 0 auto;
+            margin-bottom: 5mm;
+        }
+        .disciplinary-box {
+            flex: 0 0 auto;
+            margin-bottom: 5mm;
+        }
+        .legal-text {
+            flex: 0 0 auto;
+            margin-bottom: 5mm;
+            font-size: 9pt;
+        }
+        .evidence-section {
+            flex: 0 0 auto;
+            margin: 5mm 0;
+            max-height: 80mm;
+            overflow: hidden;
+        }
+        .evidence-image-box {
+            height: 60mm;
+            overflow: hidden;
+            text-align: center;
+        }
+        .evidence-img {
+            max-width: 60%;
+            max-height: 55mm;
+            object-fit: contain;
+        }
+        .evidence-info {
+            margin-top: 2mm;
+            text-align: center;
+            font-size: 9pt;
+        }
+        .signature-box {
+            flex: 0 0 auto;
+            margin-top: auto;
+            padding-top: 5mm;
+        }
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .signature-table td {
+            padding: 2mm;
+            height: 8mm;
+        }
+        .occurrence-row {
+            display: grid;
+            grid-template-columns: auto auto auto auto auto auto auto;
+            gap: 2mm;
+            align-items: center;
+        }
+        .measure-row {
+            display: grid;
+            grid-template-columns: 15% 85%;
+            gap: 2mm;
+            align-items: center;
+        }
+        p {
+            margin: 0;
+            padding: 0;
+            line-height: 1.3;
+        }
+        .name-date-row, .function-sector-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2mm;
+            margin-bottom: 2mm;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="content-container">
+            <!-- Cabeçalho -->
+            <div class="header">
+                <table class="header-table">
+                    <tr>
+                        <td style="width: 50%">Título: ACR-003_Medida_Disciplinar</td>
+                        <td style="width: 20%">Anexo</td>
+                        <td style="width: 20%">Nº Documento</td>
+                        <td style="width: 10%" rowspan="2">
+                            <img src="{{logo_src}}" alt="Logo IB" style="max-width: 100%; height: auto;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Tipo de Documento: Controlado</td>
+                        <td>PRO_003</td>
+                        <td><strong>{{numero_documento}}</strong></td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Grid de identificação -->
+            <div class="identification-section">
+                <div class="name-date-row">
+                    <p>Sr.(a) {{nome_funcionario}}</p>
+                    <p>{{data_formatada_extenso}}</p>
+                </div>
+                
+                <div class="function-sector-row">
+                    <p>Função: {{funcao}}</p>
+                    <p>Setor: {{setor}}</p>
+                </div>
+                
+                <p style="margin-top: 3mm">Pelo presente o notificamos que nesta data está recebendo uma medida disciplinar, em razão da não conformidade abaixo discriminada.</p>
+            </div>
+
+            <!-- Ocorrência -->
+            <div class="occurrence-box">
+                <p style="font-weight: bold; margin-bottom: 2mm">Ocorrência</p>
+                <div class="occurrence-row">
+                    <p><strong>Código Infração</strong></p>
+                    <p>{{codigo_infracao}}</p>
+                    <p>{{infracao_cometida}}</p>
+                    <p><strong>Em:</strong></p>
+                    <p>{{data_infracao}}</p>
+                    <p><strong>às:</strong></p>
+                    <p>{{hora_infracao}}</p>
+                </div>
+            </div>
+
+            <!-- Medida Disciplinar -->
+            <div class="disciplinary-box">
+                <p style="font-weight: bold; margin-bottom: 2mm">Medida Disciplinar</p>
+                <div class="measure-row">
+                    <p>{{penalidade}}</p>
+                    <p>{{penalidade_descricao}}</p>
+                </div>
+            </div>
+
+            <!-- Texto Legal -->
+            <div class="legal-text">
+                <p>Lembramos que caso haja incidência na mesma falta, será penalizado(a), conforme a CONSOLIDAÇÃO DAS LEIS TRABALHISTAS e o procedimento disciplinar da empresa.</p>
+                <p style="margin-top: 2mm">Esclarecemos que, a reiteração no cometimento de irregularidades autoriza a rescisão do contrato de trabalho por justa causa, razão pela qual esperamos que evite a reincidência da não conformidade, para que não tenhamos no futuro, de tomar medidas que são facultadas por lei à empresa.</p>
+            </div>
+
+            <!-- Evidências -->
+            <div class="evidence-section">
+                <div class="evidence-image-box">
+                    {{#if url_imagem_temporaria}}
+                    <img src="{{url_imagem_temporaria}}" alt="Evidência" class="evidence-img">
+                    {{/if}}
+                </div>
+                <div class="evidence-info">
+                    <p>Valor praticado: {{valor_praticado}}{{metrica}}</p>
+                    <p>Limite permitido: {{valor_limite}}{{metrica}}</p>
+                </div>
+            </div>
+
+            <!-- Assinaturas -->
+            <div class="signature-box">
+                <p style="font-weight: bold; margin-bottom: 2mm">Assinaturas</p>
+                <table class="signature-table">
+                    <tr>
+                        <td style="width: 20%; text-align: center"></td>
+                        <td style="width: 40%; text-align: center; border-left: 1px solid #000; border-right: 1px solid #000"><strong>Nome</strong></td>
+                        <td style="width: 20%; text-align: center; border-left: 1px solid #000; border-right: 1px solid #000"><strong>Data</strong></td>
+                        <td style="width: 20%; text-align: center"><strong>Assinatura</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Funcionário</td>
+                        <td style="border-left: 1px solid #000; border-right: 1px solid #000">{{nome_funcionario}}</td>
+                        <td style="border-left: 1px solid #000; border-right: 1px solid #000"></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Líder</td>
+                        <td style="border-left: 1px solid #000; border-right: 1px solid #000">{{nome_lider}}</td>
+                        <td style="border-left: 1px solid #000; border-right: 1px solid #000"></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Testemunha</td>
+                        <td style="border-left: 1px solid #000; border-right: 1px solid #000"></td>
+                        <td style="border-left: 1px solid #000; border-right: 1px solid #000"></td>
+                        <td></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 
