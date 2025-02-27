@@ -276,7 +276,7 @@ router.post('/create', async (req, res) => {
         
         const { error: updateError } = await supabase
             .from('tratativas')
-            .update({ url_documento_enviado: publicUrl })
+            .update({ documento_url: publicUrl })
             .eq('id', tratativaId);
 
         if (updateError) throw updateError;
@@ -801,6 +801,155 @@ router.post('/test-connection', (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erro ao testar conexão',
+            error: error.message
+        });
+    }
+});
+
+// Rota de mock para testar geração de PDF com imagem específica
+router.post('/mock-test', async (req, res) => {
+    try {
+        console.log('\n[Mock Test] ✅ Iniciando geração de documento de teste');
+        
+        // Dados mockados para teste
+        const mockData = {
+            numero_documento: '2024001',
+            nome_funcionario: 'JOÃO DA SILVA',
+            funcao: 'OPERADOR DE PRODUÇÃO',
+            setor: 'PRODUÇÃO',
+            data_infracao: '23/02/2024',
+            hora_infracao: '09:40',
+            codigo_infracao: 'A001',
+            infracao_cometida: 'EXCESSO DE VELOCIDADE NA EMPILHADEIRA',
+            penalidade_aplicada: 'ADV',
+            nome_lider: 'MARIA OLIVEIRA',
+            url_imagem_temporaria: 'https://kjlwqezxzqjfhacmjhbh.supabase.co/storage/v1/object/public/tratativas/temp/f87643c3-cbc0-4135-8322-13b317a98120-Captura%20de%20tela%202025-02-23%20094045.png',
+            valor_praticado: '15',
+            valor_limite: '10',
+            metrica: 'km/h',
+            mock: true
+        };
+
+        // Processar data e hora
+        if (mockData.data_infracao && mockData.hora_infracao) {
+            // Combinar data e hora em um único timestamp
+            mockData.data_ocorrencia = `${mockData.data_infracao}T${mockData.hora_infracao}:00`;
+        }
+
+        // Processar penalidade
+        const penalidade = processarPenalidade(mockData.penalidade_aplicada);
+        mockData.penalidade = penalidade.codigo;
+        mockData.penalidade_descricao = penalidade.descricao;
+
+        // Processar data por extenso
+        const [dia, mes, ano] = mockData.data_infracao.split('/');
+        if (dia && mes && ano) {
+            mockData.data_infracao = `${ano}-${mes}-${dia}`;
+            mockData.data_formatada = `${dia}/${mes}/${ano}`;
+            
+            const mesesPorExtenso = [
+                'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+                'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
+            ];
+            mockData.data_formatada_extenso = `${dia} de ${mesesPorExtenso[parseInt(mes) - 1]} de ${ano}`;
+            
+            console.log('[Mock Test] 📅 Data formatada:', mockData.data_formatada);
+            console.log('[Mock Test] 📝 Data por extenso:', mockData.data_formatada_extenso);
+        }
+
+        // Adicionar logo aos dados
+        const dadosTeste = {
+            ...mockData,
+            logo_src: LOGO_BASE64
+        };
+
+        console.log('[Mock Test] 📋 Dados preparados');
+        console.log('[Mock Test] 🖼️ URL da imagem:', dadosTeste.url_imagem_temporaria);
+
+        console.log('[Mock Test] 🚀 Iniciando navegador Puppeteer');
+        const browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+        const page = await browser.newPage();
+
+        console.log('[Mock Test] 📄 Renderizando template');
+        const html = await new Promise((resolve, reject) => {
+            req.app.render('templateTratativa', dadosTeste, (err, html) => {
+                if (err) {
+                    console.error('[Erro] Falha na renderização do template:', err);
+                    reject(err);
+                } else resolve(html);
+            });
+        });
+
+        console.log('[Mock Test] 🎨 Injetando CSS');
+        const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
+        const css = fs.readFileSync(cssPath, 'utf8');
+        const htmlWithStyles = html.replace('</head>', `
+            <base href="file://${path.join(__dirname, '../public')}/">
+            <style>${css}</style>
+        </head>`);
+
+        console.log('[Mock Test] 🔄 Configurando conteúdo na página');
+        await page.setContent(htmlWithStyles, {
+            waitUntil: 'networkidle0',
+            timeout: 60000
+        });
+
+        console.log('[Mock Test] 📑 Gerando PDF');
+        const pdfBuffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: {
+                top: '0',
+                right: '0',
+                bottom: '0',
+                left: '0'
+            },
+            preferCSSPageSize: true
+        });
+
+        await browser.close();
+        console.log('[Mock Test] 🔒 Navegador fechado');
+
+        const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
+        const nomeFormatado = normalizarTexto(mockData.nome_funcionario).replace(/\s+/g, '_').toUpperCase();
+        const setorFormatado = normalizarTexto(mockData.setor).replace(/\s+/g, '_').toUpperCase();
+        const fileName = `mocktest/${mockData.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
+        
+        console.log('[Mock Test] 📤 Iniciando upload para Supabase:', fileName);
+        const { error: uploadError } = await supabase.storage
+            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
+            .upload(fileName, pdfBuffer, {
+                contentType: 'application/pdf',
+                upsert: true
+            });
+
+        if (uploadError) {
+            console.error('[Erro] Upload falhou:', uploadError);
+            throw uploadError;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+            .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
+            .getPublicUrl(fileName);
+
+        console.log('\n[Mock Test] ✅ Processo concluído com sucesso');
+        console.log(`[Mock Test] 📂 Arquivo: ${fileName}`);
+        console.log(`[Mock Test] 🔗 URL pública gerada: ${publicUrl}\n`);
+
+        res.json({
+            success: true,
+            message: 'Documento de teste gerado com sucesso',
+            url: publicUrl
+        });
+
+    } catch (error) {
+        console.error('[Mock Test] ❌ Erro:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao gerar documento de teste',
             error: error.message
         });
     }
