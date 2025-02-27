@@ -1,0 +1,423 @@
+<!DOCTYPE html> 
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medida Disciplinar</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        body {
+            font-family: 'Century Gothic', 'Arial', 'Helvetica', sans-serif;
+            font-size: 10px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .page-container {
+            width: 210mm;
+            height: 297mm;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .content-container {
+            position: absolute;
+            top: 12.7mm;
+            right: 12.7mm;
+            bottom: 12.7mm;
+            left: 12.7mm;
+            border: 1px solid black;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .header-table td {
+            border: 1px solid black;
+            padding: 5px;
+        }
+
+        .header-table td:first-child {
+            border-left: none;
+        }
+
+        .header-table td:last-child {
+            border-right: none;
+        }
+
+        .logo {
+            width: 45px;
+            height: 35px;
+            text-align: center;
+        }
+
+        .logo-img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .identification-section {
+            padding: 5px;
+            border-bottom: 1px solid black;
+        }
+
+        .name-date-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .function-sector-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .notification-text {
+            text-align: justify;
+            font-size: 10px;
+        }
+
+        .occurrence-box {
+            border-bottom: 1px solid black;
+        }
+
+        .occurrence-header {
+            background-color: #dadada;
+            padding: 5px;
+            text-align: center;
+            border-top: 1px solid black;
+            border-bottom: 1px solid black;
+        }
+
+        .occurrence-content {
+            padding: 0;
+        }
+
+        .occurrence-row {
+            display: table;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .occurrence-row > div {
+            display: table-cell;
+            padding: 5px;
+            vertical-align: middle;
+            border-top: 1px solid black;
+        }
+
+        .occurrence-row > div:nth-child(2),
+        .occurrence-row > div:nth-child(3),
+        .occurrence-row > div:nth-child(4),
+        .occurrence-row > div:nth-child(5),
+        .occurrence-row > div:nth-child(6),
+        .occurrence-row > div:nth-child(7) {
+            border-left: 1px solid black;
+        }
+
+        .disciplinary-box {
+            border-bottom: 1px solid black;
+        }
+
+        .disciplinary-header {
+            background-color: #dadada;
+            padding: 5px;
+            text-align: center;
+            border-top: 1px solid black;
+            border-bottom: 1px solid black;
+        }
+
+        .disciplinary-content {
+            padding: 0;
+        }
+
+        .measure-row {
+            display: flex;
+            width: 100%;
+        }
+
+        .measure-row > div:first-child {
+            flex: 15%;
+            padding: 5px;
+            border-top: 1px solid black;
+        }
+
+        .measure-row > div:last-child {
+            flex: 85%;
+            padding: 5px;
+            border-top: 1px solid black;
+            border-left: 1px solid black;
+        }
+
+        .legal-text {
+            padding: 10px;
+            font-size: 10px;
+            text-align: justify;
+        }
+
+        .legal-text p {
+            margin: 5px 0;
+        }
+
+        .evidence-section {
+            border-top: 1px solid black;
+            border-bottom: 1px solid black;
+            padding: 10px;
+            text-align: center;
+            min-height: 534px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .evidence-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            flex: 1;
+            justify-content: space-between;
+        }
+
+        .evidence-images {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+            width: 100%;
+            padding: 10px 0;
+            flex: 1;
+            min-height: 420px;
+        }
+
+        .evidence-image-box {
+            width: calc(50% - 5px);
+            height: auto;
+            min-height: 420px;
+            max-height: 500px;
+            border: 1px solid black;
+            margin: 0;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+            max-width: 320px;
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        .evidence-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            width: auto;
+            height: auto;
+        }
+
+        .evidence-info {
+            width: 100%;
+            text-align: center;
+            font-size: 10px;
+            padding: 10px 0;
+            margin-top: auto;
+        }
+
+        .evidence-info p {
+            margin: 2px 0;
+        }
+
+        .signature-box {
+            border-top: 1px solid black;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .signature-header {
+            background-color: #dadada;
+            padding: 5px;
+            text-align: center;
+            border-bottom: 1px solid black;
+        }
+
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .signature-table td {
+            padding: 5px;
+            border: 1px solid black;
+        }
+
+        .first-col {
+            width: 15%;
+        }
+
+        .name-col {
+            width: 35%;
+        }
+
+        .date-col {
+            width: 20%;
+        }
+
+        .signature-col {
+            width: 30%;
+        }
+
+        .table-header td {
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .bordered-col {
+            border: 1px solid black;
+        }
+
+        .signature-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="content-container">
+            <div class="container">
+                <!-- Cabeçalho -->
+                <div class="header">
+                    <table class="header-table">
+                        <tr>
+                            <td class="title">Título: {{titulo}}</td>
+                            <td class="anexo">{{anexo}}</td>
+                            <td class="doc-number">Nº Documento</td>
+                            <td class="logo" rowspan="2">
+                                <img src="{{logoUrl}}" alt="Logo IB" class="logo-img">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Tipo de Documento: {{tipoDocumento}}</td>
+                            <td>{{codigoDocumento}}</td>
+                            <td><strong>{{numeroDocumento}}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- Grid de identificação -->
+                <div class="identification-section">
+                    <div class="name-date-row">
+                        <div class="employee-name">
+                            <p>Sr.(a) {{nome}}</p>
+                        </div>
+                        <div class="date-section">
+                            <p>{{dataFormatada}}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="function-sector-row">
+                        <div class="function-info">
+                            <p>Função: {{funcao}}</p>
+                        </div>
+                        <div class="sector-info">
+                            <p>Setor: {{setor}}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="notification-text">
+                        <p>{{textoNotificacao}}</p>
+                    </div>
+                </div>
+
+                <!-- Ocorrência -->
+                <div class="occurrence-box">
+                    <div class="occurrence-header"><strong>Ocorrência</strong></div>
+                    <div class="occurrence-content">
+                        <div class="occurrence-row">
+                            <div><strong>Código Infração</strong></div>
+                            <div>{{codigoInfracao}}</div>
+                            <div>{{descricaoInfracao}}</div>
+                            <div><strong>Em:</strong></div>
+                            <div>{{dataOcorrencia}}</div>
+                            <div><strong>às:</strong></div>
+                            <div>{{horaOcorrencia}}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Medida Disciplinar -->
+                <div class="disciplinary-box">
+                    <div class="disciplinary-header"><strong>Medida Disciplinar</strong></div>
+                    <div class="disciplinary-content">
+                        <div class="measure-row">
+                            <div>{{codigoMedida}}</div>
+                            <div>{{descricaoMedida}}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Texto Legal -->
+                <div class="legal-text">
+                    {{#each textosLegais}}
+                        <p>{{this}}</p>
+                    {{/each}}
+                </div>
+
+                <!-- Evidências -->
+                <div class="evidence-section">
+                    <div class="evidence-container">
+                        <div class="evidence-images">
+                            {{#each evidencias}}
+                                <div class="evidence-image-box">
+                                    <img src="{{this.url}}" alt="Evidência {{@index}}" class="evidence-img">
+                                </div>
+                            {{/each}}
+                        </div>
+                        <div class="evidence-info">
+                            {{#each informacoesEvidencia}}
+                                <p>{{this}}</p>
+                            {{/each}}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assinaturas -->
+                <div class="signature-box">
+                    <div class="signature-header"><strong>Assinaturas</strong></div>
+                    <table class="signature-table">
+                        <tr class="table-header">
+                            <td class="first-col" style="text-align: center;"></td>
+                            <td class="name-col bordered-col" style="text-align: center;"><strong>Nome</strong></td>
+                            <td class="date-col bordered-col" style="text-align: center;"><strong>Data</strong></td>
+                            <td class="signature-col" style="text-align: center;"><strong>Assinatura</strong></td>
+                        </tr>
+                        {{#each assinaturas}}
+                        <tr>
+                            <td class="first-col">{{this.cargo}}</td>
+                            <td class="name-col bordered-col">{{this.nome}}</td>
+                            <td class="date-col bordered-col">{{this.data}}</td>
+                            <td class="signature-col">{{this.assinatura}}</td>
+                        </tr>
+                        {{/each}}
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

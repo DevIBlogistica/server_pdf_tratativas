@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <!-- Como o layout é fixo (A4), definimos a viewport com largura em mm -->
-  <meta name="viewport" content="width=210mm, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Medida Disciplinar</title>
   <style>
     /* Define a página A4 sem margens */
     @page {
-      size: A4 portrait;
+      size: A4;
       margin: 0;
     }
     /* Reset geral */
@@ -20,21 +20,25 @@
     html, body {
       width: 210mm;
       height: 297mm;
-      font-family: 'Century Gothic', Arial, sans-serif;
+      font-family: 'Century Gothic', 'Arial', 'Helvetica', sans-serif;
       background: white;
+      font-size: 10px;
     }
     /* Container principal com espaçamento interno */
     .page-container {
       width: 210mm;
       height: 297mm;
-      padding: 20mm;
+      margin: 0 auto;
       position: relative;
-      background: white;
     }
     /* Container de conteúdo com layout em coluna */
     .content-container {
-      width: 100%;
-      height: 100%;
+      position: absolute;
+      top: 12.7mm;
+      right: 12.7mm;
+      bottom: 12.7mm;
+      left: 12.7mm;
+      border: 1px solid black;
       display: flex;
       flex-direction: column;
     }
@@ -46,37 +50,47 @@
     .header-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 5mm;
     }
     .header-table td {
-      padding: 2mm;
       border: 1px solid black;
+      padding: 5px;
+    }
+    .header-table td:first-child {
+      border-left: none;
+    }
+    .header-table td:last-child {
+      border-right: none;
     }
     /* Logo no cabeçalho */
-    .header-table td.logo {
-      width: 10%;
+    .logo {
+      width: 45px;
+      height: 35px;
       text-align: center;
-      vertical-align: middle;
     }
-    .header-table td.logo img {
+    .logo-img {
       max-width: 100%;
-      height: auto;
+      max-height: 100%;
     }
     /* Seção de identificação */
     .identification-section {
       flex: 0 0 auto;
       margin-bottom: 5mm;
-      font-size: 10pt;
+      padding: 5px;
+      border-bottom: 1px solid black;
     }
-    .name-date-row,
+    .name-date-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
     .function-sector-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2mm;
-      margin-bottom: 2mm;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
     }
-    .identification-section p {
-      line-height: 1.3;
+    .notification-text {
+      text-align: justify;
+      font-size: 10px;
     }
     /* Ocorrência */
     .occurrence-box {
@@ -85,18 +99,33 @@
       border-bottom: 1px solid black;
     }
     .occurrence-header {
-      font-weight: bold;
-      margin-bottom: 2mm;
+      background-color: #dadada;
+      padding: 5px;
+      text-align: center;
+      border-top: 1px solid black;
+      border-bottom: 1px solid black;
+    }
+    .occurrence-content {
+      padding: 0;
     }
     .occurrence-row {
-      display: grid;
-      grid-template-columns: repeat(7, auto);
-      gap: 2mm;
-      align-items: center;
+      display: table;
+      width: 100%;
+      border-collapse: collapse;
     }
-    .occurrence-row p {
-      margin: 0;
-      font-size: 9pt;
+    .occurrence-row > div {
+      display: table-cell;
+      padding: 5px;
+      vertical-align: middle;
+      border-top: 1px solid black;
+    }
+    .occurrence-row > div:nth-child(2),
+    .occurrence-row > div:nth-child(3),
+    .occurrence-row > div:nth-child(4),
+    .occurrence-row > div:nth-child(5),
+    .occurrence-row > div:nth-child(6),
+    .occurrence-row > div:nth-child(7) {
+      border-left: 1px solid black;
     }
     /* Medida Disciplinar */
     .disciplinary-box {
@@ -105,24 +134,40 @@
       border-bottom: 1px solid black;
     }
     .disciplinary-header {
-      font-weight: bold;
-      margin-bottom: 2mm;
+      background-color: #dadada;
+      padding: 5px;
+      text-align: center;
+      border-top: 1px solid black;
+      border-bottom: 1px solid black;
+    }
+    .disciplinary-content {
+      padding: 0;
     }
     .measure-row {
       display: flex;
-      gap: 2mm;
-      align-items: center;
+      width: 100%;
+    }
+    .measure-row > div:first-child {
+      flex: 15%;
+      padding: 5px;
+      border-top: 1px solid black;
+    }
+    .measure-row > div:last-child {
+      flex: 85%;
+      padding: 5px;
+      border-top: 1px solid black;
+      border-left: 1px solid black;
     }
     /* Texto Legal */
     .legal-text {
       flex: 0 0 auto;
       margin-bottom: 5mm;
-      font-size: 9pt;
+      padding: 10px;
+      font-size: 10px;
       text-align: justify;
-      line-height: 1.3;
     }
     .legal-text p {
-      margin-bottom: 2mm;
+      margin: 5px 0;
     }
     /* Evidências */
     .evidence-section {
@@ -132,72 +177,114 @@
       overflow: hidden;
       border-top: 1px solid black;
       border-bottom: 1px solid black;
-      padding: 5mm 0;
+      padding: 10px;
+      text-align: center;
+      min-height: 534px;
+      display: flex;
+      flex-direction: column;
     }
     .evidence-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      flex: 1;
+      justify-content: space-between;
     }
     .evidence-images {
       display: flex;
+      gap: 5px;
       justify-content: center;
-      gap: 2mm;
+      width: 100%;
+      padding: 10px 0;
+      flex: 1;
+      min-height: 420px;
     }
     .evidence-image-box {
-      height: 60mm;
+      width: calc(50% - 5px);
+      height: auto;
+      min-height: 420px;
+      max-height: 500px;
+      border: 1px solid black;
+      margin: 0;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      max-width: 320px;
+      padding: 10px;
       overflow: hidden;
-      text-align: center;
-      margin: 0 auto;
     }
     .evidence-img {
-      max-width: 60%;
-      max-height: 55mm;
+      max-width: 100%;
+      max-height: 100%;
       object-fit: contain;
+      width: auto;
+      height: auto;
     }
     .evidence-info {
-      margin-top: 2mm;
+      width: 100%;
       text-align: center;
-      font-size: 9pt;
+      font-size: 10px;
+      padding: 10px 0;
+      margin-top: auto;
+    }
+    .evidence-info p {
+      margin: 2px 0;
     }
     /* Assinaturas */
     .signature-box {
       flex: 0 0 auto;
       margin-top: auto;
-      padding-top: 5mm;
+      padding-bottom: 0;
     }
     .signature-header {
-      font-weight: bold;
-      margin-bottom: 2mm;
+      background-color: #dadada;
+      padding: 5px;
+      text-align: center;
+      border-bottom: 1px solid black;
     }
     .signature-table {
       width: 100%;
       border-collapse: collapse;
+      margin-bottom: 0;
     }
     .signature-table td {
-      padding: 2mm;
-      height: 8mm;
+      padding: 5px;
+      height: 25px;
       border: 1px solid black;
       text-align: center;
-      font-size: 9pt;
+      font-size: 10px;
     }
-    .table-header td {
-      background-color: #dadada;
-      font-weight: bold;
+    .signature-table tr:last-child td {
+      border-bottom: none;
     }
     .first-col {
-      width: 10%;
+      width: 6%;
+      border: none !important;
     }
     .name-col {
       width: 40%;
     }
     .date-col {
-      width: 15%;
+      width: 19%;
     }
     .signature-col {
       width: 35%;
+      border-right: none !important;
     }
-    .bordered-col {
-      border-left: 1px solid black;
-      border-right: 1px solid black;
+    .table-header td {
+      background-color: #dadada;
+      font-weight: bold;
+    }
+    @media print {
+      body {
+        margin: 0;
+        padding: 0;
+      }
     }
   </style>
 </head>
@@ -267,8 +354,8 @@
         <div class="disciplinary-header">Medida Disciplinar</div>
         <div class="disciplinary-content">
           <div class="measure-row">
-            <div style="flex: 15%;">{{penalidade}}</div>
-            <div style="flex: 85%;">{{penalidade_descricao}}</div>
+            <div>{{penalidade}}</div>
+            <div>{{penalidade_descricao}}</div>
           </div>
         </div>
       </div>
@@ -320,26 +407,26 @@
         <table class="signature-table">
           <tr class="table-header">
             <td class="first-col"></td>
-            <td class="name-col bordered-col"><strong>Nome</strong></td>
-            <td class="date-col bordered-col"><strong>Data</strong></td>
+            <td class="name-col"><strong>Nome</strong></td>
+            <td class="date-col"><strong>Data</strong></td>
             <td class="signature-col"><strong>Assinatura</strong></td>
           </tr>
           <tr>
             <td class="first-col">Funcionário</td>
-            <td class="name-col bordered-col">{{nome_funcionario}}</td>
-            <td class="date-col bordered-col"></td>
+            <td class="name-col">{{nome_funcionario}}</td>
+            <td class="date-col"></td>
             <td class="signature-col"></td>
           </tr>
           <tr>
             <td class="first-col">Líder</td>
-            <td class="name-col bordered-col">{{nome_lider}}</td>
-            <td class="date-col bordered-col"></td>
+            <td class="name-col">{{nome_lider}}</td>
+            <td class="date-col"></td>
             <td class="signature-col"></td>
           </tr>
           <tr>
             <td class="first-col">Testemunha</td>
-            <td class="name-col bordered-col"></td>
-            <td class="date-col bordered-col"></td>
+            <td class="name-col"></td>
+            <td class="date-col"></td>
             <td class="signature-col"></td>
           </tr>
         </table>

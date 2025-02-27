@@ -3,6 +3,8 @@ const express = require('express');
 const { engine } = require('express-handlebars');
 const path = require('path');
 const cors = require('cors');
+const https = require('https');
+const fs = require('fs');
 require('dotenv').config();
 
 // Importação das rotas
@@ -14,7 +16,7 @@ const port = process.env.PORT || 3000;
 
 // Configuração do CORS para permitir requisições de todas as origens
 const corsOptions = {
-    origin: '*', // Permitir todas as origens em desenvolvimento
+    origin: '*',
     credentials: true,
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -40,12 +42,12 @@ app.enable('trust proxy');
 
 // Configuração para aceitar dados JSON
 app.use(express.json({ 
-    limit: '1mb',
+    limit: '50mb',
     type: ['application/json', 'text/plain']
 }));
 app.use(express.urlencoded({ 
     extended: true, 
-    limit: '1mb' 
+    limit: '50mb' 
 }));
 
 // Configuração do Handlebars como template engine
@@ -134,12 +136,18 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Iniciar servidor
-const server = app.listen(port, 'localhost', () => {
-    console.log(`Servidor rodando em http://localhost:${port}`);
+// Configuração HTTPS
+const httpsOptions = {
+    key: fs.readFileSync(path.join(__dirname, 'certs', 'key.pem')),
+    cert: fs.readFileSync(path.join(__dirname, 'certs', 'cert.pem'))
+};
+
+// Iniciar servidor HTTPS
+const server = https.createServer(httpsOptions, app).listen(port, 'localhost', () => {
+    console.log(`Servidor HTTPS rodando em https://localhost:${port}`);
     console.log('Acesse:');
-    console.log(`- API: http://localhost:${port}/api/tratativa/test-connection`);
-    console.log(`- Documentação: http://localhost:${port}/api-docs`);
+    console.log(`- API: https://localhost:${port}/api/tratativa/test-connection`);
+    console.log(`- Documentação: https://localhost:${port}/api-docs`);
 });
 
 // Graceful shutdown

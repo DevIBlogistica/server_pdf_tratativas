@@ -51,7 +51,16 @@ if (!fs.existsSync(tempPdfDir)) {
 // Function to generate PDF buffer
 const generatePDF = async (page) => {
     try {
-        // Generate PDF buffer directly
+        // Configure viewport for A4 size
+        await page.setViewport({ width: 1240, height: 1754 });
+
+        // Set media type to print for proper CSS rendering
+        await page.emulateMediaType('print');
+
+        // Wait for images to load
+        await page.waitForSelector('img');
+
+        // Generate PDF buffer with exact A4 layout
         const pdfBuffer = await page.pdf({
             format: 'A4',
             printBackground: true,
@@ -248,71 +257,73 @@ router.post('/create', async (req, res) => {
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
+
         const page = await browser.newPage();
 
-        // Permitir acesso a arquivos locais e URLs externas
-        await page.setBypassCSP(true);
+        // Renderizar template com os dados
+        const template = fs.readFileSync(path.join(__dirname, '../views/templateTratativa.handlebars'), 'utf8');
+        const compiledTemplate = handlebars.compile(template);
+        const html = compiledTemplate(dadosComLogo);
 
-        console.log('🖨️ [4/5] Renderizando template e gerando PDF');
-        const html = await new Promise((resolve, reject) => {
-            req.app.render('templateTratativa', dadosComLogo, (err, html) => {
-                if (err) reject(err);
-                else resolve(html);
-            });
-        });
+        // Carregar HTML no Puppeteer
+        await page.setContent(html, { waitUntil: 'networkidle0' });
 
-        const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
-        const css = fs.readFileSync(cssPath, 'utf8');
-        const htmlWithStyles = html.replace('</head>', `
-            <base href="file://${path.join(__dirname, '../public')}/">
-            <style>${css}</style>
-        </head>`);
-
-        await page.setContent(htmlWithStyles, {
-            waitUntil: 'networkidle0',
-            timeout: 60000
-        });
-
-        // Generate PDF buffer
+        // Gerar PDF
         const pdfBuffer = await generatePDF(page);
-        await browser.close();
 
-        // Gera nome do arquivo incluindo o ID do registro
-        const dataFormatada = new Date().toLocaleDateString('pt-BR').split('/').join('-');
-        const nomeFormatado = normalizarTexto(data.nome_funcionario).replace(/\s+/g, '_').toUpperCase();
-        const setorFormatado = normalizarTexto(data.setor).replace(/\s+/g, '_').toUpperCase();
-        const fileName = `enviadas/${data.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
+        // Salvar PDF temporariamente
+        fs.writeFileSync(tempPdfPath, pdfBuffer);
+        console.log(`📄 [4/5] PDF gerado temporariamente em: ${tempPdfPath}`);
 
-        console.log('📤 [5/5] Fazendo upload do PDF para Supabase');
-        const { error: uploadError } = await supabase.storage
+        // 3. Upload do PDF para o Supabase Storage
+        const pdfFileName = `${normalizarTexto(data.numero_documento)}_${Date.now()}.pdf`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
             .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-            .upload(fileName, pdfBuffer, {
-                contentType: 'application/pdf',
-                upsert: true
-            });
+            .upload(`tratativas/${pdfFileName}`, fs.readFileSync(tempPdfPath));
 
         if (uploadError) throw uploadError;
 
+        // 4. Obter URL pública do PDF
         const { data: { publicUrl } } = supabase.storage
             .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
-            .getPublicUrl(fileName);
+            .getPublicUrl(`tratativas/${pdfFileName}`);
 
-        console.log('🔗 [Link do Documento]\n' + publicUrl + '\n');
+        // 5. Atualizar registro com URL do PDF
+        const { error: updateError } = await supabase
+            .from('tratativas')
+            .update({ pdf_url: publicUrl })
+            .eq('id', tratativaId);
 
+        if (updateError) throw updateError;
+
+        // Limpar arquivo temporário
+        fs.unlinkSync(tempPdfPath);
+
+        console.log('✅ [5/5] Processo concluído com sucesso');
         res.json({
             success: true,
-            message: 'Tratativa criada e documento gerado com sucesso',
-            tratativa_id: tratativaId,
-            url: publicUrl
+            message: 'Documento de tratativa gerado com sucesso',
+            url: publicUrl,
+            id: tratativaId
         });
 
     } catch (error) {
-        console.error('🚨 [Erro] Erro ao criar tratativa:', error);
+        console.error('❌ [Erro] Falha ao processar tratativa:', error);
+        
+        // Limpar arquivo temporário em caso de erro
+        if (fs.existsSync(tempPdfPath)) {
+            fs.unlinkSync(tempPdfPath);
+        }
+        
         res.status(500).json({
             success: false,
-            message: 'Erro ao criar tratativa e gerar documento',
+            message: 'Erro ao gerar documento de tratativa',
             error: error.message
         });
+    } finally {
+        if (browser) {
+            await browser.close();
+        }
     }
 });
 
