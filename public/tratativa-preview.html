@@ -5,6 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Preview - Medida Disciplinar</title>
     <link rel="stylesheet" href="tratativa-styles.css">
+    <script>
+        // Função para carregar a logo
+        window.onload = function() {
+            fetch('images/logo.png')
+                .then(response => response.blob())
+                .then(blob => {
+                    const reader = new FileReader();
+                    reader.onloadend = function() {
+                        const base64data = reader.result;
+                        document.querySelector('.logo img').src = base64data;
+                    }
+                    reader.readAsDataURL(blob);
+                })
+                .catch(error => console.error('Erro ao carregar logo:', error));
+        }
+    </script>
 </head>
 <body>
     <div class="page-container">
@@ -18,7 +34,7 @@
                             <td class="anexo">Anexo</td>
                             <td class="doc-number">Nº Documento</td>
                             <td class="logo" rowspan="2">
-                                <img src="https://kjlwqezxzqjfhacmjhbh.supabase.co/storage/v1/object/public/sourcefiles//logo.png" alt="Logo IB" class="logo-img">
+                                <img src="data:image/png;base64,{{logo_src}}" alt="Logo IB" class="logo-img">
                             </td>
                         </tr>
                         <tr>

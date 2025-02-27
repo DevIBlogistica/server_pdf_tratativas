@@ -40,8 +40,8 @@ function normalizarTexto(texto) {
 
 // Logo local path
 const LOGO_PATH = path.join(__dirname, '../public/images/logo.png');
-// Use direct file path for logo
-const LOGO_URL = '/images/logo.png';
+// Converte a imagem para base64
+const LOGO_BASE64 = `data:image/png;base64,${fs.readFileSync(LOGO_PATH).toString('base64')}`;
 
 // Diretório temporário para PDFs
 const tempPdfDir = path.join(__dirname, '../temp/pdfs');
@@ -63,7 +63,7 @@ const generatePDF = async (page) => {
                 left: '25px'
             },
             preferCSSPageSize: true,
-            scale: 0.98, // Slightly reduce scale to ensure content fits properly
+            scale: 1.0,
             displayHeaderFooter: false,
             landscape: false
         });
@@ -209,7 +209,7 @@ router.post('/create', async (req, res) => {
         // Adicionar logo aos dados
         const dadosComLogo = {
             ...data,
-            logo_src: LOGO_URL
+            logo_src: LOGO_BASE64
         };
 
         console.log('[3/5] Iniciando navegador Puppeteer');
@@ -472,7 +472,7 @@ router.post('/generate', async (req, res) => {
         // Adicionar logo aos dados
         const dadosComLogo = {
             ...data,
-            logo_src: LOGO_URL
+            logo_src: LOGO_BASE64
         };
 
         // Gera PDF usando a estrutura existente
@@ -678,7 +678,7 @@ router.post('/test', async (req, res) => {
 
         const dadosTeste = {
             ...data,
-            logo_src: LOGO_URL
+            logo_src: LOGO_BASE64
         };
 
         console.log('[Teste de PDF] 📋 Dados preparados');
@@ -844,7 +844,7 @@ router.post('/mock-pdf', async (req, res) => {
         // Processar data por extenso
         const [dia, mes, ano] = mockData.data_infracao.split('/');
         if (dia && mes && ano) {
-            mockData.data_infracao = `${ano}-${mes}-${dia}`;
+            mockData.data_infracao = `${dia}/${mes}/${ano}`;
             mockData.data_formatada = `${dia}/${mes}/${ano}`;
             
             const mesesPorExtenso = [
@@ -854,101 +854,73 @@ router.post('/mock-pdf', async (req, res) => {
             mockData.data_formatada_extenso = `${dia} de ${mesesPorExtenso[parseInt(mes) - 1]} de ${ano}`;
         }
 
-        // Adicionar logo aos dados usando URL direta
+        // Adicionar logo aos dados
         const dadosTeste = {
             ...mockData,
-            logo_src: LOGO_URL
+            logo_src: LOGO_BASE64
         };
 
         console.log('[Mock PDF] 📋 Dados preparados');
 
-        // Iniciar Puppeteer com configurações específicas
+        // Ler o template HTML e CSS
+        const htmlPath = path.join(__dirname, '../public/tratativa-preview.html');
+        const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
+        
+        let html = fs.readFileSync(htmlPath, 'utf8');
+        const css = fs.readFileSync(cssPath, 'utf8');
+
+        // Substituir placeholders no template
+        Object.keys(dadosTeste).forEach(key => {
+            const regex = new RegExp(`{{${key}}}`, 'g');
+            html = html.replace(regex, dadosTeste[key] || '');
+        });
+
+        // Adicionar CSS inline
+        html = html.replace('</head>', `
+            <style>
+                ${css}
+                @page {
+                    margin: 0;
+                    size: A4;
+                }
+                body {
+                    margin: 0;
+                    padding: 25px;
+                    width: 210mm;
+                    height: 297mm;
+                    box-sizing: border-box;
+                }
+                .container {
+                    max-width: 100%;
+                    margin: 0 auto;
+                }
+            </style>
+        </head>`);
+
+        // Iniciar Puppeteer
         console.log('[Mock PDF] 🚀 Iniciando navegador Puppeteer');
         const browser = await puppeteer.launch({
             headless: true,
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-web-security',
-                '--disable-features=IsolateOrigins,site-per-process',
-                '--allow-running-insecure-content'
-            ]
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
         });
-
         const page = await browser.newPage();
 
         // Configurar viewport para A4
         await page.setViewport({
-            width: 794,  // A4 width at 96 DPI
-            height: 1123,  // A4 height at 96 DPI
-            deviceScaleFactor: 1
+            width: 794, // A4 width in pixels at 96 DPI
+            height: 1123, // A4 height in pixels at 96 DPI
+            deviceScaleFactor: 2
         });
 
-        // Habilitar logs detalhados
-        page.on('console', msg => console.log('[Browser Console]', msg.text()));
-        page.on('pageerror', err => console.log('[Browser Error]', err));
-        page.on('requestfailed', request => 
-            console.log(`[Request Failed] ${request.url()}: ${request.failure().errorText}`)
-        );
-
-        // Configurar headers e permissões
-        await page.setExtraHTTPHeaders({
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-        });
+        // Permitir acesso a arquivos locais e URLs externas
         await page.setBypassCSP(true);
 
-        // Renderizar o template com Handlebars
-        console.log('[Mock PDF] 📄 Renderizando template');
-        const html = await new Promise((resolve, reject) => {
-            req.app.render('templateTratativa', dadosTeste, (err, html) => {
-                if (err) {
-                    console.error('[Erro] Falha na renderização do template:', err);
-                    reject(err);
-                } else resolve(html);
-            });
-        });
-
-        // Injetar CSS inline
-        console.log('[Mock PDF] 🎨 Injetando CSS');
-        const cssPath = path.join(__dirname, '../public/tratativa-styles.css');
-        const css = fs.readFileSync(cssPath, 'utf8');
-        const htmlWithStyles = html.replace('</head>', `
-            <base href="file://${path.join(__dirname, '../public')}/">
-            <style>${css}</style>
-        </head>`);
-
-        // Carregar o conteúdo e aguardar
+        // Carregar o conteúdo HTML
         console.log('[Mock PDF] 📄 Carregando conteúdo');
-        await page.setContent(htmlWithStyles, {
-            waitUntil: ['load', 'domcontentloaded', 'networkidle0'],
-            timeout: 30000
+        await page.setContent(html, {
+            waitUntil: 'networkidle0',
+            timeout: 60000
         });
-
-        // Aguardar e verificar a logo
-        console.log('[Mock PDF] ⌛ Verificando elementos...');
-        await page.evaluate(() => {
-            const logoImg = document.querySelector('img.logo-img');
-            if (!logoImg) {
-                console.error('Elemento da logo não encontrado');
-                return false;
-            }
-            if (!logoImg.complete) {
-                console.error('Logo não carregou completamente');
-                return false;
-            }
-            if (logoImg.naturalHeight === 0) {
-                console.error('Logo com altura 0');
-                return false;
-            }
-            console.log('Logo verificada com sucesso');
-            return true;
-        });
-
-        // Pequena pausa para garantir renderização
-        await page.waitForTimeout(1000);
 
         // Gerar PDF
         console.log('[Mock PDF] 📑 Gerando PDF');
@@ -962,7 +934,7 @@ router.post('/mock-pdf', async (req, res) => {
                 left: '0'
             },
             preferCSSPageSize: true,
-            scale: 1
+            scale: 0.98
         });
 
         await browser.close();
@@ -974,7 +946,6 @@ router.post('/mock-pdf', async (req, res) => {
         const setorFormatado = normalizarTexto(mockData.setor).replace(/\s+/g, '_').toUpperCase();
         const fileName = `mockpdf/${mockData.numero_documento}-${nomeFormatado}-${setorFormatado}-${dataFormatada}.pdf`;
         
-        // Upload para Supabase
         console.log('[Mock PDF] 📤 Iniciando upload para Supabase:', fileName);
         const { error: uploadError } = await supabase.storage
             .from(process.env.SUPABASE_TRATATIVAS_BUCKET_NAME)
@@ -1066,7 +1037,7 @@ router.post('/mock-test', async (req, res) => {
 
         const dadosTeste = {
             ...mockData,
-            logo_src: LOGO_URL
+            logo_src: LOGO_BASE64
         };
 
         console.log('[Mock Test] 📋 Dados preparados');
@@ -1218,7 +1189,7 @@ router.post('/mock-template', async (req, res) => {
         // Adicionar logo aos dados
         const dadosTeste = {
             ...mockData,
-            logo_src: LOGO_URL
+            logo_src: LOGO_BASE64
         };
 
         console.log('[Mock Template] 📋 Dados preparados');
