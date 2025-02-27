@@ -276,7 +276,7 @@ router.post('/create', async (req, res) => {
         
         const { error: updateError } = await supabase
             .from('tratativas')
-            .update({ documento_enviado_url: publicUrl })
+            .update({ url_documento_enviado: publicUrl })
             .eq('id', tratativaId);
 
         if (updateError) throw updateError;
