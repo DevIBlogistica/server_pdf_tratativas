@@ -151,9 +151,8 @@ router.post('/create', async (req, res) => {
 
         // Validação dos dados recebidos - apenas campos obrigatórios
         if (!data.numero_documento || !data.data_infracao || !data.hora_infracao || 
-            !data.codigo_infracao || !data.infracao_cometida || !data.penalidade_aplicada || !data.nome_lider ||
-            !data.funcao || !data.setor || !data.metrica || !data.valor_praticado || !data.valor_limite) {
-            throw new Error('Dados incompletos. É necessário fornecer: número do documento, data, hora, código da infração, descrição da infração, penalidade aplicada, líder, função, setor, métrica, valor praticado e valor limite.');
+            !data.codigo_infracao || !data.infracao_cometida || !data.penalidade || !data.nome_lider) {
+            throw new Error('Dados incompletos. É necessário fornecer: número da tratativa, data, hora, código da infração, descrição da infração, penalidade e líder.');
         }
 
         // Processar data se estiver no formato dd/mm/aaaa
@@ -179,26 +178,24 @@ router.post('/create', async (req, res) => {
         const { data: newTratativa, error: dbError } = await supabase
             .from('tratativas')
             .insert([{
-                numero_documento: data.numero_documento,
-                nome_funcionario: data.nome_funcionario,
+                numero_tratativa: data.numero_tratativa,
+                funcionario: data.funcionario,
                 data_infracao: data.data_infracao,
-                hora_infracao: data.hora_infracao,
+                hora_infracao: `${data.data_infracao}T${data.hora_infracao}:00.000Z`,
                 codigo_infracao: data.codigo_infracao,
-                infracao_cometida: data.infracao_cometida,
-                penalidade_aplicada: data.penalidade_aplicada,
-                nome_lider: data.nome_lider,
+                descricao_infracao: data.descricao_infracao,
+                penalidade: data.penalidade,
+                lider: data.lider,
                 status: 'ENVIADA',
+                texto_infracao: data.texto_infracao,
                 texto_limite: data.texto_limite,
-                texto_excesso: data.texto_excesso,
-                documento_url: null,
-                documento_devolvido_url: null,
+                url_documento_enviado: null,
+                url_documento_devolvido: null,
                 data_devolvida: null,
-                justificativa: null,
                 funcao: data.funcao,
                 setor: data.setor,
-                metrica: data.metrica,
+                medida: data.medida,
                 valor_praticado: data.valor_praticado,
-                valor_limite: data.valor_limite,
                 mock: data.mock || false
             }])
             .select()
